@@ -85,8 +85,8 @@ class InvoiceStore:
 ```python
 def main(settings):
     with create_object_store_client(
-        connect_timeout=settings.connect_timeout,
-        read_timeout=settings.read_timeout,
+        connect_timeout=settings.connect_timeout_in_seconds,
+        read_timeout=settings.read_timeout_in_seconds,
     ) as client:
         invoice_store = InvoiceStore(
             client,
