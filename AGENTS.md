@@ -36,6 +36,7 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 ## Quality gate
 - `make check` formats, lints, type-checks, tests, and runs `pristine check` on its own source. It must report 0 findings.
 - `make check-all` runs `make check`, then a gitleaks scan of the git history.
+- The CI workflow, [.github/workflows/check.yml](.github/workflows/check.yml), runs `make check-all` on every push to main and every pull request.
 - Contributors run `make check-all` locally before pushing.
 - `pristine project .` must report 0 findings on this repository.
 
