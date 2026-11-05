@@ -1,6 +1,6 @@
 # CR-3 No Comments Except Machine-Read Text
 
-No comments in code. Docstrings are comments. The code must be clear enough to document itself. If a comment feels necessary, the code is unclear. Refactor until it reads like prose.
+No comments in code, docstrings included. The code documents itself, and a comment that feels necessary signals unclear code to refactor until it reads like prose. The exceptions are text a program reads: toolchain directives, comments a generation tool writes, descriptions a framework publishes to its consumers, and doc comments a published API reference generator reads.
 
 The exceptions are text that a program reads. The test: delete the text and check whether any program's behavior or output changes. If it changes, the text is an instruction or data written in comment syntax. If nothing changes, it is a comment, and it goes.
 
