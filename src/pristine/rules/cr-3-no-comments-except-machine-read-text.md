@@ -1,6 +1,6 @@
 # CR-3 No Comments Except Machine-Read Text
 
-No comments in code, docstrings included. The code documents itself, and a comment that feels necessary signals unclear code to refactor until it reads like prose. The exceptions are text a program reads: toolchain directives, comments a generation tool writes, descriptions a framework publishes to its consumers, and doc comments a published API reference generator reads.
+No comments in code, docstrings included. The code documents itself, and a comment that feels necessary signals unclear code to refactor until it reads like prose. The exceptions are text a program reads: toolchain directives, comments a generation tool writes, descriptions a framework publishes to its consumers, and doc comments a published API reference generator reads. A reason that a name cannot carry goes to a decision record or to the pull request description.
 
 The exceptions are text that a program reads. The test: delete the text and check whether any program's behavior or output changes. If it changes, the text is an instruction or data written in comment syntax. If nothing changes, it is a comment, and it goes.
 
@@ -18,6 +18,12 @@ When you take one of the last two exceptions:
 Doctests pass the deletion test and stay excluded: they put tests inside the source, which [TST-4](tst-4-tests-live-in-a-dedicated-tests-folder.md) forbids.
 
 Naming comes first. A description supplements a clear name for a consumer who cannot read the code. It never excuses an unclear name (see [CR-4](cr-4-naming.md)).
+
+## Where the reason lives
+Several rules ask to record why a decision was taken. With comments banned, the reason goes to the first of these places that can hold it:
+1. A name that carries the reason, such as a private module-level `_exchange_rate_cache` or `retry_after_gateway_throttling`.
+2. A decision record in the project's own documentation, such as `docs/decisions/` or the project's AGENTS.md, for a reason a name cannot carry.
+3. The description of the pull request, for a reason that matters only to the review.
 
 ## Bad
 
