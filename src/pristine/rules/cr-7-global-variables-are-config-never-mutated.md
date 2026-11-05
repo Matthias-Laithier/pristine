@@ -8,7 +8,7 @@ The exceptions are caches, plugin registries, and stable service instances.
 - Caches and registries may grow only behind an encapsulated mechanism: `functools.lru_cache` for caches, a registration decorator whose module owns the registry dict. Consumers never receive direct write access.
 - A service may manage internal operational state such as connection pooling, token caching, or retries. Its identity, configuration, and application state stay fixed. Consumers call the service. They never replace it, reconfigure it, or use it as a state container.
 
-When you take an exception, name the owner and the lifecycle at the definition.
+When you take an exception, the name carries the owner and the lifecycle, such as a private module-level `_rate_cache` that only its own module fills. A decision record holds anything more (see [CR-3](cr-3-no-comments-except-machine-read-text.md)).
 
 [CO-12](co-12-localize-mutation.md) owns mutation at every scope. [CO-13](co-13-imports-do-not-perform-external-work.md) constrains the initialization of global values.
 
