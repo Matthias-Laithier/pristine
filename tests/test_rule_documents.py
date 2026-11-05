@@ -15,6 +15,7 @@ FENCED_BLOCK = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 EXTERNAL_TARGET = re.compile(r"^(?:[a-z]+:|#)")
 RULE_HEADING = re.compile(r"# (?P<id>[A-Z]+-\d+) \S")
+CHAPTER_ITEM = re.compile(r"^- (?P<id>[A-Z]+-\d+) \S", re.MULTILINE)
 
 
 def relative_links(markdown: str) -> list[str]:
@@ -37,10 +38,15 @@ def test_relative_links_resolve(document: Path) -> None:
     assert not broken, f"{document.name} links to missing files: {broken}"
 
 
-def test_hub_chapters_link_every_rule_file() -> None:
-    chapters = HUB.read_text().split(CHAPTERS_HEADING, 1)[1]
-    linked = {(RULES_DIRECTORY / target).resolve() for target in relative_links(chapters)}
-    assert linked == {path.resolve() for path in RULE_FILES}
+def listed_rule_ids(hub: str) -> list[str]:
+    chapters = hub.split(CHAPTERS_HEADING, 1)[1]
+    return CHAPTER_ITEM.findall(chapters)
+
+
+def test_hub_chapters_list_every_rule_file() -> None:
+    listed = listed_rule_ids(HUB.read_text())
+    assert len(listed) == len(set(listed)), "the hub lists a rule ID twice"
+    assert set(listed) == {rule_id(path) for path in RULE_FILES}
 
 
 def test_rule_files_start_with_a_unique_id_heading() -> None:
