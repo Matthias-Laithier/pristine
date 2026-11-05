@@ -27,6 +27,7 @@ UNASSERTED_BAD_EXAMPLES = {
     "BS-8-bad:file": "the example leaks a file handle, and BS-8 detects only dropped asyncio tasks and swallowed cancellation",
     "CO-5-bad": "a method that ignores self may implement a protocol, so CO-5 checks only classes of static methods",
     "CR-15-bad": "nine files form a small set, and CR-15 reports a crowded directory only from twelve code files on",
+    "CR-18-bad": "delivery policy numbers need judgment, and CR-18 checks only model identifiers and sampling settings",
     "CR-22-bad:float money": "float money cannot be detected from syntax, and CR-22 checks only naive datetimes",
     "CR-8-bad": "a directory tree carries no file contents, and CR-8 judges client-library imports, not file names",
     "TST-8-bad": "the live client is injected, and TST-8 needs a client constructed from an environment key",
