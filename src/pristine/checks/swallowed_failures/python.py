@@ -56,7 +56,7 @@ def python_verdict(clause: Node, names: frozenset[str], body: str | None) -> tup
 
 
 def logged_verdict(names: frozenset[str], block: Node) -> tuple[Severity, str] | None:
-    result = None if all(is_expected(name) for name in names) else logged_default(block, LOGGED_DEFAULTS)
+    result = logged_default(block, LOGGED_DEFAULTS) if names & BROAD_EXCEPTIONS else None
     if result is None:
         return None
     return Severity.WARNING, f"only logs, then does '{result}', which hides the failure; {NARROW_HINT}"

@@ -22,13 +22,14 @@ def python_except(caught: str, body: str, tail: str = "") -> str:
         (python_except("except (FileNotFoundError, os.error)", "pass"), [(4, "warning")]),
         (python_except("except (FileNotFoundError, DocumentNotFoundError)", "pass"), []),
         (python_except("except ValueError", "pass", "    else:\n        raise Rejected(path)\n"), []),
-        (python_except("except ValueError", "logger.debug('bad %s', path)\n        return 0"), [(4, "warning")]),
+        (python_except("except ValueError", "logger.debug('bad %s', path)\n        return 0"), []),
         (python_except("except Exception as error", "logging.exception(error)\n        return None"), [(4, "warning")]),
-        (python_except("except KeyError", "self.log.warning(path)\n        return DEFAULT_PORT"), [(4, "warning")]),
-        (python_except("except FileNotFoundError", "logger.info(path)\n        return {}"), []),
-        (python_except("except ValueError", "logger.debug(path)\n        raise"), []),
-        (python_except("except ValueError", "logger.debug(path)\n        return Rejected(path)"), []),
-        (python_except("except ValueError", "logger.debug(path)\n        continue"), []),
+        (
+            python_except("except (KeyError, Exception)", "self.log.warning(path)\n        return DEFAULT_PORT"),
+            [(4, "warning")],
+        ),
+        (python_except("except Exception", "logger.debug(path)\n        return Rejected(path)"), []),
+        (python_except("except Exception", "logger.debug(path)\n        continue"), []),
     ],
 )
 def test_python_except_clauses(run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]) -> None:
