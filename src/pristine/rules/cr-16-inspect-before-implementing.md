@@ -7,6 +7,6 @@ Follow this order of preference:
 2. Improve or extend the mechanism that owns the responsibility.
 3. Create a new implementation only when existing code cannot cleanly satisfy the requirement.
 
-Never force an unrelated abstraction to support a new use case. When reuse would create unclear ownership, hidden coupling, or a worse interface, create the smallest suitable implementation and record why the existing mechanism was left aside.
+Never force an unrelated abstraction to support a new use case. When reuse would create unclear ownership, hidden coupling, or a worse interface, create the smallest suitable implementation and record why the existing mechanism was left aside, in the place [CR-3](cr-3-no-comments-except-machine-read-text.md) gives for a reason.
 
 This rule owns discovery and reuse inside the project. [CR-2](cr-2-do-not-reinvent.md) owns discovery and reuse of standard-library and third-party solutions. [CR-5](cr-5-dry-don-t-repeat-yourself.md) owns extracting behavior that is genuinely shared.
