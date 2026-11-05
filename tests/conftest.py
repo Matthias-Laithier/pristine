@@ -53,9 +53,65 @@ def run_git(directory: Path, *arguments: str) -> None:
     subprocess.run([git, "-C", str(directory), *arguments], check=True, timeout=GIT_TIMEOUT_SECONDS)
 
 
+def json_object(value: object) -> dict[str, object]:
+    assert isinstance(value, dict)
+    return dict[str, object](value)
+
+
+def json_list(value: object) -> list[object]:
+    assert isinstance(value, list)
+    return list[object](value)
+
+
+def json_text(value: object) -> str:
+    assert isinstance(value, str)
+    return value
+
+
+def json_integer(value: object) -> int:
+    assert isinstance(value, int)
+    return value
+
+
+def parsed_finding(value: object) -> ReportedFinding:
+    entry = json_object(value)
+    return ReportedFinding(
+        path=json_text(entry["path"]),
+        line=json_integer(entry["line"]),
+        rule_id=json_text(entry["rule_id"]),
+        severity=json_text(entry["severity"]),
+        message=json_text(entry["message"]),
+    )
+
+
+def parsed_path(value: object) -> ReportedPath:
+    entry = json_object(value)
+    return ReportedPath(path=json_text(entry["path"]), reason=json_text(entry["reason"]))
+
+
+def parsed_summary(value: object) -> ReportSummary:
+    entry = json_object(value)
+    return ReportSummary(
+        errors=json_integer(entry["errors"]),
+        warnings=json_integer(entry["warnings"]),
+        checked_files=json_integer(entry["checked_files"]),
+        unchecked_files=json_integer(entry["unchecked_files"]),
+        skipped_files=json_integer(entry["skipped_files"]),
+        missing_paths=json_integer(entry["missing_paths"]),
+        by_rule={rule_id: json_integer(count) for rule_id, count in json_object(entry["by_rule"]).items()},
+        omitted=json_integer(entry["omitted"]),
+    )
+
+
 def parsed_report(output: str) -> JsonReport:
-    report: JsonReport = json.loads(output)
-    return report
+    document = json_object(json.loads(output))
+    return JsonReport(
+        summary=parsed_summary(document["summary"]),
+        findings=[parsed_finding(entry) for entry in json_list(document["findings"])],
+        unchecked=[parsed_path(entry) for entry in json_list(document["unchecked"])],
+        skipped=[parsed_path(entry) for entry in json_list(document["skipped"])],
+        missing=[json_text(entry) for entry in json_list(document["missing"])],
+    )
 
 
 @pytest.fixture
