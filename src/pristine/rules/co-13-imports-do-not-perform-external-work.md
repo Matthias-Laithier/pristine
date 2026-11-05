@@ -30,12 +30,19 @@ def create_payments_client(credential):
 ```
 
 ```python
-import os
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
+
+
+class PaymentsSettings(BaseSettings):
+    payments_api_key: SecretStr
 
 
 def main():
-    with create_payments_client(os.environ["PAYMENTS_API_KEY"]) as payments_client:
+    payments_settings = PaymentsSettings()
+    payments_api_key = payments_settings.payments_api_key.get_secret_value()
+    with create_payments_client(payments_api_key) as payments_client:
         run_application(payments_client)
 ```
 
-The module is safe to import anywhere. The composition root performs environment access and client construction explicitly.
+The module is safe to import anywhere. The composition root builds the settings and the client explicitly.
