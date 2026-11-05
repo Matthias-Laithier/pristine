@@ -79,8 +79,7 @@ def trace_back(parents: dict[str, str], node: str, start: str) -> list[str]:
     return path[::-1]
 
 
-def shortest_cycle(graph: DependencyGraph, members: set[str]) -> list[str]:
-    start = min(members)
+def shortest_cycle(graph: DependencyGraph, members: set[str], start: str) -> list[str]:
     parents: dict[str, str] = {}
     queue = deque([start])
     while queue:
@@ -97,6 +96,6 @@ def cyclic_components(graph: DependencyGraph) -> list[set[str]]:
     return [set(component) for component in StronglyConnectedComponents(graph).find() if len(component) > 1]
 
 
-def import_cycles(graph: DependencyGraph) -> list[ImportCycle]:
-    components = cyclic_components(graph)
-    return [ImportCycle(shortest_cycle(graph, component), len(component)) for component in components]
+def import_cycles(graph: DependencyGraph, checked: set[str]) -> list[ImportCycle]:
+    starts = [(component, min(component & checked)) for component in cyclic_components(graph) if component & checked]
+    return [ImportCycle(shortest_cycle(graph, component, start), len(component)) for component, start in starts]

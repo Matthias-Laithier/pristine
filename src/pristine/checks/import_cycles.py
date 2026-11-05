@@ -5,6 +5,7 @@ from pristine.checks.registry import PathCheck, register_path_check
 from pristine.findings import Finding, Severity
 from pristine.imports.cycles import ImportCycle, dependency_graph, import_cycles
 from pristine.imports.registry import ImportEdge, ImportReader, SourceFile, reader_for
+from pristine.imports.repository import with_repository_files
 from pristine.inspection import is_generated
 
 RULE_ID = "CO-8"
@@ -55,9 +56,10 @@ def cycle_finding(cycle: ImportCycle, lines: ImportLines) -> Finding:
 
 
 def check_import_cycles(paths: list[str]) -> list[Finding]:
-    edges = [edge for reader, sources in sources_by_reader(paths).items() for edge in reader(sources)]
+    sources = sources_by_reader(with_repository_files(paths))
+    edges = [edge for reader, reader_sources in sources.items() for edge in reader(reader_sources)]
     lines = import_lines(edges)
-    return [cycle_finding(cycle, lines) for cycle in import_cycles(dependency_graph(edges))]
+    return [cycle_finding(cycle, lines) for cycle in import_cycles(dependency_graph(edges), set(paths))]
 
 
 register_path_check(
@@ -66,7 +68,7 @@ register_path_check(
         summary=(
             "Import cycles between files. Python imports, including lazy, dynamic with literal names, and "
             "TYPE_CHECKING ones, and relative TS and JS imports, including type-only ones, that resolve with "
-            "certainty to a checked file."
+            "certainty to a file of the repository. Cycles are reported when they pass through a checked file."
         ),
         run=check_import_cycles,
     )

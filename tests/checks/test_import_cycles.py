@@ -1,7 +1,11 @@
+import json
+import subprocess
+from pathlib import Path
 from typing import Any
 
 import pytest
 
+from pristine.cli import main
 from tests.conftest import RunPristine
 
 DEEP_CHAIN_LENGTH = 1100
@@ -113,3 +117,18 @@ def test_a_cycle_deeper_than_the_recursion_limit_is_found(run_pristine: RunPrist
     }
     _, report = run_pristine(files)
     assert [(path, line) for path, line, _ in reported_cycles(report)] == [("step_0000.py", 1)]
+
+
+def test_a_cycle_through_an_unchecked_repository_file_is_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    subprocess.run(["git", "init", "--quiet"], check=True, timeout=30)
+    files = {"orders.py": "import invoices\n", "invoices.py": "import discounts\n", "discounts.py": "import orders\n"}
+    files |= {"tax.py": "import rates\n", "rates.py": "import tax\n"}
+    for name, content in files.items():
+        Path(name).write_text(content)
+    main(["check", "orders.py", "--json"])
+    assert reported_cycles(json.loads(capsys.readouterr().out)) == [
+        ("orders.py", 1, "orders.py -> invoices.py -> discounts.py -> orders.py")
+    ]
