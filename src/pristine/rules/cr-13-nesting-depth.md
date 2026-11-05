@@ -14,10 +14,11 @@ Generated files keep the nesting their generator writes (see [CR-3](cr-3-no-comm
 
 ```python
 MAX_OVERDUE_REMINDERS = 3
+INVOICE_BATCH_SIZE = 500
 
 
 def send_overdue_reminders(invoice_store, mailer, today):
-    for invoice in invoice_store.all():
+    for invoice in invoice_store.stream(batch_size=INVOICE_BATCH_SIZE):
         if invoice.due_date < today:
             if not invoice.is_paid:
                 if invoice.reminder_count < MAX_OVERDUE_REMINDERS:
@@ -34,10 +35,11 @@ Four levels. The reader must stack four conditions to know when an email leaves,
 
 ```python
 MAX_OVERDUE_REMINDERS = 3
+INVOICE_BATCH_SIZE = 500
 
 
 def send_overdue_reminders(invoice_store, mailer, today):
-    for invoice in invoice_store.all():
+    for invoice in invoice_store.stream(batch_size=INVOICE_BATCH_SIZE):
         if invoice.is_paid:
             continue
         if invoice.due_date >= today:
