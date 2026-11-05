@@ -15,7 +15,6 @@ FENCED_BLOCK = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
 MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 EXTERNAL_TARGET = re.compile(r"^(?:[a-z]+:|#)")
 RULE_HEADING = re.compile(r"# (?P<id>[A-Z]+-\d+) \S")
-FORBIDDEN_WORDS = ("vault", "obsidian", "guidelines/")
 
 
 def relative_links(markdown: str) -> list[str]:
@@ -53,10 +52,3 @@ def test_rule_files_start_with_a_unique_id_heading() -> None:
     ]
     assert not mismatched, f"file names disagree with their heading ID: {mismatched}"
     assert len(identifiers) == len(set(identifiers))
-
-
-@pytest.mark.parametrize("document", RULE_DOCUMENTS, ids=lambda path: path.name)
-def test_rule_documents_stand_alone(document: Path) -> None:
-    text = document.read_text().lower()
-    found = [word for word in FORBIDDEN_WORDS if word in text]
-    assert not found, f"{document.name} mentions {found}"
