@@ -1,14 +1,14 @@
-import pickle
 import sys
 
 from pristine.inspection import inspect_file
+from pristine.outcome_lines import encoded_outcome
 
 
 def main() -> None:
     for path in sys.stdin.buffer.read().decode().split("\0"):
         if not path:
             continue
-        sys.stdout.write(pickle.dumps((path, inspect_file(path))).hex() + "\n")
+        sys.stdout.write(encoded_outcome(path, inspect_file(path)))
         sys.stdout.flush()
 
 

@@ -1,9 +1,10 @@
 import os
-import pickle
 import subprocess
 import sys
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 
+from pristine.outcome_lines import MalformedOutcomeLine, decoded_outcome
 from pristine.outcomes import Outcome, Unchecked
 
 WORKER_COMMAND = (sys.executable, "-m", "pristine.worker")
@@ -12,9 +13,16 @@ SECONDS_PER_FILE = 10
 LOST_FILE_REASON = "the parser crashed or timed out on this file"
 
 
+def reported_outcomes(lines: list[str]) -> Iterator[tuple[str, Outcome]]:
+    for line in lines:
+        try:
+            yield decoded_outcome(line)
+        except MalformedOutcomeLine:
+            continue
+
+
 def decoded_results(output: bytes | None) -> dict[str, Outcome]:
-    lines = (output or b"").decode().splitlines()
-    return dict(pickle.loads(bytes.fromhex(line)) for line in lines if line)
+    return dict(reported_outcomes((output or b"").decode(errors="replace").splitlines()))
 
 
 def run_worker(command: tuple[str, ...], paths: list[str]) -> tuple[dict[str, Outcome], bool]:
