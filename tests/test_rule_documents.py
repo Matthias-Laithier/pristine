@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from pristine.match_groups import group_text
+
 REPOSITORY = Path(__file__).resolve().parents[1]
 RULES_DIRECTORY = REPOSITORY / "src" / "pristine" / "rules"
 HUB = RULES_DIRECTORY / "README.md"
@@ -27,8 +29,9 @@ def relative_links(markdown: str) -> list[str]:
 def rule_id(path: Path) -> str:
     first_line = path.read_text().splitlines()[0]
     heading = RULE_HEADING.match(first_line)
-    assert heading, f"{path.name} starts with {first_line!r}, expected '# <ID> <Title>'"
-    return heading["id"]
+    identifier = None if heading is None else group_text(heading, "id")
+    assert identifier is not None, f"{path.name} starts with {first_line!r}, expected '# <ID> <Title>'"
+    return identifier
 
 
 @pytest.mark.parametrize("document", LINKED_DOCUMENTS, ids=lambda path: path.name)
@@ -40,7 +43,7 @@ def test_relative_links_resolve(document: Path) -> None:
 
 def listed_rule_ids(hub: str) -> list[str]:
     chapters = hub.split(CHAPTERS_HEADING, 1)[1]
-    return CHAPTER_ITEM.findall(chapters)
+    return [identifier for identifier in CHAPTER_ITEM.findall(chapters) if isinstance(identifier, str)]
 
 
 def test_hub_chapters_list_every_rule_file() -> None:

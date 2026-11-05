@@ -3,6 +3,7 @@ import re
 from collections.abc import Iterator
 
 from pristine.imports.registry import ImportEdge, SourceFile, reads_imports
+from pristine.match_groups import group_text
 
 SCRIPT_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")
 INDEX_MODULE = "index"
@@ -39,7 +40,7 @@ def is_member_access(text: str, position: int) -> bool:
 
 
 def module_specifier(token: re.Match[str]) -> str | None:
-    specifier = token.group("clause") or token.group("bare") or token.group("call")
+    specifier = group_text(token, "clause") or group_text(token, "bare") or group_text(token, "call")
     if specifier is None or TEMPLATE_INTERPOLATION in specifier or is_member_access(token.string, token.start()):
         return None
     return specifier if RELATIVE_SPECIFIER.match(specifier) else None

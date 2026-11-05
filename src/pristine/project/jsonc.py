@@ -1,6 +1,8 @@
 import json
 import re
 
+from pristine.match_groups import group_text
+
 BYTE_ORDER_MARK = "\ufeff"
 JSON_STRING = r'("(?:[^"\\\n]|\\.)*")'
 STRING_OR_COMMENT = re.compile(JSON_STRING + r"|//[^\n]*|/\*.*?\*/", re.DOTALL)
@@ -8,11 +10,11 @@ STRING_OR_TRAILING_COMMA = re.compile(JSON_STRING + r"|,(?=\s*[}\]])")
 
 
 def comment_as_space(match: re.Match[str]) -> str:
-    return match[1] or " "
+    return group_text(match, 1) or " "
 
 
 def string_or_nothing(match: re.Match[str]) -> str:
-    return match[1] or ""
+    return group_text(match, 1) or ""
 
 
 def parse_jsonc(text: str) -> object:

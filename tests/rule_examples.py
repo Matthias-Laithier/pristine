@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from pristine.match_groups import group_text
+
 RULES_DIRECTORY = Path(__file__).parent.parent / "src" / "pristine" / "rules"
 RULE_DOCUMENT_PATTERN = "*-*.md"
 TITLE_PATTERN = re.compile(r"^# (?P<rule_id>[A-Z]+-\d+) ")
@@ -103,14 +105,14 @@ def _filename_before(lines: list[str], fence_index: int) -> str | None:
     while previous >= 0 and not lines[previous].strip():
         previous -= 1
     match = FILENAME_PATTERN.match(lines[previous]) if previous >= 0 else None
-    return match["name"] if match else None
+    return None if match is None else group_text(match, "name")
 
 
 def _section_at(lines: list[str], line_index: int) -> tuple[ExampleKind | None, str] | None:
     for heading in reversed(lines[:line_index]):
         section = SECTION_PATTERN.match(heading)
         if section:
-            return ExampleKind(section["kind"].lower()), section["variant"] or ""
+            return ExampleKind(section["kind"].lower()), group_text(section, "variant") or ""
         if OTHER_SECTION_PATTERN.match(heading):
             return None
     return SHARED_SECTION

@@ -5,6 +5,7 @@ from tree_sitter import Node
 
 from pristine.checks.swallowed_failures import PROPAGATE_HINT, detects, normalized, statements_of, swallow
 from pristine.findings import Finding, Severity
+from pristine.match_groups import group_text
 from pristine.parsing import ParsedFile, all_nodes
 
 ERROR_NAME = re.compile(r"err(or)?(\d|[A-Z_]\w*)?|\w+Err(or)?\d*")
@@ -17,7 +18,7 @@ ERROR_TYPE = "error"
 
 def error_name(node: Node | None, pattern: re.Pattern[str]) -> str | None:
     match = None if node is None else pattern.fullmatch(normalized(node))
-    name = None if match is None else match["name"]
+    name = None if match is None else group_text(match, "name")
     return name if name is not None and ERROR_NAME.fullmatch(name) else None
 
 
