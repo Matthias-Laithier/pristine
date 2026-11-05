@@ -42,3 +42,22 @@ def test_binary_and_fixture_data_files_are_skipped(run_pristine: RunPristine) ->
     )
     assert report["unchecked"] == [{"path": "build.recipe", "reason": "no grammar for this file type"}]
     assert {entry["path"]: entry["reason"] for entry in report["skipped"]}["report.pdf"] == "binary file"
+
+
+def test_minified_assets_are_skipped_as_generated(run_pristine: RunPristine) -> None:
+    minified_bundle = "(function(){" + "var total=price*quantity;" * 60 + "})();\n"
+    _, report = run_pristine(
+        {
+            "static/htmx.min.js": "// readable header\nvar total = price * quantity;\n",
+            "static/charts.MIN.mjs": "export const total = 1;\n",
+            "static/bundle.js": minified_bundle,
+            "static/checkout.js": "var total = price * quantity;\n" * 6 + minified_bundle,
+            "static/invoices.py": minified_bundle,
+        }
+    )
+    skipped = {entry["path"]: entry["reason"] for entry in report["skipped"]}
+    assert skipped == {
+        "static/htmx.min.js": "generated file",
+        "static/charts.MIN.mjs": "generated file",
+        "static/bundle.js": "generated file",
+    }
