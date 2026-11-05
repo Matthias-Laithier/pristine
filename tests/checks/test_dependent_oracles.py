@@ -57,6 +57,11 @@ def test_order_total_is_deterministic(order):
     assert order.total == order.total
     expected = calculate_order_total_in_cents(order)
     assert calculate_order_total_in_cents(order) == expected
+
+
+def test_order_lines_returns_copy(order):
+    assert order.lines is not order.lines
+    assert order.lines == order.lines
 """
 
 

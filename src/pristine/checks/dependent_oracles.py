@@ -21,7 +21,7 @@ STATEFUL_CALLEES = re.compile(
 )
 PROPERTY_NAME = re.compile(
     r"(^|_)(eq|equal[a-z]*|reflexiv[a-z]*|identity|same|hash[a-z]*|determinis[a-z]*|idempoten[a-z]*|stab[a-z]*"
-    r"|consistent|repeatable|reproducible|cach[a-z]*|memoized|singleton|pure)(_|$)"
+    r"|consistent|repeatable|reproducible|cach[a-z]*|memoized|singleton|pure|cop(y|ies))(_|$)"
 )
 CALL_KIND = "call"
 AWAIT_KIND = "await"
