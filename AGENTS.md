@@ -67,7 +67,7 @@ When the user gives a rule or a thought, determine its scope first. A request ab
 
 ### Rule IDs
 - Every rule has an ID made of its chapter prefix and a number. The prefix takes the first letter of each word of the chapter name, such as CR for Coding Rules. Rules are numbered in sequence within the chapter: CR-1, CR-2, CR-3.
-- IDs are stable for life. A rule keeps its ID when its file moves. IDs are never renumbered and never reused, which is why BS-6 and BS-7 do not exist.
+- IDs are stable for life. A rule keeps its ID when its file moves. IDs are never renumbered and never reused.
 - Prefixes are unique across all chapters. Before creating a chapter, check its initials against every existing prefix. On a collision, pick an unambiguous alternative, such as TST for Testing when T is taken.
 - Titles are the relevance filter. A rule title is specific enough for an agent reading the chapter list to judge whether the rule touches its task without opening the file. The one-line description of a chapter meets the same bar.
 - Agents cite rule IDs to report compliance or violations when writing or reviewing code.

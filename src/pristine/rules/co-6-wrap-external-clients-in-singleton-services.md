@@ -6,7 +6,7 @@ Recreating a client on every call repeats setup and throws away reuse such as co
 
 A singleton describes the lifecycle of the service. It says nothing about how consumers reach it. Create the instance in the application's composition root and pass it to consumers. A stable global service is also acceptable when its identity and configuration never change and it holds no mutable application state. Internal client state such as connection pools, token caches, and retries is operational state and stays encapsulated. See [CR-7](cr-7-global-variables-are-config-never-mutated.md).
 
-Never share a client beyond the lifecycle or concurrency model it supports. Per-tenant credentials, per-request user tokens, separate event loops, clients that are not thread-safe, and test fakes require separate instances. Each service lives in its own file inside the component's `services/` folder (see [CR-8](cr-8-services-live-in-a-dedicated-services-folder.md)). The composition root also owns cleanup at the end of the application's life (see [BS-10](bs-10-resources-have-explicit-owners-and-lifetimes.md)).
+Never share a client beyond the lifecycle or concurrency model it supports. Per-tenant credentials, per-request user tokens, separate event loops, clients that are not thread-safe, and test fakes require separate instances. Each service lives in its own file inside the component's `services/` folder (see [CR-8](cr-8-services-live-in-a-dedicated-services-folder.md)). The composition root also owns cleanup at the end of the application's life (see [BS-8](bs-8-resources-have-explicit-owners-and-lifetimes.md)).
 
 ## Bad
 

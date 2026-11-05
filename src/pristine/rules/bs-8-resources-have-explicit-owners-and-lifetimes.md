@@ -1,4 +1,4 @@
-# BS-10 Resources Have Explicit Owners and Lifetimes
+# BS-8 Resources Have Explicit Owners and Lifetimes
 
 Every resource that requires release has one explicit owner and a bounded lifetime. Files, streams, locks, transactions, temporary directories, subprocesses, threads, sockets, and external clients are closed, committed, rolled back, joined, terminated, or otherwise released on every path, failure paths included.
 

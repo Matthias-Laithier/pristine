@@ -49,4 +49,4 @@ def create_invoice(invoice_repository, request):
     invoice_repository.save(Invoice(request.recipient, request.amount_in_cents))
 ```
 
-The parser owns validation. Domain logic receives one trusted value with explicit invariants and performs no side effect until validation succeeds. [BS-9](bs-9-represent-domain-invariants-in-types.md) owns the trusted representation after the boundary.
+The parser owns validation. Domain logic receives one trusted value with explicit invariants and performs no side effect until validation succeeds. [BS-7](bs-7-represent-domain-invariants-in-types.md) owns the trusted representation after the boundary.

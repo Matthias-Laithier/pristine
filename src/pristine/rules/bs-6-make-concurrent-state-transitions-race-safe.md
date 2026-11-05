@@ -1,4 +1,4 @@
-# BS-8 Make Concurrent State Transitions Race-Safe
+# BS-6 Make Concurrent State Transitions Race-Safe
 
 Every read-modify-write transition that can overlap with another execution stays correct under concurrency. Enforce the precondition and the write as one indivisible operation, with a conditional update, a version check, a constraint, a lock, a serializable transaction, a queue partition, or an equivalent mechanism.
 

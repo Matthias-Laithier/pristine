@@ -48,4 +48,4 @@ def transfer_funds(unit_of_work, transfer):
 
 Both balances commit together, and serializable isolation prevents overlapping transfers from losing updates. Any failure rolls the transaction back, so observers see either the complete transfer or no transfer.
 
-See [BS-3](bs-3-bound-every-external-call.md) for retry and timeout requirements, [BS-4](bs-4-do-not-swallow-failures.md) for keeping the failures that trigger rollback or recovery, and [BS-8](bs-8-make-concurrent-state-transitions-race-safe.md) for interference between overlapping operations.
+See [BS-3](bs-3-bound-every-external-call.md) for retry and timeout requirements, [BS-4](bs-4-do-not-swallow-failures.md) for keeping the failures that trigger rollback or recovery, and [BS-6](bs-6-make-concurrent-state-transitions-race-safe.md) for interference between overlapping operations.

@@ -63,4 +63,4 @@ def save_orders(storage: OrderStorage, orders):
 
 `save_orders` depends only on the `save` contract. A different storage implementation can replace `FileOrderStorage` without changing the consumer.
 
-[CO-11](co-11-export-only-the-public-contract.md) owns how much of an interface is exposed. [CR-17](cr-17-keep-function-signatures-cohesive.md) owns the shape of its inputs. [BS-11](bs-11-boundaries-expose-stable-error-contracts.md) owns its failures.
+[CO-11](co-11-export-only-the-public-contract.md) owns how much of an interface is exposed. [CR-17](cr-17-keep-function-signatures-cohesive.md) owns the shape of its inputs. [BS-9](bs-9-boundaries-expose-stable-error-contracts.md) owns its failures.

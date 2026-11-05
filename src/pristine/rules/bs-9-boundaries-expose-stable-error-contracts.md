@@ -1,4 +1,4 @@
-# BS-11 Boundaries Expose Stable Error Contracts
+# BS-9 Boundaries Expose Stable Error Contracts
 
 A public boundary defines the failures its callers may receive. Translate framework, SDK, database, transport, and operating-system errors into a small set of errors the boundary owns. Callers never need to import the exception types of a dependency or inspect error-message text to decide what happened.
 

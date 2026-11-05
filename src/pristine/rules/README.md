@@ -68,10 +68,10 @@ Rules that protect trust boundaries and failure paths.
 - [BS-3 Bound Every External Call](bs-3-bound-every-external-call.md)
 - [BS-4 Do Not Swallow Failures](bs-4-do-not-swallow-failures.md)
 - [BS-5 State Changes Are Atomic](bs-5-state-changes-are-atomic.md)
-- [BS-8 Make Concurrent State Transitions Race-Safe](bs-8-make-concurrent-state-transitions-race-safe.md)
-- [BS-9 Represent Domain Invariants in Types](bs-9-represent-domain-invariants-in-types.md)
-- [BS-10 Resources Have Explicit Owners and Lifetimes](bs-10-resources-have-explicit-owners-and-lifetimes.md)
-- [BS-11 Boundaries Expose Stable Error Contracts](bs-11-boundaries-expose-stable-error-contracts.md)
+- [BS-6 Make Concurrent State Transitions Race-Safe](bs-6-make-concurrent-state-transitions-race-safe.md)
+- [BS-7 Represent Domain Invariants in Types](bs-7-represent-domain-invariants-in-types.md)
+- [BS-8 Resources Have Explicit Owners and Lifetimes](bs-8-resources-have-explicit-owners-and-lifetimes.md)
+- [BS-9 Boundaries Expose Stable Error Contracts](bs-9-boundaries-expose-stable-error-contracts.md)
 
 ### Composability (CO)
 How code is designed for composition.

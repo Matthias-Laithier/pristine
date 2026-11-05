@@ -79,4 +79,4 @@ class ExchangeRateService:
         return parse_exchange_rate(response)
 ```
 
-The call has a visible finite budget. If the dependency cannot respond within it, the operation fails and frees the caller. [BS-11](bs-11-boundaries-expose-stable-error-contracts.md) owns the failure the service boundary exposes.
+The call has a visible finite budget. If the dependency cannot respond within it, the operation fails and frees the caller. [BS-9](bs-9-boundaries-expose-stable-error-contracts.md) owns the failure the service boundary exposes.

@@ -66,4 +66,4 @@ class PaymentService:
             raise PaymentFailed(customer_identifier) from error
 ```
 
-The service translates a dependency failure into its domain contract and keeps the original cause for diagnosis. [BS-11](bs-11-boundaries-expose-stable-error-contracts.md) owns the shape of that contract.
+The service translates a dependency failure into its domain contract and keeps the original cause for diagnosis. [BS-9](bs-9-boundaries-expose-stable-error-contracts.md) owns the shape of that contract.

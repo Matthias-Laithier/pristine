@@ -1,4 +1,4 @@
-# BS-9 Represent Domain Invariants in Types
+# BS-7 Represent Domain Invariants in Types
 
 After validation, represent domain state so that invalid combinations cannot be constructed or are rejected at construction. Use value objects, enums, distinct variants, constrained collections, or constructors that enforce related fields together. Never carry a lifecycle or multi-field invariant through the application as unrelated primitives and booleans that can later form impossible combinations.
 
