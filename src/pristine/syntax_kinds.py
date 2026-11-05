@@ -70,6 +70,10 @@ NAMED_FUNCTION_KINDS = frozenset(
 
 FUNCTION_KINDS = NAMED_FUNCTION_KINDS | ANONYMOUS_FUNCTION_KINDS
 
+NESTED_SCOPE_KINDS = FUNCTION_KINDS | {"class_definition"}
+
+ASYNC_KINDS = frozenset({"function_definition", "for_statement", "with_statement"})
+
 CALL_KINDS = frozenset({"call", "call_expression"})
 
 COMMENT_KINDS = frozenset({"comment", "line_comment", "block_comment"})

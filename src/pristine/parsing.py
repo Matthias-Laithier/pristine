@@ -5,6 +5,7 @@ from tree_sitter import Node, Tree
 
 from pristine.services.grammars import parser_for
 from pristine.syntax_kinds import (
+    ASYNC_KINDS,
     COMMENT_KINDS,
     DOCSTRING_CONTAINERS,
     DOCSTRING_LANGUAGES,
@@ -14,6 +15,7 @@ from pristine.syntax_kinds import (
 
 MODULE_WRAPPER_FIELDS = {"export_statement": "declaration", "decorated_definition": "definition"}
 MODULE_EXPRESSION_KIND = "expression_statement"
+ASYNC_KEYWORD = "async"
 
 
 @dataclass(frozen=True)
@@ -77,6 +79,10 @@ def function_name(node: Node) -> str:
     own_name = node_text(node.child_by_field_name("name"))
     holder_name = None if holder is None else node_text(holder.child_by_field_name("name"))
     return own_name or holder_name or "<anonymous>"
+
+
+def is_async(node: Node) -> bool:
+    return node.type in ASYNC_KINDS and node.children[0].type == ASYNC_KEYWORD
 
 
 def is_docstring(node: Node) -> bool:

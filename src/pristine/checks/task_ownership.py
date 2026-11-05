@@ -6,9 +6,9 @@ from tree_sitter import Node
 from pristine.calls import callee_of
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.parsing import ParsedFile, all_nodes, is_async, line_of, node_text
 from pristine.python_calls import import_bindings, qualified_callee
-from pristine.syntax_kinds import FUNCTION_KINDS
+from pristine.syntax_kinds import NESTED_SCOPE_KINDS
 
 RULE_ID = "BS-8"
 TASK_FACTORIES = frozenset({"asyncio.create_task", "asyncio.ensure_future"})
@@ -18,8 +18,6 @@ CANCELLED_ERRORS = frozenset({"asyncio.CancelledError", "asyncio.exceptions.Canc
 BROAD_CATCH = "BaseException"
 GROUP_KINDS = frozenset({"tuple", "parenthesized_expression"})
 REFERENCE_KINDS = frozenset({"identifier", "attribute", "subscript"})
-NESTED_SCOPE_KINDS = FUNCTION_KINDS | {"class_definition"}
-ASYNC_KINDS = frozenset({"function_definition", "for_statement", "with_statement"})
 CLEANUP_KINDS = frozenset({"except_clause", "finally_clause"})
 FORMATTING_CALLS = frozenset({"str", "repr", "type"})
 LOG_KEYWORD = "exc_info"
@@ -66,10 +64,6 @@ def enclosing_nodes(node: Node) -> list[Node]:
         chain.append(scope)
         scope = scope.parent
     return chain
-
-
-def is_async(node: Node) -> bool:
-    return node.type in ASYNC_KINDS and node.children[0].type == "async"
 
 
 def can_be_cancelled(clause: Node) -> bool:
