@@ -4,6 +4,7 @@ from tree_sitter import Node
 
 from pristine.checks.injection.constructed import is_constant_reference, is_escaping_callee, is_placeholder_name
 from pristine.parsing import node_text
+from pristine.python_strings import interpolations
 from pristine.registration import registering
 from pristine.syntax_kinds import COMPREHENSION_KINDS
 
@@ -16,13 +17,6 @@ ARGUMENT_LIST_KIND = "argument_list"
 REPEAT_OPERATOR = "*"
 
 _TRUST_RULES: dict[str, Callable[[Node], bool]] = {}
-
-
-def interpolations(node: Node) -> list[Node]:
-    if node.type == "concatenated_string":
-        return [inner for part in node.named_children for inner in interpolations(part)]
-    expressions = (child.child_by_field_name("expression") for child in node.named_children)
-    return [expression for expression in expressions if expression is not None] if node.type == "string" else []
 
 
 def is_trusted(node: Node | None) -> bool:
