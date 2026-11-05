@@ -1,0 +1,62 @@
+import re
+from pathlib import Path
+
+import pytest
+
+REPOSITORY = Path(__file__).resolve().parents[1]
+RULES_DIRECTORY = REPOSITORY / "src" / "pristine" / "rules"
+HUB = RULES_DIRECTORY / "README.md"
+NON_RULE_DOCUMENTS = frozenset({"README.md", "STYLE.md"})
+RULE_DOCUMENTS = sorted(RULES_DIRECTORY.glob("*.md"))
+RULE_FILES = [path for path in RULE_DOCUMENTS if path.name not in NON_RULE_DOCUMENTS]
+LINKED_DOCUMENTS = [*RULE_DOCUMENTS, REPOSITORY / "README.md", REPOSITORY / "AGENTS.md"]
+CHAPTERS_HEADING = "## Chapters"
+FENCED_BLOCK = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
+MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
+EXTERNAL_TARGET = re.compile(r"^(?:[a-z]+:|#)")
+RULE_HEADING = re.compile(r"# (?P<id>[A-Z]+-\d+) \S")
+FORBIDDEN_WORDS = ("vault", "obsidian", "guidelines/")
+
+
+def relative_links(markdown: str) -> list[str]:
+    prose = FENCED_BLOCK.sub("", markdown)
+    targets = [target.split("#")[0] for target in MARKDOWN_LINK.findall(prose)]
+    return [target for target in targets if target and not EXTERNAL_TARGET.match(target)]
+
+
+def rule_id(path: Path) -> str:
+    first_line = path.read_text().splitlines()[0]
+    heading = RULE_HEADING.match(first_line)
+    assert heading, f"{path.name} starts with {first_line!r}, expected '# <ID> <Title>'"
+    return heading["id"]
+
+
+@pytest.mark.parametrize("document", LINKED_DOCUMENTS, ids=lambda path: path.name)
+def test_relative_links_resolve(document: Path) -> None:
+    targets = relative_links(document.read_text())
+    broken = [target for target in targets if not (document.parent / target).exists()]
+    assert not broken, f"{document.name} links to missing files: {broken}"
+
+
+def test_hub_chapters_link_every_rule_file() -> None:
+    chapters = HUB.read_text().split(CHAPTERS_HEADING, 1)[1]
+    linked = {(RULES_DIRECTORY / target).resolve() for target in relative_links(chapters)}
+    assert linked == {path.resolve() for path in RULE_FILES}
+
+
+def test_rule_files_start_with_a_unique_id_heading() -> None:
+    identifiers = [rule_id(path) for path in RULE_FILES]
+    mismatched = [
+        path.name
+        for path, identifier in zip(RULE_FILES, identifiers, strict=True)
+        if not path.name.startswith(f"{identifier.lower()}-")
+    ]
+    assert not mismatched, f"file names disagree with their heading ID: {mismatched}"
+    assert len(identifiers) == len(set(identifiers))
+
+
+@pytest.mark.parametrize("document", RULE_DOCUMENTS, ids=lambda path: path.name)
+def test_rule_documents_stand_alone(document: Path) -> None:
+    text = document.read_text().lower()
+    found = [word for word in FORBIDDEN_WORDS if word in text]
+    assert not found, f"{document.name} mentions {found}"

@@ -1,0 +1,33 @@
+[project]
+name = "pristine"
+version = "0.1.0"
+description = "Opinionated coding rules for agents, with an agent-first CLI that serves them and checks their mechanical part."
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "tree-sitter>=0.25,<0.26",
+    "tree-sitter-language-pack>=1.23,<2",
+]
+
+[project.scripts]
+pristine = "pristine.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.9,<0.13"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "ty>=0.0.85",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["I", "B", "UP", "SIM", "PL", "ERA"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["PLR2004"]
