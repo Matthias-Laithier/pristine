@@ -2,6 +2,7 @@
 
 Opinionated coding rules for AI coding agents, with a CLI that serves them and checks their mechanical part.
 
+[![check](https://github.com/Matthias-Laithier/pristine/actions/workflows/check.yml/badge.svg)](https://github.com/Matthias-Laithier/pristine/actions/workflows/check.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](pyproject.toml)
 
