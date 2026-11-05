@@ -14,7 +14,7 @@ from pristine.cli_help import (
 )
 from pristine.discovery import discover_files, missing_paths
 from pristine.findings import Severity
-from pristine.grammar_downloads import announce_grammar_downloads
+from pristine.grammar_downloads import grammar_download_notices
 from pristine.project.inspection import inspect_project
 from pristine.rendering import render_json, render_text
 from pristine.report import Report, build_report
@@ -99,7 +99,8 @@ def print_report(report: Report, arguments: argparse.Namespace) -> int:
 def run_check(arguments: argparse.Namespace) -> int:
     files = discover_files(arguments.paths, arguments.exclude)
     path_findings = [finding for check in path_checks() for finding in check.run(files)]
-    announce_grammar_downloads(files)
+    for notice in grammar_download_notices(files):
+        print(notice, file=sys.stderr)
     report = build_report(inspect_in_workers(files), path_findings, missing_paths(arguments.paths))
     return print_report(report, arguments)
 

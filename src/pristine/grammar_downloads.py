@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 from pristine.inspection import BINARY_SNIFF_BYTES, is_generated, skip_reason
@@ -26,8 +25,7 @@ def uncached_language(shown_path: str, cached: frozenset[str]) -> str | None:
     return language
 
 
-def announce_grammar_downloads(paths: list[str]) -> None:
+def grammar_download_notices(paths: list[str]) -> list[str]:
     cached = cached_languages()
-    languages = {language for path in paths if (language := uncached_language(path, cached))}
-    for language in sorted(languages):
-        print(DOWNLOAD_NOTICE.format(language=language), file=sys.stderr)
+    languages = {language for path in paths if (language := uncached_language(path, cached)) is not None}
+    return [DOWNLOAD_NOTICE.format(language=language) for language in sorted(languages)]
