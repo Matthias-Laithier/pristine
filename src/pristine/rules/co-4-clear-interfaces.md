@@ -1,6 +1,6 @@
 # CO-4 Clear Interfaces
 
-A composable unit has a clear interface. The interface is the contract. The consumer never needs to know the internals. A unit with a leaky interface is not composable, because consumers come to depend on details that should stay hidden.
+A composable unit exposes a contract its consumers use without knowing its internals. Consumers call its operations and never read its fields, its storage, or its implementation details. A unit with a leaky interface is not composable, because consumers come to depend on details that should stay hidden and break when the implementation changes.
 
 ## Bad
 
