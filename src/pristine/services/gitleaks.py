@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -43,19 +44,25 @@ def mirror_paths(paths: list[str], root: Path) -> dict[str, str]:
     return links
 
 
-def scan_command() -> list[str]:
-    command = ["gitleaks", "dir", ".", *SCAN_OPTIONS]
+def scan_command(gitleaks: str) -> list[str]:
+    command = [gitleaks, "dir", ".", *SCAN_OPTIONS]
     project_config = Path.cwd() / PROJECT_CONFIG_NAME
     return [*command, "--config", str(project_config)] if project_config.is_file() else command
 
 
 def run_gitleaks(root: Path) -> str:
+    gitleaks = shutil.which("gitleaks")
+    if gitleaks is None:
+        raise SecretScanFailed("gitleaks is not installed or not on PATH")
     try:
         result = subprocess.run(
-            scan_command(), cwd=root, capture_output=True, text=True, timeout=GITLEAKS_TIMEOUT_SECONDS, check=False
+            scan_command(gitleaks),
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=GITLEAKS_TIMEOUT_SECONDS,
+            check=False,
         )
-    except FileNotFoundError as error:
-        raise SecretScanFailed("gitleaks is not installed or not on PATH") from error
     except subprocess.TimeoutExpired as error:
         raise SecretScanFailed(f"gitleaks timed out after {GITLEAKS_TIMEOUT_SECONDS} seconds") from error
     except (OSError, subprocess.SubprocessError) as error:

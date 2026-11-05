@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -6,9 +7,12 @@ GIT_TIMEOUT_SECONDS = 30
 
 
 def ls_files(directory: Path, *options: str) -> list[str] | None:
+    git = shutil.which("git")
+    if git is None:
+        return None
     try:
         result = subprocess.run(
-            ["git", "-C", str(directory), "ls-files", *options, "-z"],
+            [git, "-C", str(directory), "ls-files", *options, "-z"],
             capture_output=True,
             timeout=GIT_TIMEOUT_SECONDS,
             check=False,
