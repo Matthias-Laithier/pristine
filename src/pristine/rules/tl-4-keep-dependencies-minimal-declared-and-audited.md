@@ -6,7 +6,7 @@ Deployable applications commit the lockfile of their ecosystem and build from it
 
 The runtime version is pinned: `.python-version` or `requires-python` in `pyproject.toml`, `engines` in `package.json`, the `go` directive in `go.mod`. Local development, CI, and production then run the same interpreter or toolchain, and the frozen lockfile resolves against the runtime it was locked for.
 
-Run the available vulnerability and obsolete-dependency checks regularly, and through `make check-all` when they are deterministic enough for the complete gate. A reported vulnerability requires an assessment. A blind upgrade is no answer. Record temporary pins, ignored advisories, forks, and postponed upgrades with their reason and their removal condition.
+Run the available vulnerability and obsolete-dependency checks regularly, and through `make check-all` when they are deterministic enough for the complete gate. A reported vulnerability requires an assessment. A blind upgrade is no answer. Record temporary pins, ignored advisories, forks, and postponed upgrades with their reason and their removal condition, in the place [CR-3](cr-3-no-comments-except-machine-read-text.md) gives for a reason.
 
 Transitive dependencies belong to the direct package that selected them. Declare a transitive package directly only when application code imports it or the project must constrain it for a documented compatibility or security reason. [CR-2](cr-2-do-not-reinvent.md) owns whether to adopt a dependency. This rule owns it after adoption.
 
