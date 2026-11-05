@@ -4,7 +4,7 @@ dev:
 	uv run pristine check src tests
 
 install:
-	uv sync
+	uv sync --locked
 
 format:
 	uv run ruff format src tests
