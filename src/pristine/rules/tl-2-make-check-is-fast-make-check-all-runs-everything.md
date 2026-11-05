@@ -1,6 +1,6 @@
 # TL-2 `make check` Is Fast, `make check-all` Runs Everything
 
-`make check` runs every fast mechanical check: the linter, the typechecker, fast tests, format verification, and anything else that should run before every push. A fast mechanical check that exists in the project and is missing from `check` is a defect: the gate lies by omission. [TL-3](tl-3-automate-formatting-and-static-analysis.md) defines the required code-quality checks.
+`make check` runs every fast mechanical check: the linter, the typechecker, fast tests, format verification, and anything else that should run before every push. A fast mechanical check that exists in the project and is missing from `check` is a defect: the gate lies by omission. [TL-3](tl-3-automate-formatting-and-static-analysis.md) defines the required code-quality checks. `make check-all` runs `check` first, then every remaining mechanical check, such as slow integration, end-to-end, load, and dependency checks.
 
 `make check-all` includes `make check` and every remaining mechanical check, such as slow integration, end-to-end, load, and applicable dependency checks. A check that exists in the project and is in neither target is a defect. See [TL-4](tl-4-keep-dependencies-minimal-declared-and-audited.md).
 
