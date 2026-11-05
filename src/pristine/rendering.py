@@ -44,7 +44,9 @@ def render_text(report: Report, limit: int | None) -> str:
         f"{finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}" for finding in shown
     ]
     if len(shown) < len(report.findings):
-        lines.append(f"... {counted(len(report.findings) - len(shown), 'more finding')} omitted (use --max or --json)")
+        lines.append(
+            f"... {counted(len(report.findings) - len(shown), 'more finding')} omitted, raise --max or use --json to see them"
+        )
     lines += [f"missing: {path}" for path in report.missing]
     lines += [f"unchecked: {path} ({reason})" for path, reason in report.unchecked.items()]
     skipped_reasons = Counter(report.skipped.values())

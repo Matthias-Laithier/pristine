@@ -62,7 +62,7 @@ def test_max_prints_the_first_findings_and_counts_the_rest(
     assert (report["summary"]["omitted"], report["summary"]["errors"]) == (2, 3)
     main(["check", "values.py", "--max", "2"])
     lines = capsys.readouterr().out.splitlines()
-    assert lines[2] == "... 1 more finding omitted (use --max or --json)"
+    assert lines[2] == "... 1 more finding omitted, raise --max or use --json to see them"
     assert lines[3].startswith("summary: 3 errors")
 
 
