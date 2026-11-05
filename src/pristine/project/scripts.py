@@ -23,7 +23,7 @@ def invoked_script(runner: str, arguments: list[str]) -> str | None:
 
 def script_names(command: str) -> set[str]:
     calls = program_calls(command, SCRIPT_RUNNERS)
-    return {name for runner, arguments in calls if (name := invoked_script(runner, arguments))}
+    return {name for runner, arguments in calls if (name := invoked_script(runner, arguments)) is not None}
 
 
 def with_package_scripts(commands: Iterable[str], scripts: Mapping[str, str]) -> list[str]:

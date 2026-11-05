@@ -71,8 +71,8 @@ def js_literal_kind(value: Node | None) -> str | None:
 
 def declared_kinds(keyword: str, declarator: Node) -> tuple[str, frozenset[str]]:
     literal_kind = js_literal_kind(declarator.child_by_field_name("value"))
-    rebindable = {REBINDABLE} if keyword in JS_REBINDABLE_KEYWORDS else set()
-    literal = {literal_kind} if literal_kind else set()
+    rebindable = {REBINDABLE} if keyword in JS_REBINDABLE_KEYWORDS else set[str]()
+    literal = set[str]() if literal_kind is None else {literal_kind}
     return node_text(declarator.child_by_field_name("name")) or "", frozenset(rebindable | literal)
 
 

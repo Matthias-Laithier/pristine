@@ -21,7 +21,7 @@ type Combine = Callable[[str | None, str], str]
 
 
 def append_value(current: str | None, value: str) -> str:
-    return f"{current} {value}".strip() if current else value
+    return value if current in (None, "") else f"{current} {value}".strip()
 
 
 def keep_existing(current: str | None, value: str) -> str:

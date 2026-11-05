@@ -44,7 +44,7 @@ def render_rules_json() -> str:
 
 def render_rule_line(entry: dict[str, str | None]) -> str:
     line = f"{entry['rule_id']} {entry['title']} ({entry['checked_by']})"
-    return f"{line}: {entry['summary']}" if entry["summary"] else line
+    return line if entry["summary"] is None else f"{line}: {entry['summary']}"
 
 
 def render_rules_text() -> str:

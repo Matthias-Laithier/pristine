@@ -20,7 +20,7 @@ def uncached_language(shown_path: str, cached: frozenset[str]) -> str | None:
     if language is None or language in cached:
         return None
     head = file_head(path)
-    if head is None or skip_reason(path, head) or is_generated(head.decode(errors="replace")):
+    if head is None or skip_reason(path, head) is not None or is_generated(head.decode(errors="replace")):
         return None
     return language
 

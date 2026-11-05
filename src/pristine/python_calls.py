@@ -37,8 +37,8 @@ def import_bindings(root: Node) -> dict[str, str]:
 def import_binding(name: Node, prefix: str) -> tuple[str, str]:
     alias = node_text(name.child_by_field_name("alias"))
     imported = node_text(name.child_by_field_name("name")) or node_text(name) or ""
-    local = alias or (imported if prefix else imported.split(".")[0])
-    return local, prefix + (imported if prefix or alias else local)
+    local = alias if alias is not None else (imported if prefix else imported.split(".")[0])
+    return local, prefix + (imported if prefix or alias is not None else local)
 
 
 def qualified_callee(callee: str, bindings: dict[str, str]) -> str | None:

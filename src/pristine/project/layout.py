@@ -12,7 +12,7 @@ BUILD_SCRIPT = "build"
 
 
 def missing_makefile(project: Project) -> list[Finding]:
-    if project.makefile_path:
+    if project.makefile_path is not None:
         return []
     message = "no Makefile at the repository root; add one with the dev, check, and check-all targets"
     return [Finding(project.shown(ROOT), FIRST_LINE, RULE_ID, Severity.ERROR, message)]
