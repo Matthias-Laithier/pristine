@@ -6,7 +6,7 @@ At-least-once delivery is the contract of every queue, webhook provider, and wor
 
 The exceptions:
 - Effects that are idempotent by nature, such as setting a value, an upsert by natural key, or a delete by identifier.
-- Providers without an idempotency mechanism. Record the intent before the effect, check it on redelivery, and document the remaining duplicate window.
+- Providers without an idempotency mechanism. Record the intent before the effect, check it on redelivery, and document the remaining duplicate window in the place [CR-3](cr-3-no-comments-except-machine-read-text.md) gives for a reason.
 
 [BS-3](bs-3-bound-every-external-call.md) owns the decision of a caller to retry. This rule owns surviving redelivery. [BS-5](bs-5-state-changes-are-atomic.md) owns the durable intent, and [BS-6](bs-6-make-concurrent-state-transitions-race-safe.md) owns two deliveries processed at the same time.
 
