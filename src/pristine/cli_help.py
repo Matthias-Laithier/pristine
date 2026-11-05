@@ -6,11 +6,14 @@ DESCRIPTION = (
     "an unknown rule ID."
 )
 GUIDE_DESCRIPTION = (
-    "Print the rules hub verbatim as markdown: precedence, the steps to follow before coding, while coding, and "
-    "before finishing, and the chapter lists with every rule ID and title. Read it before coding. Exit code 0."
+    "Print the rules hub as markdown: precedence, the steps to follow before coding, while coding, and before "
+    "finishing, and the chapter lists with every rule ID and title. A rule index follows: one line per rule in "
+    "ID order, '- ID Title (checked_by): statement', the statement being the rule's first paragraph. Links "
+    "between rule files print as their plain label. Read it before coding. Exit code 0."
 )
 RULE_DESCRIPTION = (
-    "Print the full markdown text of each given rule, in the order given, separated by a blank line. IDs match "
+    "Print the full markdown text of each given rule, in the order given, separated by a blank line. Links "
+    "between rule files print as their plain label. IDs match "
     "case-insensitively, such as cr-13 or CR-13. Exit code 0, or 2 when an ID is unknown, with the known IDs on "
     "stderr and nothing on stdout."
 )
@@ -18,7 +21,7 @@ RULES_DESCRIPTION = (
     "List every rule, in chapter and number order, with how it is checked: 'check' (pristine check), 'project' "
     "(pristine project), or 'review' (no automated check: review your code against it yourself). Text lines read "
     "'ID Title (checked_by): summary', the summary only for checked rules, then a 'next:' line. --json prints a list of objects with "
-    "rule_id, title, checked_by, and summary (null for review). Exit code 0."
+    "rule_id, title, checked_by, summary (null for review), and statement, the rule's first paragraph. Exit code 0."
 )
 CHECK_DESCRIPTION = (
     "Check files and directories. Directories expand to their git-tracked and untracked, non-ignored files, "

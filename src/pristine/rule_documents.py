@@ -18,6 +18,11 @@ class RuleDocument:
     title: str
     text: str
 
+    @property
+    def statement(self) -> str:
+        paragraph = self.text.partition("\n")[2].strip().partition("\n\n")[0]
+        return " ".join(paragraph.splitlines())
+
 
 class UnknownRule(LookupError):
     pass

@@ -14,9 +14,10 @@ from pristine.cli_help import (
 from pristine.discovery import PathNotFound, discover_files
 from pristine.findings import Severity
 from pristine.project.inspection import inspect_project
-from pristine.rendering import render_json, render_rules_json, render_rules_text, render_text
+from pristine.rendering import render_json, render_text
 from pristine.report import Report, build_report
-from pristine.rule_documents import UnknownRule, find_rule, guide_text, rule_documents
+from pristine.rule_documents import UnknownRule, find_rule, rule_documents
+from pristine.rule_listing import render_guide, render_rules_json, render_rules_text
 from pristine.services.isolated_inspection import inspect_in_workers
 
 EXIT_CLEAN = 0
@@ -90,7 +91,7 @@ def run_rules(arguments: argparse.Namespace) -> int:
 
 
 def run_guide(_: argparse.Namespace) -> int:
-    print(guide_text(), end="")
+    print(render_guide(), end="")
     return EXIT_CLEAN
 
 

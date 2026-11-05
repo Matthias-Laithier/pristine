@@ -10,9 +10,9 @@ from pristine.project.inspection import PROJECT_RULE_SUMMARIES
 RULES_SOURCE = Path(__file__).parents[1] / "src" / "pristine" / "rules"
 
 
-def listed_rules(capsys: pytest.CaptureFixture[str]) -> dict[str, str]:
+def listed_rules(capsys: pytest.CaptureFixture[str]) -> dict[str, dict[str, str]]:
     assert main(["rules", "--json"]) == 0
-    return {entry["rule_id"]: entry["checked_by"] for entry in json.loads(capsys.readouterr().out)}
+    return {entry["rule_id"]: entry for entry in json.loads(capsys.readouterr().out)}
 
 
 def test_guide_prints_the_hub_with_links_as_plain_text(capsys: pytest.CaptureFixture[str]) -> None:
@@ -22,6 +22,14 @@ def test_guide_prints_the_hub_with_links_as_plain_text(capsys: pytest.CaptureFix
     assert output.startswith(hub_heading + "\n")
     assert "- CR-13 Nesting Depth\n" in output
     assert ".md)" not in output
+
+
+def test_guide_ends_with_a_rule_index_of_statements(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["guide"]) == 0
+    index = capsys.readouterr().out.partition("\n## Rule index\n")[2]
+    statement = (RULES_SOURCE / "cr-13-nesting-depth.md").read_text(encoding="utf-8").splitlines()[2]
+    assert f"\n- CR-13 Nesting Depth (check): {statement}\n" in index
+    assert "\n- CR-20 Minimize the Resulting Codebase (review): " in index
 
 
 def test_rule_prints_each_rule_matched_case_insensitively(capsys: pytest.CaptureFixture[str]) -> None:
@@ -43,7 +51,9 @@ def test_unknown_rule_is_a_usage_error_listing_known_ids(capsys: pytest.CaptureF
 
 def test_rules_lists_checked_project_and_review_rules(capsys: pytest.CaptureFixture[str]) -> None:
     rules = listed_rules(capsys)
-    assert (rules["CR-13"], rules["TL-1"], rules["CR-20"]) == ("check", "project", "review")
+    checked_by = (rules["CR-13"]["checked_by"], rules["TL-1"]["checked_by"], rules["CR-20"]["checked_by"])
+    assert checked_by == ("check", "project", "review")
+    assert rules["CR-13"]["statement"].startswith("2 levels of nesting is the target, 3 is the hard limit")
     assert len(rules) == len(list(RULES_SOURCE.glob("*-*-*.md")))
 
 
