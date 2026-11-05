@@ -34,7 +34,10 @@ class ExchangeRateService:
 
     def fetch(self, currency):
         try:
-            response = self.http_client.get(f"https://rates.example/{currency}")
+            response = self.http_client.get(
+                "https://rates.example/rates",
+                params={"currency": currency},
+            )
         except HttpClientUnavailable as error:
             raise ExchangeRateUnavailable from error
         return parse_exchange_rate(response)
@@ -71,7 +74,8 @@ class ExchangeRateService:
     def fetch(self, currency):
         try:
             response = self.http_client.get(
-                f"https://rates.example/{currency}",
+                "https://rates.example/rates",
+                params={"currency": currency},
                 timeout=3,
             )
         except HttpClientUnavailable as error:
