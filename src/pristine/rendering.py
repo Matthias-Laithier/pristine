@@ -11,6 +11,10 @@ NEXT_STEP = (
 )
 
 
+def counted(count: int, noun: str) -> str:
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
 def summary(report: Report) -> dict[str, int]:
     return {
         "errors": report.count(Severity.ERROR),
@@ -38,11 +42,14 @@ def render_text(report: Report, limit: int | None) -> str:
         f"{finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}" for finding in shown
     ]
     if len(shown) < len(report.findings):
-        lines.append(f"... {len(report.findings) - len(shown)} more findings omitted (use --max or --json)")
+        lines.append(f"... {counted(len(report.findings) - len(shown), 'more finding')} omitted (use --max or --json)")
     lines += [f"unchecked: {path} ({reason})" for path, reason in report.unchecked.items()]
     skipped_reasons = Counter(report.skipped.values())
-    lines += [f"skipped: {count} file(s), {reason}" for reason, count in sorted(skipped_reasons.items())]
-    lines.append("summary: " + ", ".join(f"{value} {key.replace('_', ' ')}" for key, value in summary(report).items()))
+    lines += [f"skipped: {counted(count, 'file')}, {reason}" for reason, count in sorted(skipped_reasons.items())]
+    lines.append(
+        "summary: "
+        + ", ".join(counted(value, key.replace("_", " ").removesuffix("s")) for key, value in summary(report).items())
+    )
     if report.findings:
         lines.append("by rule: " + ", ".join(f"{rule_id} {count}" for rule_id, count in report.by_rule().items()))
     lines.append(NEXT_STEP)
