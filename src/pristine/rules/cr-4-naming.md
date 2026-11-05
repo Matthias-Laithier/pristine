@@ -11,12 +11,13 @@ External APIs, legacy schemas, and protocols may impose names the application do
 ## Bad
 
 ```python
-DISCOUNT_MINIMUM = 100
+DISCOUNT_MINIMUM_IN_CENTS = 10_000
+BASIS_POINTS_PER_UNIT = 10_000
 
 
 def calc(bp, tr):
-    total = bp + bp * tr
-    if total > DISCOUNT_MINIMUM:
+    total = bp + bp * tr // BASIS_POINTS_PER_UNIT
+    if total > DISCOUNT_MINIMUM_IN_CENTS:
         total = apply_disc(total)
     return total
 ```
@@ -26,14 +27,15 @@ The abbreviated names hide the domain and force the reader to reconstruct it fro
 ## Good
 
 ```python
-DISCOUNT_MINIMUM = 100
+DISCOUNT_MINIMUM_IN_CENTS = 10_000
+BASIS_POINTS_PER_UNIT = 10_000
 
 
-def calculate_total_price(base_price, tax_rate):
-    total = base_price + base_price * tax_rate
-    if total > DISCOUNT_MINIMUM:
-        total = apply_discount(total)
-    return total
+def calculate_total_price_in_cents(base_price_in_cents, tax_rate_in_basis_points):
+    total_in_cents = base_price_in_cents + base_price_in_cents * tax_rate_in_basis_points // BASIS_POINTS_PER_UNIT
+    if total_in_cents > DISCOUNT_MINIMUM_IN_CENTS:
+        total_in_cents = apply_discount(total_in_cents)
+    return total_in_cents
 ```
 
 Only the names changed. The calculation is identical, and its purpose and inputs are explicit.
