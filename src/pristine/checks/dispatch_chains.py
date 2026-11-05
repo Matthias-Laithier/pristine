@@ -19,7 +19,7 @@ COMPARISON_KINDS = frozenset({"binary_expression", "comparison_operator", "equal
 DISJUNCTION_KINDS = frozenset({"binary_expression", "boolean_operator", "disjunction_expression"})
 GROUPING_KIND = "parenthesized_expression"
 ELIF_KIND = "elif_clause"
-ELSE_TOKEN = "else"
+ELSE_KIND = "else"
 EXEMPT_SUBJECT_PREFIXES = ("typeof ",)
 CONSTANT_PATTERN = re.compile(
     r"-?\s*\d[\w.]*|\"(?:[^\"\\$]|\\.)*\"|'(?:[^'\\$]|\\.)*'|`[^`$]*`|\.\w+"
@@ -78,7 +78,7 @@ def branch_subject(condition: Node) -> str | None:
 
 def else_if_of(node: Node) -> Node | None:
     children = node.children
-    after_else = (children[index + 1] for index in range(len(children) - 1) if children[index].type == ELSE_TOKEN)
+    after_else = (children[index + 1] for index in range(len(children) - 1) if children[index].type == ELSE_KIND)
     alternative = node.child_by_field_name("alternative") or next(after_else, None)
     if alternative is None or alternative.type in IF_KINDS:
         return alternative
