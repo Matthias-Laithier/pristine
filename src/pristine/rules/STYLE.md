@@ -20,4 +20,5 @@ How the rule documents and every document of this repository are written.
 ## Formatting
 - No emoji. No bold or italics for emphasis.
 - Headings name sections. A list holds items of the same kind.
-- Links are relative markdown links, such as `[CR-13](cr-13-nesting-depth.md)`. External sources link to their URL.
+- A rule file links another rule file with a relative markdown link, such as `[CR-13](cr-13-nesting-depth.md)`. The CLI prints such a link as its label. The hub lists rules as plain `ID Title` text, without links.
+- External sources link to their URL.
