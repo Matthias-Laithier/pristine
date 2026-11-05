@@ -1,6 +1,8 @@
 # TL-1 Every Project Has a Makefile
 
-Every project has a Makefile, whatever the stack. Python, Node, Go, Rust, or a mixed monorepo all share the same front door. `make` is the one convention that crosses every ecosystem: it is on every Unix machine and every CI image. `package.json` scripts exist only in Node projects, `just` and Taskfile need installs, and README paragraphs are prose nobody re-reads.
+Every project has one Makefile at the repository root, whatever the stack, with the targets `dev`, `check`, and `check-all`, plus `build` when the project produces artifacts. Components carry no Makefile of their own.
+
+Python, Node, Go, Rust, or a mixed monorepo all share the same front door. `make` is the one convention that crosses every ecosystem: it is on every Unix machine and every CI image. `package.json` scripts exist only in Node projects, `just` and Taskfile need installs, and README paragraphs are prose nobody re-reads.
 
 The Makefile lives at the repository root. A project with several components, such as a backend, a frontend, and a worker, has one root Makefile and no Makefile per component, so the front door is one place. The contract targets always run the whole project: `make dev` starts every component that has something to run, `make check` runs the fast checks of every component, and `make check-all` runs every check. What runs inside a component is an implementation detail. The front door is the root.
 
