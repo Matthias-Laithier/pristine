@@ -35,6 +35,7 @@ class Requirement:
 @dataclass(frozen=True)
 class FastGate:
     rule: Rule
+    commands: tuple[str, ...]
     invocations: frozenset[Invocation]
 
 
@@ -73,11 +74,11 @@ def fast_gate(project: Project) -> FastGate | None:
         return None
     javascript = project.root_manifest(Ecosystem.JAVASCRIPT)
     commands = with_package_scripts(reach(makefile, FAST_GATE).commands, javascript.scripts if javascript else {})
-    return FastGate(makefile.rules[FAST_GATE], invocations(commands))
+    return FastGate(makefile.rules[FAST_GATE], tuple(commands), invocations(commands))
 
 
 def declares(manifest: Manifest, tool: Tool) -> bool:
-    return bool(tool.packages & manifest.dependencies or manifest.settings_keys.intersection(tool.settings_keys))
+    return bool(tool.packages & manifest.dependencies or manifest.settings.keys() & set(tool.settings_keys))
 
 
 def is_configured(tool: Tool, manifests: list[Manifest], file_names: frozenset[str]) -> bool:

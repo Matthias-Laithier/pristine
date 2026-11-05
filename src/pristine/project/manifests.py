@@ -17,7 +17,7 @@ PACKAGE_DEPENDENCY_TABLES = ("dependencies", "devDependencies", "optionalDepende
 class Manifest:
     path: str
     dependencies: frozenset[str]
-    settings_keys: frozenset[str]
+    settings: Mapping[str, object]
     scripts: Mapping[str, str]
 
 
@@ -60,7 +60,8 @@ def pyproject_dependencies(document: dict[str, object]) -> frozenset[str]:
 
 def read_pyproject(path: str, text: str) -> Manifest:
     document = tomllib.loads(text)
-    return Manifest(path, pyproject_dependencies(document), frozenset(table(document, "tool")), {})
+    tool = table(document, "tool")
+    return Manifest(path, pyproject_dependencies(document), tool, {})
 
 
 def read_package_json(path: str, text: str) -> Manifest:
@@ -69,7 +70,7 @@ def read_package_json(path: str, text: str) -> Manifest:
         raise TypeError("the top level is not a JSON object")
     dependencies = frozenset(name for key in PACKAGE_DEPENDENCY_TABLES for name in table(document, key))
     scripts = {name: body for name, body in table(document, "scripts").items() if isinstance(body, str)}
-    return Manifest(path, dependencies, frozenset(document), scripts)
+    return Manifest(path, dependencies, document, scripts)
 
 
 MANIFEST_READERS: dict[Ecosystem, tuple[str, Callable[[str, str], Manifest]]] = {

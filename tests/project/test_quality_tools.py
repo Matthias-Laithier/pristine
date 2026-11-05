@@ -2,16 +2,17 @@ import json
 
 from tests.project.conftest import RunProject, rule_findings
 
-PYPROJECT = '[project]\nname = "app"\n\n[dependency-groups]\ndev = ["ruff>=0.6", "MyPy[reports]==1.0"]\n'
+PYPROJECT = '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\ndev = ["ruff>=0.6", "MyPy[reports]==1.0"]\n'
 PYTHON_MAKEFILE = (
     "RUN := uv run --project app\n"
     "dev:\n\t./run\n"
-    "check: format-check lint\n\t$(RUN) mypy app\n"
+    "check: format-check lint\n\t$(RUN) mypy --strict app\n"
     "check-all: check\n"
     "format-check:\n\t@$(RUN) ruff format {format_mode} app\n"
     "lint:\n\tcd app && $(RUN) ruff check .\n"
 )
 PACKAGE = {
+    "engines": {"node": ">=22"},
     "devDependencies": {"eslint": "9", "prettier": "3", "typescript": "5"},
     "scripts": {"lint": "eslint . && prettier --check .", "typecheck": "tsc --noEmit", "verify": "npm run lint"},
 }
