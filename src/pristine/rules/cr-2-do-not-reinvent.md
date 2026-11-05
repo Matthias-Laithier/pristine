@@ -9,7 +9,7 @@ The only exceptions:
 - Its operational cost or dependency weight is disproportionate to the problem.
 - Its license conflicts.
 
-When you fall back to an exception, record why in an issue, an ADR, or the project documentation.
+When you fall back to an exception, record why in the place [CR-3](cr-3-no-comments-except-machine-read-text.md) gives for a reason.
 
 This rule owns discovery of standard-library and third-party solutions. [CR-16](cr-16-inspect-before-implementing.md) owns discovery and reuse inside the project. [TL-4](tl-4-keep-dependencies-minimal-declared-and-audited.md) owns a dependency after adoption.
 
