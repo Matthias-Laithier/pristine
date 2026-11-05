@@ -75,7 +75,7 @@ def client_table(language: str) -> ClientTable | None:
 
 
 def library_names(clients: list[ClientImport]) -> str:
-    return ", ".join(dict.fromkeys(client.client for client in clients))
+    return ", ".join(sorted({client.client for client in clients}))
 
 
 def reads_clients(

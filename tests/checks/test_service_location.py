@@ -59,4 +59,4 @@ def test_one_finding_lists_every_client_library(run_pristine: RunPristine) -> No
     _, report = run_pristine({"orders/cache.py": source})
     messages = [finding["message"] for finding in report["findings"] if finding["rule_id"] == "CR-8"]
     assert len(messages) == 1
-    assert "redis, boto3 outside" in messages[0]
+    assert "boto3, redis outside" in messages[0]
