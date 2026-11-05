@@ -1,6 +1,6 @@
 # TST-5 Every Bug Gets a Regression Test
 
-Every fixed bug leaves behind a test that would have caught it. The sequence is fixed: reproduce the bug as a failing test, watch it fail, fix the code until the test passes, and commit both together. The test stays for as long as the behavior exists. If an automated regression test is technically impossible, leave the strongest available automated check or a documented verification, and record why.
+Every fixed bug leaves behind a test that would have caught it. The sequence is fixed: reproduce the bug as a failing test, watch it fail, fix the code until the test passes, and commit both together. The test stays for as long as the behavior exists. If an automated regression test is technically impossible, leave the strongest available automated check or a documented verification, and record why in the place [CR-3](cr-3-no-comments-except-machine-read-text.md) gives for a reason.
 
 Watching it fail is what makes the test real. A regression test that was never red has proven nothing. If the bug is technically reproducible in a test and you cannot make that test fail, you have not reproduced the bug, and the fix you are about to write is a guess.
 
