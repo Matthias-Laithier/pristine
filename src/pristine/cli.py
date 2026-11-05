@@ -1,5 +1,6 @@
 import argparse
 import sys
+from collections.abc import Callable
 from importlib.metadata import version
 from pathlib import Path
 
@@ -26,6 +27,8 @@ EXIT_CLEAN = 0
 EXIT_ERRORS_FOUND = 1
 EXIT_USAGE = 2
 
+type CommandHandler = Callable[[argparse.Namespace], int]
+
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="pristine", description=DESCRIPTION)
@@ -42,13 +45,11 @@ def parser() -> argparse.ArgumentParser:
         "directory pattern such as 'vendor' skips everything under it; repeat for several patterns",
     )
     add_report_options(check)
-    check.set_defaults(handler=run_check)
     project = commands.add_parser(
         "project", help="check the repository tooling contract (TL-1 to TL-4)", description=PROJECT_DESCRIPTION
     )
     project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
     add_report_options(project)
-    project.set_defaults(handler=run_project)
     add_rule_commands(commands)
     return root
 
@@ -71,11 +72,8 @@ def add_report_options(command: argparse.ArgumentParser) -> None:
     )
 
 
-def add_rule_commands(commands: argparse._SubParsersAction) -> None:
-    guide = commands.add_parser(
-        "guide", help="print the rules hub to read before coding", description=GUIDE_DESCRIPTION
-    )
-    guide.set_defaults(handler=run_guide)
+def add_rule_commands(commands: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
+    commands.add_parser("guide", help="print the rules hub to read before coding", description=GUIDE_DESCRIPTION)
     rule = commands.add_parser(
         "rule", help="print rules by ID, by chapter, or all of them", description=RULE_DESCRIPTION
     )
@@ -85,10 +83,8 @@ def add_rule_commands(commands: argparse._SubParsersAction) -> None:
         metavar="ID",
         help="rule IDs such as CR-13, chapter prefixes such as BS, or all, case-insensitive",
     )
-    rule.set_defaults(handler=run_rule)
     rules = commands.add_parser("rules", help="list every rule and how it is checked", description=RULES_DESCRIPTION)
     rules.add_argument("--json", action="store_true", help="print the list as JSON")
-    rules.set_defaults(handler=run_rules)
 
 
 def print_report(report: Report, arguments: argparse.Namespace) -> int:
@@ -133,6 +129,10 @@ def run_rule(arguments: argparse.Namespace) -> int:
     return EXIT_CLEAN
 
 
+def command_handlers() -> dict[str, CommandHandler]:
+    return {"check": run_check, "project": run_project, "guide": run_guide, "rule": run_rule, "rules": run_rules}
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = parser().parse_args(argv)
-    return arguments.handler(arguments)
+    return command_handlers()[arguments.command](arguments)
