@@ -1,6 +1,6 @@
 # CR-5 DRY (Don't Repeat Yourself)
 
-This rule matters a lot. Many bugs and inconsistencies in software come from behaviors that should be shared and are duplicated: misaligned frontend components, backend discrepancies, and objects that do the same thing with no common class, interface, or owning entity.
+Many bugs and inconsistencies in software come from behaviors that should be shared and are duplicated: misaligned frontend components, backend discrepancies, and objects that do the same thing with no common class, interface, or owning entity.
 
 If two or more things share behavior, extract a shared unit for that behavior. The unit may be a function, a class, an interface, or an owning entity. Sharing prevents inconsistencies, makes debugging easier, and produces clear diffs when editing code.
 

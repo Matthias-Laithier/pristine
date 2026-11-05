@@ -1,6 +1,6 @@
 # CR-4 Naming
 
-Names must be crystal clear. A longer name understood at once beats a shorter one that requires guessing. A name describes what the thing is or does. It never describes how it does it or where it lives. Established domain abbreviations such as `HTTP`, `URL`, and `API` are allowed. Ambiguous local shorthand is forbidden. `getUserByEmail` is clear. `handleData` is unclear.
+Names must be clear. A longer name understood at once beats a shorter one that requires guessing. A name describes what the thing is or does. It never describes how it does it or where it lives. Established domain abbreviations such as `HTTP`, `URL`, and `API` are allowed. Ambiguous local shorthand is forbidden. `getUserByEmail` is clear. `handleData` is unclear.
 
 Naming stays semantically consistent within each bounded context. If a concept is named `InvoiceRecipient`, every layer that shares that domain model uses the same term. Each layer may apply its conventional casing or serialization. A different bounded context may use a different term when the concepts differ.
 
