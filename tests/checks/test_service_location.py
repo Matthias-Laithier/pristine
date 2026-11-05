@@ -35,6 +35,7 @@ GO_CLIENT = 'package store\n\nimport (\n\t"context"\n\ts3 "github.com/aws/aws-sd
         ("orders/store.py", TYPE_CHECKING_IMPORT, []),
         ("orders/llm.py", MISTRAL_CLIENT, [(2, "warning")]),
         ("orders/workflow.py", MISTRAL_FRAMEWORK, []),
+        ("orders/gemini.py", "import cohere\nimport google.generativeai as genai\n", [(1, "warning")]),
         ("web/api.ts", AXIOS_CLIENT, [(2, "warning")]),
         ("web/api.test.ts", AXIOS_CLIENT, []),
         ("web/billing.ts", SCRIPT_TYPES_ONLY, []),

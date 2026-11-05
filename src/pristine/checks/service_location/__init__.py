@@ -1,7 +1,7 @@
 from pathlib import PurePath
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.checks.service_location.languages import client_table
+from pristine.checks.service_location.languages import client_table, library_names
 from pristine.findings import Finding, Severity
 from pristine.parsing import ParsedFile
 from pristine.path_roles import is_test_path
@@ -41,16 +41,14 @@ def check_service_location(parsed: ParsedFile) -> list[Finding]:
     table = client_table(parsed.language)
     if table is None or is_exempt(parsed.path):
         return []
-    imports = [(module.line, table.client_of(module.name)) for module in table.read_imports(parsed.root)]
-    clients = [(line, client) for line, client in imports if client is not None]
+    clients = table.clients(parsed.root)
     if not clients:
         return []
-    libraries = ", ".join(dict.fromkeys(client for _, client in clients))
     message = (
-        f"imports external-system client library {libraries} outside a services/ folder; "
+        f"imports external-system client library {library_names(clients)} outside a services/ folder; "
         "wrap it in a service under services/ and build it in the composition root"
     )
-    return [Finding(parsed.path, min(clients)[0], RULE_ID, Severity.WARNING, message)]
+    return [Finding(parsed.path, min(client.line for client in clients), RULE_ID, Severity.WARNING, message)]
 
 
 register_file_check(

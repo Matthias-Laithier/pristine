@@ -1,3 +1,13 @@
+PYTHON_MODEL_CLIENTS = (
+    "openai",
+    "anthropic",
+    "mistralai.Mistral",
+    "mistralai.client.Mistral",
+    "google.generativeai",
+    "cohere",
+)
+SCRIPT_MODEL_CLIENTS = ("openai", "@anthropic-ai/sdk", "@mistralai/mistralai")
+GO_MODEL_CLIENTS = ("github.com/sashabaranov/go-openai", "github.com/anthropics/anthropic-sdk-go")
 PYTHON_CLIENTS = (
     "requests",
     "httpx",
@@ -19,10 +29,6 @@ PYTHON_CLIENTS = (
     "confluent_kafka",
     "pika",
     "aio_pika",
-    "openai",
-    "anthropic",
-    "mistralai.Mistral",
-    "mistralai.client.Mistral",
     "stripe",
     "slack_sdk",
     "smtplib",
@@ -37,6 +43,7 @@ PYTHON_CLIENTS = (
     "temporalio.client",
     "sqlalchemy.create_engine",
     "sqlalchemy.ext.asyncio.create_async_engine",
+    *PYTHON_MODEL_CLIENTS,
 )
 SCRIPT_CLIENTS = (
     "axios",
@@ -53,12 +60,10 @@ SCRIPT_CLIENTS = (
     "redis",
     "kafkajs",
     "amqplib",
-    "openai",
-    "@anthropic-ai/sdk",
-    "@mistralai/mistralai",
     "stripe",
     "@slack/web-api",
     "nodemailer",
+    *SCRIPT_MODEL_CLIENTS,
 )
 GO_CLIENTS = (
     "github.com/aws/aws-sdk-go",
@@ -78,7 +83,6 @@ GO_CLIENTS = (
     "github.com/stripe/stripe-go",
     "github.com/slack-go/slack",
     "github.com/elastic/go-elasticsearch",
-    "github.com/sashabaranov/go-openai",
-    "github.com/anthropics/anthropic-sdk-go",
     "go.temporal.io/sdk/client",
+    *GO_MODEL_CLIENTS,
 )

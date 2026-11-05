@@ -3,7 +3,14 @@ from dataclasses import dataclass
 
 from tree_sitter import Node
 
-from pristine.checks.service_location.clients import GO_CLIENTS, PYTHON_CLIENTS, SCRIPT_CLIENTS
+from pristine.checks.service_location.clients import (
+    GO_CLIENTS,
+    GO_MODEL_CLIENTS,
+    PYTHON_CLIENTS,
+    PYTHON_MODEL_CLIENTS,
+    SCRIPT_CLIENTS,
+    SCRIPT_MODEL_CLIENTS,
+)
 from pristine.checks.service_location.python_imports import python_import_targets
 from pristine.parsing import all_nodes, line_of, node_text
 from pristine.registration import registering
@@ -25,15 +32,32 @@ type ImportReader = Callable[[Node], Iterator[ImportedModule]]
 
 
 @dataclass(frozen=True)
+class ClientImport:
+    line: int
+    client: str
+
+
+@dataclass(frozen=True)
 class ClientTable:
     packages: tuple[str, ...]
+    model_packages: tuple[str, ...]
     separator: str
     read_imports: ImportReader
 
-    def client_of(self, module: str) -> str | None:
+    def clients(self, root: Node) -> list[ClientImport]:
+        return self.imports_of(root, self.packages)
+
+    def model_clients(self, root: Node) -> list[ClientImport]:
+        return self.imports_of(root, self.model_packages)
+
+    def imports_of(self, root: Node, packages: tuple[str, ...]) -> list[ClientImport]:
+        imports = [(module.line, self.package_of(module.name, packages)) for module in self.read_imports(root)]
+        return [ClientImport(line, client) for line, client in imports if client is not None]
+
+    def package_of(self, module: str, packages: tuple[str, ...]) -> str | None:
         if self.is_non_client_reference(module):
             return None
-        return next((package for package in self.packages if self.is_within(module, package)), None)
+        return next((package for package in packages if self.is_within(module, package)), None)
 
     def is_non_client_reference(self, module: str) -> bool:
         parts = module.split(self.separator)[1:]
@@ -50,15 +74,21 @@ def client_table(language: str) -> ClientTable | None:
     return _CLIENT_TABLES.get(language)
 
 
-def reads_clients(packages: tuple[str, ...], separator: str, *languages: str) -> Callable[[ImportReader], ImportReader]:
+def library_names(clients: list[ClientImport]) -> str:
+    return ", ".join(dict.fromkeys(client.client for client in clients))
+
+
+def reads_clients(
+    packages: tuple[str, ...], model_packages: tuple[str, ...], separator: str, *languages: str
+) -> Callable[[ImportReader], ImportReader]:
     def register(reader: ImportReader) -> ImportReader:
-        registering(_CLIENT_TABLES, *languages)(ClientTable(packages, separator, reader))
+        registering(_CLIENT_TABLES, *languages)(ClientTable(packages, model_packages, separator, reader))
         return reader
 
     return register
 
 
-@reads_clients(PYTHON_CLIENTS, ".", "python")
+@reads_clients(PYTHON_CLIENTS, PYTHON_MODEL_CLIENTS, ".", "python")
 def read_python_imports(root: Node) -> Iterator[ImportedModule]:
     yield from (ImportedModule(target, line) for target, line in python_import_targets(root))
 
@@ -102,7 +132,7 @@ def string_content(node: Node | None) -> str | None:
     return (node_text(node) or "").strip("\"'`")
 
 
-@reads_clients(SCRIPT_CLIENTS, "/", *SCRIPT_LANGUAGES)
+@reads_clients(SCRIPT_CLIENTS, SCRIPT_MODEL_CLIENTS, "/", *SCRIPT_LANGUAGES)
 def read_script_imports(root: Node) -> Iterator[ImportedModule]:
     for node in all_nodes(root):
         targets = script_import_targets(node) if node.type == "import_statement" else []
@@ -110,7 +140,7 @@ def read_script_imports(root: Node) -> Iterator[ImportedModule]:
         yield from (ImportedModule(target, line_of(node)) for target in targets)
 
 
-@reads_clients(GO_CLIENTS, "/", "go")
+@reads_clients(GO_CLIENTS, GO_MODEL_CLIENTS, "/", "go")
 def read_go_imports(root: Node) -> Iterator[ImportedModule]:
     for node in all_nodes(root):
         source = string_content(node.child_by_field_name("path")) if node.type == "import_spec" else None
