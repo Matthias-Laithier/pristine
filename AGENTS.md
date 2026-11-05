@@ -11,21 +11,27 @@ Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README
 - Each check registers itself through [checks/registry.py](src/pristine/checks/registry.py). The registry imports every module of the `checks` package on first use, so a new check is a new module and nothing else.
 - A file check, registered with `register_file_check`, receives one parsed file and returns its findings. It runs on every file with a grammar.
 - A path check, registered with `register_path_check`, receives the list of discovered paths and returns its findings. It runs once in the main process over every discovered file and never parses with tree-sitter.
+- Checks share helpers through neutral modules. A check never imports the internals of another check.
 
 ### Worker isolation
-- File checks run in worker processes, each reporting after every file.
+- File checks run in parallel worker processes. A worker reports each file as a JSON line once it finishes the file.
 - A worker that crashes or exceeds its time budget loses only the file it was on. The report lists that file as unchecked, and a new worker continues with the rest.
-- Grammar downloads run inside the same budget.
+- Grammar downloads run inside the same budget. The main process announces each first-use download with one line on stderr.
 - Directory expansion leaves out vendored directories such as `node_modules` and `.venv`.
+
+### Report
+- A report holds the findings, the unchecked, skipped, and missing paths, and the finding counts per rule ID.
+- A path that does not exist is reported as missing and never aborts the run.
+- The text and JSON renderers print the same report. `--max N` caps the printed findings. The summary and the per-rule counts still cover every finding.
 
 ### Packages
 - `services/` wraps every external dependency: git, gitleaks, the tree-sitter grammars, and the worker processes.
 - `project/` implements `pristine project`: it loads a repository root and checks it against the Tooling chapter, TL-1 to TL-4.
 - `imports/` reads import edges for the import-cycle check, CO-8. Each reader registers itself for the file suffixes it handles, through the same auto-discovery as the checks.
-- `rules/` holds the rule documents. They ship inside the package, and `pristine guide` and `pristine rule <ID>` print them.
+- `rules/` holds the rule documents. They ship inside the package. `pristine guide` prints the hub followed by a rule index built from each rule's title and statement. `pristine rule` prints rules selected by ID, by chapter prefix, or with `all`. Both print links between rule files as their plain label.
 
 ### Parsing
-Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded on first use of each language into the user cache. The tests parse with real grammars, so their first run needs network access to download the Python, JavaScript, TypeScript, and Rust grammars.
+Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded on first use of each language into the user cache. The tests parse with real grammars, so their first run needs network access to download the grammar of every language they cover.
 
 ## Adding a check
 1. Add a module to `src/pristine/checks/` that registers a file check or a path check for one rule ID.
@@ -34,9 +40,9 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 4. Favor reliability over recall. A check reports only what it judges with certainty. A false positive costs more than a missed finding, since agents act on every finding. Leave the uncertain cases to the agent's own review.
 
 ## Quality gate
-- `make check` formats, lints, type-checks, tests, and runs `pristine check` on its own source. It must report 0 findings.
+- `make check` verifies formatting, lints, type-checks, tests, and runs `pristine check` on its own source and Makefile. It must report 0 findings.
 - `make check-all` runs `make check`, then a gitleaks scan of the git history.
-- The CI workflow, [.github/workflows/check.yml](.github/workflows/check.yml), runs `make check-all` on every push to main and every pull request.
+- The CI workflow, [.github/workflows/check.yml](.github/workflows/check.yml), installs gitleaks, syncs the locked dependencies, caches the grammars, and runs `make check-all` on every push to main and every pull request.
 - Contributors run `make check-all` locally before pushing.
 - `pristine project .` must report 0 findings on this repository.
 
