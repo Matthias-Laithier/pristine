@@ -1,0 +1,8 @@
+title = "pristine"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The BS-2 rule document shows a fake committed credential as its Bad example."
+paths = ['''(^|/)rules/bs-2-keep-secrets-out-of-code-and-output\.md$''']
