@@ -9,6 +9,7 @@ __all__ = ["RuleDocument", "UnknownRule", "find_rule", "guide_text", "rule_docum
 HUB_NAME = "README.md"
 RULE_FILE_NAME = re.compile(r"[a-z]+-\d+-.+\.md")
 RULE_HEADING = re.compile(r"# (?P<rule_id>[A-Z]+-(?P<number>\d+)) (?P<title>.+)")
+RULE_LINK = re.compile(r"\[(?P<label>[^\]]+)\]\([^):\s]+\.md(?:#[^)\s]*)?\)")
 
 
 @dataclass(frozen=True)
@@ -26,8 +27,12 @@ def rules_directory() -> Traversable:
     return files("pristine") / "rules"
 
 
+def read_without_links(document: Traversable) -> str:
+    return RULE_LINK.sub(r"\g<label>", document.read_text(encoding="utf-8"))
+
+
 def guide_text() -> str:
-    return (rules_directory() / HUB_NAME).read_text(encoding="utf-8")
+    return read_without_links(rules_directory() / HUB_NAME)
 
 
 def parse_rule(name: str, text: str) -> RuleDocument:
@@ -45,7 +50,7 @@ def rule_order(document: RuleDocument) -> tuple[str, int]:
 @cache
 def rule_documents() -> tuple[RuleDocument, ...]:
     paths = [path for path in rules_directory().iterdir() if RULE_FILE_NAME.fullmatch(path.name)]
-    documents = [parse_rule(path.name, path.read_text(encoding="utf-8")) for path in paths]
+    documents = [parse_rule(path.name, read_without_links(path)) for path in paths]
     return tuple(sorted(documents, key=rule_order))
 
 

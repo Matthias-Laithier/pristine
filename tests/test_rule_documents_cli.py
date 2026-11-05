@@ -15,15 +15,21 @@ def listed_rules(capsys: pytest.CaptureFixture[str]) -> dict[str, str]:
     return {entry["rule_id"]: entry["checked_by"] for entry in json.loads(capsys.readouterr().out)}
 
 
-def test_guide_prints_the_hub_verbatim(capsys: pytest.CaptureFixture[str]) -> None:
+def test_guide_prints_the_hub_with_links_as_plain_text(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["guide"]) == 0
-    assert capsys.readouterr().out == (RULES_SOURCE / "README.md").read_text(encoding="utf-8")
+    output = capsys.readouterr().out
+    hub_heading = (RULES_SOURCE / "README.md").read_text(encoding="utf-8").partition("\n")[0]
+    assert output.startswith(hub_heading + "\n")
+    assert "- CR-13 Nesting Depth\n" in output
+    assert ".md)" not in output
 
 
 def test_rule_prints_each_rule_matched_case_insensitively(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["rule", "cr-13", "CR-12"]) == 0
+    assert main(["rule", "cr-14", "CR-12"]) == 0
     output = capsys.readouterr().out
-    assert output.startswith((RULES_SOURCE / "cr-13-nesting-depth.md").read_text(encoding="utf-8"))
+    assert output.startswith("# CR-14 Value Dispatch Through a Registry\n")
+    assert "mechanism that CR-7 permits" in output
+    assert ".md)" not in output
     assert "\n# CR-12 Function Size\n" in output
 
 
