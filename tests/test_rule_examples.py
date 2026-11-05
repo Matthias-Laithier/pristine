@@ -24,6 +24,8 @@ PYTHON_PROJECT_CONTEXT = {"pyproject.toml": '[project]\nname = "invoices"\n\n[to
 UNASSERTED_BAD_EXAMPLES = {
     "BS-3-bad": "the HTTP client is an injected collaborator, and BS-3 recognizes only known libraries by their import",
     "CR-8-bad": "a directory tree carries no file contents, and CR-8 judges client-library imports, not file names",
+    "CR-22-bad:float money": "float money cannot be detected from syntax, and CR-22 checks only naive datetimes",
+    "TST-8-bad": "the live client is injected, and TST-8 needs a client constructed from an environment key",
 }
 
 
