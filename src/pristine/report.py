@@ -11,6 +11,7 @@ class Report:
     unchecked: dict[str, str]
     skipped: dict[str, str]
     checked_files: int
+    missing: tuple[str, ...]
 
     def count(self, severity: Severity) -> int:
         return sum(1 for finding in self.findings if finding.severity is severity)
@@ -20,7 +21,7 @@ class Report:
         return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
 
 
-def build_report(outcomes: dict[str, Outcome], path_findings: list[Finding]) -> Report:
+def build_report(outcomes: dict[str, Outcome], path_findings: list[Finding], missing: tuple[str, ...] = ()) -> Report:
     ordered = sorted(outcomes.items())
     file_findings = [finding for _, outcome in ordered if isinstance(outcome, Checked) for finding in outcome.findings]
     findings = sorted(
@@ -28,4 +29,5 @@ def build_report(outcomes: dict[str, Outcome], path_findings: list[Finding]) -> 
     )
     unchecked = {path: outcome.reason for path, outcome in ordered if isinstance(outcome, Unchecked)}
     skipped = {path: outcome.reason for path, outcome in ordered if isinstance(outcome, Skipped)}
-    return Report(findings, unchecked, skipped, len(outcomes) - len(unchecked) - len(skipped))
+    checked_files = len(outcomes) - len(unchecked) - len(skipped)
+    return Report(findings, unchecked, skipped, checked_files, missing)

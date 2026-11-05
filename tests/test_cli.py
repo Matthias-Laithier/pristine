@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from pristine.cli import main
@@ -18,8 +20,15 @@ def test_exit_code_is_one_with_errors(run_pristine: RunPristine) -> None:
     assert exit_code == 1
 
 
-def test_missing_path_is_a_usage_error() -> None:
-    assert main(["check", "does/not/exist"]) == 2
+def test_missing_paths_are_listed_without_aborting(
+    run_pristine: RunPristine, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run_pristine({"values.py": LONG_FILE})
+    assert main(["check", "values.py", "gone.py"]) == 1
+    assert "\nmissing: gone.py\n" in capsys.readouterr().out
+    assert main(["check", "gone.py", "--json"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert (report["missing"], report["summary"]["missing_paths"]) == (["gone.py"], 1)
 
 
 def test_text_output_names_rule_and_location(run_pristine: RunPristine, capsys: pytest.CaptureFixture[str]) -> None:
@@ -27,7 +36,10 @@ def test_text_output_names_rule_and_location(run_pristine: RunPristine, capsys: 
     main(["check", "values.py"])
     output = capsys.readouterr().out
     assert "values.py:1: CR-1 error: file has 201 lines" in output
-    assert "\nsummary: 1 error, 0 warnings, 1 checked file, 0 unchecked files, 0 skipped files\n" in output
+    assert (
+        "\nsummary: 1 error, 0 warnings, 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n"
+        in output
+    )
 
 
 def test_summary_counts_findings_per_rule_by_count(

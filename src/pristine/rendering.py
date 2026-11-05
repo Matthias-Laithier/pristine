@@ -22,6 +22,7 @@ def summary(report: Report) -> dict[str, int]:
         "checked_files": report.checked_files,
         "unchecked_files": len(report.unchecked),
         "skipped_files": len(report.skipped),
+        "missing_paths": len(report.missing),
     }
 
 
@@ -32,6 +33,7 @@ def render_json(report: Report, limit: int | None) -> str:
         "findings": [asdict(finding) for finding in shown],
         "unchecked": [{"path": path, "reason": reason} for path, reason in report.unchecked.items()],
         "skipped": [{"path": path, "reason": reason} for path, reason in report.skipped.items()],
+        "missing": report.missing,
     }
     return json.dumps(document, indent=2)
 
@@ -43,6 +45,7 @@ def render_text(report: Report, limit: int | None) -> str:
     ]
     if len(shown) < len(report.findings):
         lines.append(f"... {counted(len(report.findings) - len(shown), 'more finding')} omitted (use --max or --json)")
+    lines += [f"missing: {path}" for path in report.missing]
     lines += [f"unchecked: {path} ({reason})" for path, reason in report.unchecked.items()]
     skipped_reasons = Counter(report.skipped.values())
     lines += [f"skipped: {counted(count, 'file')}, {reason}" for reason, count in sorted(skipped_reasons.items())]

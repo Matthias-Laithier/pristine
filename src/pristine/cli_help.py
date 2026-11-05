@@ -2,8 +2,8 @@ DESCRIPTION = (
     "Check code against the coding rules and print the rules themselves. Built for agents: run 'pristine guide' "
     "before coding to read how to apply the rules, 'pristine rule <ID>' to read a rule, and 'pristine check' on "
     "the files you wrote or changed before finishing a task. Exit code 0 means success with no error findings "
-    "(warnings may remain), 1 means at least one error finding, 2 means a usage problem such as a missing path or "
-    "an unknown rule ID."
+    "(warnings may remain), 1 means at least one error finding, 2 means a usage problem such as an invalid option "
+    "or an unknown rule ID."
 )
 GUIDE_DESCRIPTION = (
     "Print the rules hub as markdown: precedence, the steps to follow before coding, while coding, and before "
@@ -31,6 +31,9 @@ CHECK_DESCRIPTION = (
     "Each text finding reads 'path:line: RULE-ID severity: message'. A summary line follows, then a 'by rule:' "
     "line counting findings per rule ID, most frequent first; --json gives the same counts as summary.by_rule. "
     "--max N prints only the first N findings, while the summary and the per-rule counts still cover all of them. "
+    "A path that does not exist is listed as 'missing: <path>' (the JSON 'missing' list) and counted in the "
+    "summary, never a usage error, so 'git diff --name-only | xargs pristine check' survives deleted files; "
+    "the exit code still follows the error findings alone, so a run whose paths are all missing exits 0. "
     "Fix every finding, or report it by rule ID as a deliberate break with its reason."
 )
 PROJECT_DESCRIPTION = (

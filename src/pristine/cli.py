@@ -11,7 +11,7 @@ from pristine.cli_help import (
     RULE_DESCRIPTION,
     RULES_DESCRIPTION,
 )
-from pristine.discovery import PathNotFound, discover_files
+from pristine.discovery import discover_files, missing_paths
 from pristine.findings import Severity
 from pristine.project.inspection import inspect_project
 from pristine.rendering import render_json, render_text
@@ -87,13 +87,10 @@ def print_report(report: Report, arguments: argparse.Namespace) -> int:
 
 
 def run_check(arguments: argparse.Namespace) -> int:
-    try:
-        files = discover_files(arguments.paths, arguments.exclude)
-    except PathNotFound as error:
-        print(f"pristine: path not found: {error}", file=sys.stderr)
-        return EXIT_USAGE
+    files = discover_files(arguments.paths, arguments.exclude)
     path_findings = [finding for check in path_checks() for finding in check.run(files)]
-    return print_report(build_report(inspect_in_workers(files), path_findings), arguments)
+    report = build_report(inspect_in_workers(files), path_findings, missing_paths(arguments.paths))
+    return print_report(report, arguments)
 
 
 def run_project(arguments: argparse.Namespace) -> int:
