@@ -28,6 +28,7 @@ CHECK_DESCRIPTION = (
     "or to every non-hidden file outside a git repository. Prose, data, lockfiles, binaries, and files marked "
     "as generated are skipped. Files without a known grammar, unreadable files, and files whose parser crashes or "
     "times out are listed as unchecked, never silently passed. Files are parsed in parallel worker processes. "
+    "The first use of a language downloads its grammar, announced by one 'pristine: downloading' line on stderr. "
     "Each text finding reads 'path:line: RULE-ID severity: message'. A summary line follows, then a 'by rule:' "
     "line counting findings per rule ID, most frequent first; --json gives the same counts as summary.by_rule. "
     "--max N prints only the first N findings, while the summary and the per-rule counts still cover all of them. "

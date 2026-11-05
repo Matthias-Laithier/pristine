@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from pristine import grammar_downloads
 from pristine.cli import main
 from tests.conftest import RunPristine
 
@@ -67,3 +68,12 @@ def test_max_below_one_is_a_usage_error() -> None:
     with pytest.raises(SystemExit) as exit_info:
         main(["check", ".", "--max", "0"])
     assert exit_info.value.code == 2
+
+
+def test_first_use_of_a_grammar_is_announced_once_on_stderr(
+    run_pristine: RunPristine, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_pristine({"app.py": "value = 1\n", "other.py": "value = 2\n", "notes.md": "# notes\n"})
+    monkeypatch.setattr(grammar_downloads, "cached_languages", frozenset)
+    assert main(["check", "."]) == 0
+    assert capsys.readouterr().err == "pristine: downloading the python grammar (first use)\n"
