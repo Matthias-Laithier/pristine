@@ -36,6 +36,7 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 ## Quality gate
 - `make check` formats, lints, type-checks, tests, and runs `pristine check` on its own source. It must report 0 findings.
 - `make check-all` runs `make check`, then a gitleaks scan of the git history.
+- The CI workflow, [.github/workflows/check.yml](.github/workflows/check.yml), runs `make check-all` on every push to main and every pull request.
 - `pristine project .` must report 0 findings on this repository.
 
 ## Pins
@@ -47,12 +48,12 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 - Each commit passes `make check`.
 
 ## Changing the rules
-The rules change only on the user's explicit request.
+The rules change only on the maintainer's explicit request.
 
-When the user gives a rule or a thought, determine its scope first. A request about how the rules themselves are kept edits this section directly and creates no chapter. Anything else is a coding rule or thought to debate and integrate:
-1. Read the chapter lists of the hub, then debate. Read them first, so the debate happens against the rules that exist and never against memory. Push back when the proposal overlaps with an existing rule, contradicts one, feels incomplete, or could be stated better. Never accept it blindly. Argue, refine, and reach a sharper version together with the user.
+When the maintainer gives a rule or a thought, determine its scope first. A request about how the rules themselves are kept edits this section directly and creates no chapter. Anything else is a coding rule or thought to debate and integrate:
+1. Read the chapter lists of the hub, then debate. Read them first, so the debate happens against the rules that exist and never against memory. Push back when the proposal overlaps with an existing rule, contradicts one, feels incomplete, or could be stated better. Never accept it blindly. Argue, refine, and reach a sharper version together with the maintainer.
 2. Propose a full plan before writing anything: the rule files and sections to create, the files to update and what changes, the content to delete because it becomes redundant or replaced, and the files or chapters to move, rename, merge, or split. When the chapter lists change, show the new structure.
-3. Wait for the user to approve the plan before changing anything.
+3. Wait for the maintainer to approve the plan before changing anything.
 4. Execute, then update the chapter lists of the hub: add an entry for each new rule, remove the entry of each deleted rule, and rebuild the chapters when they change.
 5. Audit every existing example. Whenever a rule is added or changes materially, check every existing example against it. Update every Good example that violates the new practice. Update every Bad example whose violation is unrelated to the rule it teaches. A rule is integrated only once this audit is complete.
 6. Run the tests. The rule document tests and the example tests must keep passing.
@@ -75,6 +76,7 @@ When the user gives a rule or a thought, determine its scope first. A request ab
 ### Examples in rule files
 - Examples are optional. Include one only when it makes the rule clearer. When a comparison helps, show a Bad and a Good example.
 - Code examples are in Python unless the rule is specific to an ecosystem. Keep them as language-agnostic as possible, so a reader who does not know Python understands the principle.
+- Examples omit type annotations unless the rule is about types.
 - Examples use concrete domains, such as `monthly_report`, `send_invoice`, or `FileStorage`. Placeholders such as `foo`, `bar`, or `MyClass` never appear.
 - The Bad example is genuinely bad. It commits the full sin the rule argues against, so the reader sees the actual pain. A Bad example that partially complies teaches nothing.
 - The difference between Bad and Good is the rule and nothing else. A pair that also turns a class into a function, while the rule is about unit size, teaches the wrong rule. Isolate the change the rule teaches.
