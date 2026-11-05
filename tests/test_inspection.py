@@ -26,3 +26,19 @@ def test_unreadable_file_is_unchecked(run_pristine: RunPristine, tmp_path: Path)
     _, report = run_pristine({})
     locked.chmod(0o644)
     assert report["unchecked"] == [{"path": "locked.py", "reason": "could not read the file: Permission denied"}]
+
+
+def test_binary_and_fixture_data_files_are_skipped(run_pristine: RunPristine) -> None:
+    _, report = run_pristine(
+        {
+            "report.pdf": "%PDF-1.7\n%µ¶\n1 0 obj\n<< /Type /Catalog >>\nendobj\n",
+            "fixtures/accounts.DAT": "0001 ALICE 100\n",
+            "fixtures/total.in": "1 2\n",
+            "fixtures/total.out": "3\n",
+            "fixtures/render.golden": "<p>3</p>\n",
+            "template/gitignore": "dist/\n",
+            "build.recipe": "run\n",
+        }
+    )
+    assert report["unchecked"] == [{"path": "build.recipe", "reason": "no grammar for this file type"}]
+    assert {entry["path"]: entry["reason"] for entry in report["skipped"]}["report.pdf"] == "binary file"
