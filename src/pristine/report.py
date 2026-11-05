@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass
 
 from pristine.findings import Finding, Severity
@@ -13,6 +14,10 @@ class Report:
 
     def count(self, severity: Severity) -> int:
         return sum(1 for finding in self.findings if finding.severity is severity)
+
+    def by_rule(self) -> dict[str, int]:
+        counts = Counter(finding.rule_id for finding in self.findings)
+        return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
 
 
 def build_report(outcomes: dict[str, Outcome], path_findings: list[Finding]) -> Report:

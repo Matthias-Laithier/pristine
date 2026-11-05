@@ -23,7 +23,7 @@ def summary(report: Report) -> dict[str, int]:
 
 def render_json(report: Report) -> str:
     document = {
-        "summary": summary(report),
+        "summary": {**summary(report), "by_rule": report.by_rule()},
         "findings": [asdict(finding) for finding in report.findings],
         "unchecked": [{"path": path, "reason": reason} for path, reason in report.unchecked.items()],
         "skipped": [{"path": path, "reason": reason} for path, reason in report.skipped.items()],
@@ -40,5 +40,7 @@ def render_text(report: Report) -> str:
     skipped_reasons = Counter(report.skipped.values())
     lines += [f"skipped: {count} file(s), {reason}" for reason, count in sorted(skipped_reasons.items())]
     lines.append("summary: " + ", ".join(f"{value} {key.replace('_', ' ')}" for key, value in summary(report).items()))
+    if report.findings:
+        lines.append("by rule: " + ", ".join(f"{rule_id} {count}" for rule_id, count in report.by_rule().items()))
     lines.append(NEXT_STEP)
     return "\n".join(lines)

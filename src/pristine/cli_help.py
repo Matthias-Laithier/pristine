@@ -28,8 +28,9 @@ CHECK_DESCRIPTION = (
     "or to every non-hidden file outside a git repository. Prose, data, lockfiles, binaries, and files marked "
     "as generated are skipped. Files without a known grammar, unreadable files, and files whose parser crashes or "
     "times out are listed as unchecked, never silently passed. Files are parsed in parallel worker processes. "
-    "Each text finding reads 'path:line: RULE-ID severity: message'. Fix every finding, or report it by rule ID "
-    "as a deliberate break with its reason."
+    "Each text finding reads 'path:line: RULE-ID severity: message'. A summary line follows, then a 'by rule:' "
+    "line counting findings per rule ID, most frequent first; --json gives the same counts as summary.by_rule. "
+    "Fix every finding, or report it by rule ID as a deliberate break with its reason."
 )
 PROJECT_DESCRIPTION = (
     "Check the tooling contract of a repository, given its root directory. TL-1: a root Makefile (error if "
