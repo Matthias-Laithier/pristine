@@ -31,14 +31,19 @@ The secret is committed and copied into logs. Deleting the log line later cannot
 ## Good
 
 ```python
-import os
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
 
 
-def create_payments_service(payments_client):
+class PaymentsSettings(BaseSettings):
+    payments_api_key: SecretStr
+
+
+def create_payments_service(payments_client, payments_settings):
     return PaymentsService(
         payments_client,
-        credential=os.environ["PAYMENTS_API_KEY"],
+        credential=payments_settings.payments_api_key,
     )
 ```
 
-The secret enters only at runtime and goes directly to its owner. It is never rendered or stored in source control.
+The secret enters only at runtime, through the settings, and goes directly to its owner at construction. `SecretStr` masks it in every log line and representation, and it is never stored in source control.
