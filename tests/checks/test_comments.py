@@ -51,3 +51,34 @@ def test_docstrings_a_framework_decorator_publishes_are_allowed(run_pristine: Ru
     )
     _, report = run_pristine({"invoices.py": source})
     assert rule_findings(report, "CR-3") == [(8, "error"), (13, "error")]
+
+
+def test_module_docstring_the_module_reads_is_allowed(run_pristine: RunPristine) -> None:
+    read = (
+        '"""Generate the OpenAPI schema."""\nimport argparse\n\nparser = argparse.ArgumentParser(description=__doc__)\n'
+    )
+    unread = '"""Generate the OpenAPI schema."""\nimport argparse\n\nparser = argparse.ArgumentParser(description=main.__doc__)\n'
+    named = '"""Build the payload model."""\nmodel = create_model("Payload", __doc__="Payload.")\n'
+    _, report = run_pristine({"read.py": read, "unread.py": unread, "named.py": named})
+    assert [(finding["path"], finding["line"]) for finding in report["findings"] if finding["rule_id"] == "CR-3"] == [
+        ("named.py", 1),
+        ("unread.py", 1),
+    ]
+
+
+def test_jsdoc_of_only_type_tags_is_allowed_in_javascript(run_pristine: RunPristine) -> None:
+    source = (
+        "/** @type {import('next').NextConfig} */\n"
+        "const config = {};\n"
+        "/**\n * @param {string} name\n * @returns {string}\n */\n"
+        "const greet = (name) => name;\n"
+        "/** @param {string} name the user name */\n"
+        "const shout = (name) => name;\n"
+    )
+    _, report = run_pristine({"config.mjs": source, "config.ts": source})
+    assert [(finding["path"], finding["line"]) for finding in report["findings"] if finding["rule_id"] == "CR-3"] == [
+        ("config.mjs", 8),
+        ("config.ts", 1),
+        ("config.ts", 3),
+        ("config.ts", 8),
+    ]
