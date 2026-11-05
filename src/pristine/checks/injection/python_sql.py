@@ -2,10 +2,11 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
+from pristine.calls import calls_of
 from pristine.checks.injection.constructed import Injection, starts_with_sql
 from pristine.checks.injection.python_values import interpolations, is_trusted
-from pristine.checks.unbounded_calls.calls import calls_of
 from pristine.parsing import node_text
+from pristine.python_calls import positional_arguments
 
 SQL_FUNCTIONS = frozenset(
     {"execute", "executemany", "executescript", "fetch", "fetchrow", "fetchval", "fetch_all", "fetch_one"}
@@ -74,7 +75,7 @@ def is_built_sql(node: Node) -> bool:
 
 def scan_sql(root: Node) -> Iterator[Injection]:
     for node, callee, arguments in calls_of(root, "call"):
-        positional = [argument for argument in arguments if argument.type != "keyword_argument"]
+        positional = positional_arguments(arguments)
         is_sql_call = callee.rsplit(".", 1)[-1] in SQL_FUNCTIONS and bool(positional)
         if is_sql_call and is_built_sql(positional[0]):
             yield Injection(node, f"'{callee}' receives SQL built from non-literal values; {SQL_FIX}")

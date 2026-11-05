@@ -2,11 +2,11 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
+from pristine.calls import calls_of
 from pristine.checks.injection.constructed import Injection
 from pristine.checks.injection.python_values import is_trusted
-from pristine.checks.unbounded_calls.calls import calls_of
-from pristine.checks.unbounded_calls.python_calls import import_bindings, qualified_callee
 from pristine.parsing import node_text
+from pristine.python_calls import import_bindings, keyword_values, positional_arguments, qualified_callee
 
 SHELL_FUNCTIONS = frozenset(
     {"os.system", "os.popen", "subprocess.getoutput", "subprocess.getstatusoutput"}
@@ -24,14 +24,6 @@ EVAL_FIX = "parse the value into data, such as with ast.literal_eval or json.loa
 DESERIALIZER_FIX = "load a data format such as JSON, or yaml.safe_load"
 
 
-def keyword_values(arguments: list[Node]) -> dict[str, Node]:
-    keywords = (argument for argument in arguments if argument.type == "keyword_argument")
-    return {
-        node_text(keyword.child_by_field_name("name")) or "": keyword.child_by_field_name("value") or keyword
-        for keyword in keywords
-    }
-
-
 def runs_shell(qualified: str, arguments: list[Node]) -> bool:
     if qualified in SHELL_FUNCTIONS:
         return True
@@ -40,13 +32,13 @@ def runs_shell(qualified: str, arguments: list[Node]) -> bool:
 
 
 def has_unsafe_loader(arguments: list[Node]) -> bool:
-    positional = [argument for argument in arguments if argument.type != "keyword_argument"]
+    positional = positional_arguments(arguments)
     loader = keyword_values(arguments).get(LOADER_KEYWORD) or (positional[1] if len(positional) > 1 else None)
     return loader is None or (node_text(loader) or "").rsplit(".", 1)[-1] in UNSAFE_LOADERS
 
 
 def call_injection(callee: str, qualified: str, arguments: list[Node]) -> str | None:
-    command = next((argument for argument in arguments if argument.type != "keyword_argument"), None)
+    command = next(iter(positional_arguments(arguments)), None)
     is_dynamic = command is not None and not is_trusted(command)
     if is_dynamic and runs_shell(qualified, arguments):
         return f"'{callee}' runs a shell command built from non-literal values; {SHELL_FIX}"

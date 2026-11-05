@@ -1,10 +1,10 @@
 from tree_sitter import Node
 
+from pristine.calls import BoundedCall, calls_of
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.checks.unbounded_calls.calls import BoundedCall, calls_of
-from pristine.checks.unbounded_calls.python_calls import has_bound, import_bindings, qualified_callee
 from pristine.findings import Finding, Severity
 from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.python_calls import has_bound, import_bindings, qualified_callee
 
 RULE_ID = "CR-22"
 NOW_FIX = "use datetime.now(UTC)"

@@ -2,16 +2,17 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
+from pristine.calls import callee_of
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.checks.unbounded_calls.python_calls import PYTHON_CALLS, import_bindings, qualified_callee
 from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
+from pristine.parsing import ParsedFile, all_nodes, function_name, line_of
+from pristine.python_calls import EXTERNAL_CALLS, import_bindings, qualified_callee
 from pristine.syntax_kinds import FUNCTION_KINDS
 
 RULE_ID = "BS-13"
 ASYNC_KEYWORD = "async"
 NESTED_SCOPE_KINDS = FUNCTION_KINDS | {"class_definition"}
-BLOCKING_CALLS = frozenset(PYTHON_CALLS) | {"time.sleep", "psycopg2.connect"}
+BLOCKING_CALLS = frozenset(EXTERNAL_CALLS) | {"time.sleep", "psycopg2.connect"}
 OFFLOAD_CALLS = frozenset({"asyncio.to_thread", "anyio.to_thread.run_sync"})
 EXECUTOR_METHOD = ".run_in_executor"
 
@@ -28,7 +29,7 @@ def blocking_calls(body: Node, bindings: dict[str, str]) -> Iterator[tuple[Node,
     pending = list(body.named_children)
     while pending:
         node = pending.pop()
-        callee = "".join((node_text(node.child_by_field_name("function")) or "").split())
+        callee = callee_of(node)
         qualified = qualified_callee(callee, bindings) if node.type == "call" else None
         if node.type in NESTED_SCOPE_KINDS or is_offload(callee, qualified):
             continue

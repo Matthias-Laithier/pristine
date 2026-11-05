@@ -3,7 +3,8 @@ from pathlib import PurePath
 
 from tree_sitter import Node
 
-from pristine.checks.unbounded_calls.calls import BoundedCall, Violation, calls_of, has_unknown_argument
+from pristine.calls import BoundedCall, calls_of, has_unknown_argument
+from pristine.checks.unbounded_calls.calls import Violation
 from pristine.findings import Severity
 from pristine.parsing import ParsedFile, node_text
 

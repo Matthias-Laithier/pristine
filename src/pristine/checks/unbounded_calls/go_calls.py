@@ -2,7 +2,8 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.checks.unbounded_calls.calls import BoundedCall, Violation
+from pristine.calls import BoundedCall
+from pristine.checks.unbounded_calls.calls import Violation
 from pristine.findings import Severity
 from pristine.parsing import ParsedFile, all_nodes, node_text
 

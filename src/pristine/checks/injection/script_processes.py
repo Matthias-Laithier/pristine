@@ -2,9 +2,9 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
+from pristine.calls import calls_of
 from pristine.checks.injection.constructed import Injection
 from pristine.checks.injection.script_values import is_built, string_value
-from pristine.checks.unbounded_calls.calls import calls_of
 from pristine.parsing import all_nodes, node_text
 
 CHILD_PROCESS_MODULES = frozenset({"child_process", "node:child_process"})

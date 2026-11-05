@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.checks.unbounded_calls.python_calls import import_bindings, qualified_callee
 from pristine.findings import Finding, Severity
 from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.python_calls import import_bindings, qualified_callee
 
 RULE_ID = "CR-21"
 TYPING_MODULES = ("typing", "typing_extensions")
