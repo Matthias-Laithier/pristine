@@ -27,6 +27,8 @@ from typing import Annotated
 from fastmcp import FastMCP
 from pydantic import Field
 
+INVOICES_PER_PAGE = 50
+
 mcp = FastMCP("Invoices")
 
 
@@ -34,12 +36,15 @@ mcp = FastMCP("Invoices")
 def find_overdue_invoices(
     customer_identifier: str,
     minimum_days_overdue: Annotated[int, Field(ge=0)],
+    page: Annotated[int, Field(ge=1)],
 ):
     return [
         summarize_invoice(invoice)
         for invoice in list_overdue_invoices(
             customer_identifier,
             minimum_days_overdue,
+            page=page,
+            page_size=INVOICES_PER_PAGE,
         )
     ]
 
@@ -54,7 +59,7 @@ def summarize_invoice(invoice):
     }
 ```
 
-The agent receives a tool name, two parameter names, and nothing else. It must guess whether the identifier is an email or an account ID, from which date the days count, and whether calling the tool sends reminders. Meanwhile the helper carries text no program reads: a docstring that repeats its name and a comment that narrates `isoformat`.
+The agent receives a tool name, three parameter names, and nothing else. It must guess whether the identifier is an email or an account ID, from which date the days count, how many invoices a page holds, and whether calling the tool sends reminders. Meanwhile the helper carries text no program reads: a docstring that repeats its name and a comment that narrates `isoformat`.
 
 ## Good
 
@@ -64,6 +69,8 @@ from typing import Annotated
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import Field
+
+INVOICES_PER_PAGE = 50
 
 mcp = FastMCP("Invoices")
 
@@ -78,6 +85,10 @@ def find_overdue_invoices(
         int,
         Field(description="Minimum days elapsed since the due date.", ge=0),
     ],
+    page: Annotated[
+        int,
+        Field(description=f"Page number, starting at 1. A page holds up to {INVOICES_PER_PAGE} invoices.", ge=1),
+    ],
 ):
     """List a customer's unpaid invoices past their due date.
 
@@ -88,6 +99,8 @@ def find_overdue_invoices(
         for invoice in list_overdue_invoices(
             customer_identifier,
             minimum_days_overdue,
+            page=page,
+            page_size=INVOICES_PER_PAGE,
         )
     ]
 
