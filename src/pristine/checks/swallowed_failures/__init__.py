@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable, Iterator
 from functools import cache
 
@@ -13,6 +14,12 @@ from pristine.syntax_kinds import COMMENT_KINDS
 RULE_ID = "BS-4"
 DETECTORS_PACKAGE = "pristine.checks.swallowed_failures"
 PROPAGATE_HINT = "handle it, translate it while keeping the cause, or let it propagate"
+NARROW_HINT = "narrow the catch to the expected error, or let the failure propagate"
+LOGGING_FUNCTION = re.compile(r"([\w$.]*\.)?(\w*logger|logging|log|console)\.\w+|print", re.IGNORECASE)
+DEFAULT_NAME = re.compile(r"([\w$]+\.)*\w*default\w*", re.IGNORECASE)
+CALL_KINDS = frozenset({"call", "call_expression"})
+RETURN_KEYWORD = "return "
+EXPRESSION_STATEMENT = "expression_statement"
 EXPECTED_EXCEPTIONS = frozenset(
     {"FileNotFoundError", "FileExistsError", "ProcessLookupError", "StopIteration", "StopAsyncIteration"}
     | {"CancelledError", "ImportError", "ModuleNotFoundError", "NameError", "KeyboardInterrupt", "EOFError", "Empty"}
@@ -46,6 +53,26 @@ def body_text(body: Node) -> str | None:
     if len(statements) > 1:
         return None
     return normalized(statements[0]) if statements else ""
+
+
+def is_logging_call(statement: Node) -> bool:
+    expressions = statement.named_children if statement.type == EXPRESSION_STATEMENT else [statement]
+    calls = [expression for expression in expressions if expression.type in CALL_KINDS]
+    function = calls[0].child_by_field_name("function") if len(expressions) == 1 and calls else None
+    return function is not None and LOGGING_FUNCTION.fullmatch(normalized(function)) is not None
+
+
+def is_default_return(statement: str, defaults: frozenset[str]) -> bool:
+    returned = statement.removeprefix(RETURN_KEYWORD)
+    return statement in defaults or (returned != statement and DEFAULT_NAME.fullmatch(returned) is not None)
+
+
+def logged_default(body: Node, defaults: frozenset[str]) -> str | None:
+    *logs, last = statements_of(body) or [body]
+    if not logs or not all(map(is_logging_call, logs)):
+        return None
+    result = normalized(last)
+    return result if is_default_return(result, defaults) else None
 
 
 def is_expected(name: str) -> bool:

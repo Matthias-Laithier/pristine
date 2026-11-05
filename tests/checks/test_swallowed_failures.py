@@ -22,6 +22,13 @@ def python_except(caught: str, body: str, tail: str = "") -> str:
         (python_except("except (FileNotFoundError, os.error)", "pass"), [(4, "warning")]),
         (python_except("except (FileNotFoundError, DocumentNotFoundError)", "pass"), []),
         (python_except("except ValueError", "pass", "    else:\n        raise Rejected(path)\n"), []),
+        (python_except("except ValueError", "logger.debug('bad %s', path)\n        return 0"), [(4, "warning")]),
+        (python_except("except Exception as error", "logging.exception(error)\n        return None"), [(4, "warning")]),
+        (python_except("except KeyError", "self.log.warning(path)\n        return DEFAULT_PORT"), [(4, "warning")]),
+        (python_except("except FileNotFoundError", "logger.info(path)\n        return {}"), []),
+        (python_except("except ValueError", "logger.debug(path)\n        raise"), []),
+        (python_except("except ValueError", "logger.debug(path)\n        return Rejected(path)"), []),
+        (python_except("except ValueError", "logger.debug(path)\n        continue"), []),
     ],
 )
 def test_python_except_clauses(run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]) -> None:
@@ -46,6 +53,10 @@ def test_python_narrow_pass_falls_back_after_a_return(run_pristine: RunPristine)
         ("{ return {}; }", [(1, "warning")]),
         ("{ return false; }", []),
         ("{ throw new LoadFailed(path, { cause: error }); }", []),
+        ("{ console.error(error); return null; }", [(1, "warning")]),
+        ("{ logger.warn(error); log.error(path); return defaultConfig; }", [(1, "warning")]),
+        ("{ console.error(error); return Response.json({ error: 'failed' }, { status: 500 }); }", []),
+        ("{ console.error(error); throw error; }", []),
     ],
 )
 def test_script_catch_blocks(run_pristine: RunPristine, body: str, expected: list[tuple[int, str]]) -> None:

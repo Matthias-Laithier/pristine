@@ -2,7 +2,16 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.checks.swallowed_failures import PROPAGATE_HINT, body_text, detects, is_expected, normalized, swallow
+from pristine.checks.swallowed_failures import (
+    NARROW_HINT,
+    PROPAGATE_HINT,
+    body_text,
+    detects,
+    is_expected,
+    logged_default,
+    normalized,
+    swallow,
+)
 from pristine.findings import Finding, Severity
 from pristine.parsing import ParsedFile, all_nodes
 
@@ -13,6 +22,7 @@ EMPTY_RESULT_BODIES = frozenset(
     {"continue", "return", "return None", "return []", "return {}", 'return ""', "return ''", "return ()"}
     | {"return set()", "return False"}
 )
+LOGGED_DEFAULTS = EMPTY_RESULT_BODIES - {"continue", "return"} | {"return 0"}
 
 
 def caught_names(caught: Node | None) -> frozenset[str]:
@@ -45,11 +55,19 @@ def python_verdict(clause: Node, names: frozenset[str], body: str | None) -> tup
     return None
 
 
+def logged_verdict(names: frozenset[str], block: Node) -> tuple[Severity, str] | None:
+    result = None if all(is_expected(name) for name in names) else logged_default(block, LOGGED_DEFAULTS)
+    if result is None:
+        return None
+    return Severity.WARNING, f"only logs, then does '{result}', which hides the failure; {NARROW_HINT}"
+
+
 @detects("python")
 def python_swallows(parsed: ParsedFile) -> Iterator[Finding]:
     for clause in (node for node in all_nodes(parsed.root) if node.type == "except_clause"):
         caught = clause.child_by_field_name("value")
-        verdict = python_verdict(clause, caught_names(caught), body_text(clause.named_children[-1]))
+        names, block = caught_names(caught), clause.named_children[-1]
+        verdict = python_verdict(clause, names, body_text(block)) or logged_verdict(names, block)
         if verdict is not None:
             head = "except" if caught is None else f"except {normalized(caught)}"
             yield swallow(parsed, clause, verdict[0], f"'{head}' {verdict[1]}")
