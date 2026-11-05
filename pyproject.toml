@@ -1,13 +1,28 @@
 [project]
 name = "pristine"
 version = "0.1.0"
-description = "Opinionated coding rules for agents, with an agent-first CLI that serves them and checks their mechanical part."
+description = "Opinionated coding rules for AI coding agents, with a CLI that serves them and checks their mechanical part."
+readme = "README.md"
+authors = [{name = "Matthias Laithier", email = "matthias.laithier@gmail.com"}]
 license = "MIT"
 requires-python = ">=3.13"
+keywords = ["ai-agents", "coding-standards", "code-quality", "static-analysis", "linter", "tree-sitter"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
     "tree-sitter>=0.25,<0.26",
     "tree-sitter-language-pack>=1.23,<2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Matthias-Laithier/pristine"
+Repository = "https://github.com/Matthias-Laithier/pristine"
+Issues = "https://github.com/Matthias-Laithier/pristine/issues"
 
 [project.scripts]
 pristine = "pristine.cli:main"
