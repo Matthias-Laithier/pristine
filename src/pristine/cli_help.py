@@ -30,6 +30,7 @@ CHECK_DESCRIPTION = (
     "times out are listed as unchecked, never silently passed. Files are parsed in parallel worker processes. "
     "Each text finding reads 'path:line: RULE-ID severity: message'. A summary line follows, then a 'by rule:' "
     "line counting findings per rule ID, most frequent first; --json gives the same counts as summary.by_rule. "
+    "--max N prints only the first N findings, while the summary and the per-rule counts still cover all of them. "
     "Fix every finding, or report it by rule ID as a deliberate break with its reason."
 )
 PROJECT_DESCRIPTION = (

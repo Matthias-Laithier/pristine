@@ -38,16 +38,34 @@ def parser() -> argparse.ArgumentParser:
         help="skip paths matching this glob, relative to the working directory; '**' crosses directories, and a "
         "directory pattern such as 'vendor' skips everything under it; repeat for several patterns",
     )
-    check.add_argument("--json", action="store_true", help="print a JSON report instead of text lines")
+    add_report_options(check)
     check.set_defaults(handler=run_check)
     project = commands.add_parser(
         "project", help="check the repository tooling contract (TL-1 to TL-4)", description=PROJECT_DESCRIPTION
     )
     project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
-    project.add_argument("--json", action="store_true", help="print a JSON report instead of text lines")
+    add_report_options(project)
     project.set_defaults(handler=run_project)
     add_rule_commands(commands)
     return root
+
+
+def finding_limit(text: str) -> int:
+    limit = int(text)
+    if limit < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {limit}")
+    return limit
+
+
+def add_report_options(command: argparse.ArgumentParser) -> None:
+    command.add_argument("--json", action="store_true", help="print a JSON report instead of text lines")
+    command.add_argument(
+        "--max",
+        type=finding_limit,
+        metavar="N",
+        help="print at most N findings, then a line counting the omitted ones; the summary still counts every "
+        "finding, and --json truncates the findings list and reports the rest as summary.omitted; default: all",
+    )
 
 
 def add_rule_commands(commands: argparse._SubParsersAction) -> None:
@@ -64,7 +82,7 @@ def add_rule_commands(commands: argparse._SubParsersAction) -> None:
 
 
 def print_report(report: Report, arguments: argparse.Namespace) -> int:
-    print(render_json(report) if arguments.json else render_text(report))
+    print(render_json(report, arguments.max) if arguments.json else render_text(report, arguments.max))
     return EXIT_ERRORS_FOUND if report.count(Severity.ERROR) else EXIT_CLEAN
 
 
