@@ -1,6 +1,6 @@
 # CO-6 Wrap External Clients in Singleton Services
 
-An external client is anything with real construction cost or operational state: an HTTP client, a database pool, a message broker client, a cloud SDK. Wrap it in a service class and reuse one instance for each distinct configuration and execution context. Create it at application startup. The service exposes the operations the application actually needs, and business logic never constructs the underlying client.
+An external client is anything with real construction cost or operational state: an HTTP client, a database pool, a message broker client, a cloud SDK. Wrap it in a service class and reuse one instance for each distinct configuration and execution context. Create it at application startup. The service exposes the operations the application needs, and business logic never constructs the underlying client.
 
 Recreating a client on every call repeats setup and throws away reuse such as connection pooling. Wrapping it in a service also makes the application depend on a narrow interface, and the full SDK surface of the client stays hidden. See [CO-4](co-4-clear-interfaces.md).
 

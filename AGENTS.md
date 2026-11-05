@@ -68,10 +68,11 @@ When the maintainer gives a rule or a thought, determine its scope first. A requ
 - Rule files follow [the style guide](src/pristine/rules/STYLE.md). They also start with the point and never announce what they are about to say. They never manufacture nuance where the answer is clear. They name the exceptions: the rule, then its exceptions, then what to do when taking one, such as documenting why. Unstated exceptions get rediscovered by every reader.
 
 ### Rule IDs
-- Every rule has an ID made of its chapter prefix and a number. The prefix takes the first letter of each word of the chapter name, such as CR for Coding Rules. Rules are numbered in sequence within the chapter: CR-1, CR-2, CR-3.
+- Every rule has an ID made of its chapter prefix and a number. The prefix takes the first letter of each word of the chapter name, such as CR for Core Rules. Rules are numbered in sequence within the chapter: CR-1, CR-2, CR-3.
 - IDs are stable for life. A rule keeps its ID when its file moves. IDs are never renumbered and never reused.
 - Prefixes are unique across all chapters. Before creating a chapter, check its initials against every existing prefix. On a collision, pick an unambiguous alternative, such as TST for Testing when T is taken.
-- Titles are the relevance filter. A rule title is specific enough for an agent reading the chapter list to judge whether the rule touches its task without opening the file. The one-line description of a chapter meets the same bar.
+- The title names the rule.
+- The first paragraph of a rule file is its statement. `pristine guide` prints every statement in its rule index, and agents read the index to decide which rules to open. The statement stands alone: it gives the requirement and its scope specifically enough to judge relevance without the rest of the file. The one-line description of a chapter meets the same bar.
 - Agents cite rule IDs to report compliance or violations when writing or reviewing code.
 
 ### Examples in rule files
