@@ -3,7 +3,6 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 GITLEAKS_TIMEOUT_SECONDS = 300
 PROJECT_CONFIG_NAME = ".gitleaks.toml"
@@ -67,7 +66,7 @@ def run_gitleaks(root: Path) -> str:
     return result.stdout
 
 
-def parsed_leak(entry: Any, links: dict[str, str]) -> Leak:
+def parsed_leak(entry: object, links: dict[str, str]) -> Leak:
     if not isinstance(entry, dict):
         raise SecretScanFailed("gitleaks reported a leak that is not an object")
     link, line, rule_id = entry.get("SymlinkFile"), entry.get("StartLine"), entry.get("RuleID")

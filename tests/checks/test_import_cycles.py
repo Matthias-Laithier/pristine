@@ -1,17 +1,16 @@
 import json
 import subprocess
 from pathlib import Path
-from typing import Any
 
 import pytest
 
 from pristine.cli import main
-from tests.conftest import RunPristine
+from tests.conftest import JsonReport, RunPristine
 
 DEEP_CHAIN_LENGTH = 1100
 
 
-def reported_cycles(report: dict[str, Any]) -> list[tuple[str, int, str]]:
+def reported_cycles(report: JsonReport) -> list[tuple[str, int, str]]:
     return [
         (finding["path"], finding["line"], finding["message"].removeprefix("import cycle ").split(";")[0])
         for finding in report["findings"]

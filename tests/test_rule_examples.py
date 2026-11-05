@@ -1,16 +1,15 @@
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
 
 import pytest
 
 from pristine.checks.registry import file_checks, path_checks
 from pristine.cli import main
-from tests.conftest import RunPristine, rule_findings
+from tests.conftest import JsonReport, RunPristine, parsed_report, rule_findings
 from tests.rule_examples import ExampleKind, RuleExample, rule_examples
 
-type RunProject = Callable[[dict[str, str]], dict[str, Any]]
+type RunProject = Callable[[dict[str, str]], JsonReport]
 
 EXAMPLES = rule_examples()
 GOOD_EXAMPLES = [example for example in EXAMPLES if example.kind is ExampleKind.GOOD]
@@ -30,17 +29,17 @@ UNASSERTED_BAD_EXAMPLES = {
 
 @pytest.fixture
 def run_project(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> RunProject:
-    def run(files: dict[str, str]) -> dict[str, Any]:
+    def run(files: dict[str, str]) -> JsonReport:
         for name, content in {**PYTHON_PROJECT_CONTEXT, **files}.items():
             (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
             (tmp_path / name).write_text(content)
         main(["project", str(tmp_path), "--json"])
-        return json.loads(capsys.readouterr().out)
+        return parsed_report(capsys.readouterr().out)
 
     return run
 
 
-def failing_findings(report: dict[str, Any], rule_id: str | None = None) -> list[str]:
+def failing_findings(report: JsonReport, rule_id: str | None = None) -> list[str]:
     return [
         f"{finding['path']}:{finding['line']} {finding['rule_id']} {finding['message']}"
         for finding in report["findings"]

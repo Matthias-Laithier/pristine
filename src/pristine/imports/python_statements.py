@@ -1,9 +1,7 @@
 import ast
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any
-
-from pristine.registration import registering
+from functools import singledispatch
 
 DYNAMIC_IMPORT_FUNCTIONS = frozenset({"import_module", "__import__"})
 UNPARSABLE_SOURCE_ERRORS = (SyntaxError, ValueError, RecursionError, MemoryError)
@@ -18,17 +16,17 @@ class PythonImport:
     names: tuple[str, ...]
 
 
-type StatementReader = Callable[[Any], Iterator[PythonImport]]
+@singledispatch
+def statement_imports(node: ast.AST) -> Iterator[PythonImport]:
+    yield from ()
 
-_STATEMENT_READERS: dict[type[ast.AST], StatementReader] = {}
 
-
-@registering(_STATEMENT_READERS, ast.Import)
+@statement_imports.register
 def read_import(node: ast.Import) -> Iterator[PythonImport]:
     yield from (PythonImport(node.lineno, 0, alias.name, ()) for alias in node.names)
 
 
-@registering(_STATEMENT_READERS, ast.ImportFrom)
+@statement_imports.register
 def read_import_from(node: ast.ImportFrom) -> Iterator[PythonImport]:
     names = tuple(alias.name for alias in node.names if alias.name != WILDCARD)
     yield PythonImport(node.lineno, node.level, node.module or "", names)
@@ -47,7 +45,7 @@ def literal_module_argument(call: ast.Call) -> str | None:
     return module if isinstance(module, str) and module and not module.startswith(".") else None
 
 
-@registering(_STATEMENT_READERS, ast.Call)
+@statement_imports.register
 def read_dynamic_import(node: ast.Call) -> Iterator[PythonImport]:
     module = literal_module_argument(node) if called_name(node) in DYNAMIC_IMPORT_FUNCTIONS else None
     if module is not None:
@@ -59,9 +57,4 @@ def python_imports(text: str) -> list[PythonImport]:
         tree = ast.parse(text)
     except UNPARSABLE_SOURCE_ERRORS:
         return []
-    imports = []
-    for node in ast.walk(tree):
-        reader = _STATEMENT_READERS.get(type(node))
-        if reader is not None:
-            imports.extend(reader(node))
-    return imports
+    return [found for node in ast.walk(tree) for found in statement_imports(node)]

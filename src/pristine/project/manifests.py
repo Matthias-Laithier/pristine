@@ -3,7 +3,6 @@ import re
 import tomllib
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any
 
 from pristine.project.tools import Ecosystem
 
@@ -22,12 +21,12 @@ class Manifest:
     scripts: Mapping[str, str]
 
 
-def table(document: object, key: str) -> dict[str, Any]:
+def table(document: object, key: str) -> dict[str, object]:
     value = document.get(key) if isinstance(document, dict) else None
     return value if isinstance(value, dict) else {}
 
 
-def array(document: object, key: str) -> list[Any]:
+def array(document: object, key: str) -> list[object]:
     value = document.get(key) if isinstance(document, dict) else None
     return value if isinstance(value, list) else []
 
@@ -41,7 +40,7 @@ def requirement_names(requirements: Iterable[object]) -> set[str]:
     return {python_name(match[1]) for match in matches if match}
 
 
-def pyproject_dependencies(document: dict[str, Any]) -> frozenset[str]:
+def pyproject_dependencies(document: dict[str, object]) -> frozenset[str]:
     project, tool = table(document, "project"), table(document, "tool")
     poetry = table(tool, "poetry")
     requirement_lists = [
