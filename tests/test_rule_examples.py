@@ -24,6 +24,7 @@ PYTHON_PROJECT_CONTEXT = {"pyproject.toml": '[project]\nname = "invoices"\n\n[to
 UNASSERTED_BAD_EXAMPLES = {
     "BS-3-bad": "the HTTP client is an injected collaborator, and BS-3 recognizes only known libraries by their import",
     "BS-8-bad:file": "the example leaks a file handle, and BS-8 detects only dropped asyncio tasks and swallowed cancellation",
+    "CO-5-bad": "a method that ignores self may implement a protocol, so CO-5 checks only classes of static methods",
     "CR-15-bad": "nine files form a small set, and CR-15 reports a crowded directory only from twelve code files on",
     "CR-22-bad:float money": "float money cannot be detected from syntax, and CR-22 checks only naive datetimes",
     "CR-8-bad": "a directory tree carries no file contents, and CR-8 judges client-library imports, not file names",
