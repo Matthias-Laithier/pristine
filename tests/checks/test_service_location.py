@@ -13,8 +13,9 @@ SCRIPT_ERRORS_ONLY = 'import { AxiosError } from "axios";\n'
 OWN_BACKEND_FETCH = 'export const orders = () => fetch("/api/orders");\n'
 REQUIRED_DRIVER = 'const { Pool } = require("pg");\n'
 STDLIB_HTTP = "import json\nfrom urllib.request import urlopen\n"
-STDLIB_SOCKET = "import socket\n\nconnection = socket.create_connection((HOST, 443), timeout=5)\n"
-STDLIB_HOSTNAME = "import socket\nimport urllib.parse\n\nHOST = socket.gethostname()\n"
+STDLIB_FREE_PORT = (
+    "import socket\nfrom urllib.request import getproxies\n\nwith socket.socket() as probe:\n    probe.bind(('', 0))\n"
+)
 GO_MESSAGES_ONLY = 'package parse\n\nimport "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"\n'
 GO_CLIENT = 'package store\n\nimport (\n\t"context"\n\ts3 "github.com/aws/aws-sdk-go-v2/service/s3"\n)\n'
 
@@ -29,8 +30,7 @@ GO_CLIENT = 'package store\n\nimport (\n\t"context"\n\ts3 "github.com/aws/aws-sd
         ("orders/main.py", HTTPX_CLIENT, []),
         ("orders/retry.py", HTTPX_ERRORS_ONLY, []),
         ("orders/fetch.py", STDLIB_HTTP, [(2, "warning")]),
-        ("orders/probe.py", STDLIB_SOCKET, [(1, "warning")]),
-        ("orders/host.py", STDLIB_HOSTNAME, []),
+        ("orders/port.py", STDLIB_FREE_PORT, []),
         ("tests/fetch.py", STDLIB_HTTP, []),
         ("orders/store.py", TYPE_CHECKING_IMPORT, []),
         ("orders/llm.py", MISTRAL_CLIENT, [(2, "warning")]),
