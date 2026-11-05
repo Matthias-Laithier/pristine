@@ -76,7 +76,9 @@ def add_rule_commands(commands: argparse._SubParsersAction) -> None:
         "guide", help="print the rules hub to read before coding", description=GUIDE_DESCRIPTION
     )
     guide.set_defaults(handler=run_guide)
-    rule = commands.add_parser("rule", help="print the full text of rules by ID", description=RULE_DESCRIPTION)
+    rule = commands.add_parser(
+        "rule", help="print rules by ID, by chapter, or all of them", description=RULE_DESCRIPTION
+    )
     rule.add_argument(
         "selectors",
         nargs="+",
