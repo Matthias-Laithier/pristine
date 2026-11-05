@@ -1,4 +1,6 @@
 import json
+import tomllib
+from pathlib import Path
 
 import pytest
 
@@ -77,3 +79,11 @@ def test_first_use_of_a_grammar_is_announced_once_on_stderr(
     monkeypatch.setattr(grammar_downloads, "cached_languages", frozenset)
     assert main(["check", "."]) == 0
     assert capsys.readouterr().err == "pristine: downloading the python grammar (first use)\n"
+
+
+def test_version_prints_the_package_version(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--version"])
+    assert exit_info.value.code == 0
+    pyproject = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
+    assert capsys.readouterr().out == f"pristine {pyproject['project']['version']}\n"

@@ -1,5 +1,6 @@
 import argparse
 import sys
+from importlib.metadata import version
 from pathlib import Path
 
 from pristine.checks.registry import path_checks
@@ -28,6 +29,7 @@ EXIT_USAGE = 2
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="pristine", description=DESCRIPTION)
+    root.add_argument("--version", action="version", version=f"%(prog)s {version('pristine')}")
     commands = root.add_subparsers(dest="command", required=True)
     check = commands.add_parser("check", help="check files and directories", description=CHECK_DESCRIPTION)
     check.add_argument("paths", nargs="+", type=Path, help="files or directories to check")
