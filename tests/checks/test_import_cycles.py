@@ -1,11 +1,10 @@
 import json
-import subprocess
 from pathlib import Path
 
 import pytest
 
 from pristine.cli import main
-from tests.conftest import JsonReport, RunPristine
+from tests.conftest import JsonReport, RunPristine, run_git
 
 DEEP_CHAIN_LENGTH = 1100
 
@@ -122,7 +121,7 @@ def test_a_cycle_through_an_unchecked_repository_file_is_reported(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    subprocess.run(["git", "init", "--quiet"], check=True, timeout=30)
+    run_git(tmp_path, "init", "--quiet")
     files = {"orders.py": "import invoices\n", "invoices.py": "import discounts\n", "discounts.py": "import orders\n"}
     files |= {"tax.py": "import rates\n", "rates.py": "import tax\n"}
     for name, content in files.items():

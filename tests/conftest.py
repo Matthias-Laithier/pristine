@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from typing import TypedDict
@@ -6,6 +8,8 @@ from typing import TypedDict
 import pytest
 
 from pristine.cli import main
+
+GIT_TIMEOUT_SECONDS = 30
 
 
 class ReportedFinding(TypedDict):
@@ -41,6 +45,12 @@ class JsonReport(TypedDict):
 
 
 type RunPristine = Callable[..., tuple[int, JsonReport]]
+
+
+def run_git(directory: Path, *arguments: str) -> None:
+    git = shutil.which("git")
+    assert git is not None
+    subprocess.run([git, "-C", str(directory), *arguments], check=True, timeout=GIT_TIMEOUT_SECONDS)
 
 
 def parsed_report(output: str) -> JsonReport:

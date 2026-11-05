@@ -1,11 +1,10 @@
-import subprocess
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
 from pristine.cli import main
-from tests.conftest import JsonReport, parsed_report
+from tests.conftest import JsonReport, parsed_report, run_git
 
 type RunProject = Callable[[dict[str, str]], tuple[int, JsonReport]]
 
@@ -24,7 +23,7 @@ def run_project(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> RunProjec
 
 def track_all(directory: Path) -> None:
     for command in (["init", "-q"], ["add", "-A"]):
-        subprocess.run(["git", "-C", str(directory), *command], check=True, timeout=30)
+        run_git(directory, *command)
 
 
 def rule_findings(report: JsonReport, rule_id: str) -> list[tuple[str, str, int]]:
