@@ -12,10 +12,11 @@ GUIDE_DESCRIPTION = (
     "between rule files print as their plain label. Read it before coding. Exit code 0."
 )
 RULE_DESCRIPTION = (
-    "Print the full markdown text of each given rule, in the order given, separated by a blank line. Links "
-    "between rule files print as their plain label. IDs match "
-    "case-insensitively, such as cr-13 or CR-13. Exit code 0, or 2 when an ID is unknown, with the known IDs on "
-    "stderr and nothing on stdout."
+    "Print the full markdown text of each selected rule, in the order given, separated by a blank line. A "
+    "selector is a rule ID such as CR-13, a chapter prefix such as BS for every rule of that chapter, or 'all' "
+    "for every rule, matched case-insensitively. Links between rule files print as their plain label. 'all' "
+    "prints about 170 KB: write it to a file and read the file in parts. Exit code 0, or 2 when a selector is "
+    "unknown, with the known IDs on stderr and nothing on stdout."
 )
 RULES_DESCRIPTION = (
     "List every rule, in chapter and number order, with how it is checked: 'check' (pristine check), 'project' "

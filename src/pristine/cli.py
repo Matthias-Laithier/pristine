@@ -18,7 +18,7 @@ from pristine.grammar_downloads import announce_grammar_downloads
 from pristine.project.inspection import inspect_project
 from pristine.rendering import render_json, render_text
 from pristine.report import Report, build_report
-from pristine.rule_documents import UnknownRule, find_rule, rule_documents
+from pristine.rule_documents import UnknownRule, rule_documents, select_rules
 from pristine.rule_listing import render_guide, render_rules_json, render_rules_text
 from pristine.services.isolated_inspection import inspect_in_workers
 
@@ -77,7 +77,12 @@ def add_rule_commands(commands: argparse._SubParsersAction) -> None:
     )
     guide.set_defaults(handler=run_guide)
     rule = commands.add_parser("rule", help="print the full text of rules by ID", description=RULE_DESCRIPTION)
-    rule.add_argument("rule_ids", nargs="+", metavar="ID", help="rule IDs such as CR-13, case-insensitive")
+    rule.add_argument(
+        "selectors",
+        nargs="+",
+        metavar="ID",
+        help="rule IDs such as CR-13, chapter prefixes such as BS, or all, case-insensitive",
+    )
     rule.set_defaults(handler=run_rule)
     rules = commands.add_parser("rules", help="list every rule and how it is checked", description=RULES_DESCRIPTION)
     rules.add_argument("--json", action="store_true", help="print the list as JSON")
@@ -116,10 +121,10 @@ def run_guide(_: argparse.Namespace) -> int:
 
 def run_rule(arguments: argparse.Namespace) -> int:
     try:
-        documents = [find_rule(rule_id) for rule_id in arguments.rule_ids]
+        documents = [document for selector in arguments.selectors for document in select_rules(selector)]
     except UnknownRule as error:
         known = ", ".join(document.rule_id for document in rule_documents())
-        print(f"pristine: unknown rule ID: {error}. Known IDs: {known}", file=sys.stderr)
+        print(f"pristine: unknown rule ID or chapter: {error}. Known IDs: {known}", file=sys.stderr)
         return EXIT_USAGE
     print("\n".join(document.text for document in documents), end="")
     return EXIT_CLEAN

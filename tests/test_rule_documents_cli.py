@@ -6,6 +6,7 @@ import pytest
 from pristine.checks.registry import file_checks, path_checks
 from pristine.cli import main
 from pristine.project.inspection import PROJECT_RULE_SUMMARIES
+from pristine.rule_documents import rule_documents
 
 RULES_SOURCE = Path(__file__).parents[1] / "src" / "pristine" / "rules"
 
@@ -60,3 +61,12 @@ def test_rules_lists_checked_project_and_review_rules(capsys: pytest.CaptureFixt
 def test_every_checked_rule_has_a_rule_document(capsys: pytest.CaptureFixture[str]) -> None:
     registered = {check.rule_id for check in [*file_checks(), *path_checks()]} | PROJECT_RULE_SUMMARIES.keys()
     assert registered <= listed_rules(capsys).keys()
+
+
+def test_rule_prints_a_chapter_and_all_rules(capsys: pytest.CaptureFixture[str]) -> None:
+    main(["rule", "tl"])
+    chapter = [line for line in capsys.readouterr().out.splitlines() if line.startswith("# ")]
+    main(["rule", "all"])
+    every_rule = [line for line in capsys.readouterr().out.splitlines() if line.startswith("# ")]
+    assert [heading.split()[1] for heading in chapter] == ["TL-1", "TL-2", "TL-3", "TL-4"]
+    assert len(every_rule) == len(rule_documents())

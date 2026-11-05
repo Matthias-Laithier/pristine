@@ -1,6 +1,6 @@
 # Coding rules
 
-Rules for every agent that writes, reviews, or refactors code for the user. Each rule is a file in this directory, and agents cite rules by their ID. `pristine guide` prints this hub followed by the rule index, and `pristine rule <ID>` prints one rule.
+Rules for every agent that writes, reviews, or refactors code for the user. Each rule is a file in this directory, and agents cite rules by their ID. `pristine guide` prints this hub followed by the rule index, and `pristine rule <ID>` prints one rule. `pristine rule BS` prints a chapter, and `pristine rule all` prints every rule.
 
 ## Precedence
 When instructions conflict, the higher one wins:
@@ -23,7 +23,7 @@ Apply the rules while writing the code. When a decision genuinely conflicts with
 1. Run `pristine check` on the directories the task touched, or on the repository root, so checks that span files, such as import cycles, see the unchanged files too. Fix every finding in the code the task wrote or changed, or keep it as a deliberate break.
 2. Run `pristine project` on the repository root.
 3. Handle findings in code the task did not change. Fix them when they sit in a unit the task rewrote, as CR-11 requires. Otherwise leave them and count them per rule ID.
-4. Walk the review rules relevant to the change, marked `review` in `pristine rules`. Confirm compliance against the full rule.
+4. Walk the review rules relevant to the change, marked `review` in `pristine rules`. Confirm compliance against the full rule. A reviewer checking a change against every rule writes them all to a file with `pristine rule all > rules.md` and reads the file in parts, so no output gets cut.
 5. Complete the CR-20 subtraction pass and growth account.
 6. Report three things: every deliberate break with its rule ID and reason, the pre-existing findings counted per rule ID, and the CR-20 growth account.
 

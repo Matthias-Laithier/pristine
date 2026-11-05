@@ -4,11 +4,12 @@ from functools import cache
 from importlib.resources import files
 from importlib.resources.abc import Traversable
 
-__all__ = ["RuleDocument", "UnknownRule", "find_rule", "guide_text", "rule_documents"]
+__all__ = ["RuleDocument", "UnknownRule", "guide_text", "rule_documents", "select_rules"]
 
 HUB_NAME = "README.md"
 RULE_FILE_NAME = re.compile(r"[a-z]+-\d+-.+\.md")
 RULE_HEADING = re.compile(r"# (?P<rule_id>[A-Z]+-(?P<number>\d+)) (?P<title>.+)")
+ALL_RULES = "ALL"
 RULE_LINK = re.compile(r"\[(?P<label>[^\]]+)\]\([^):\s]+\.md(?:#[^)\s]*)?\)")
 
 
@@ -59,8 +60,15 @@ def rule_documents() -> tuple[RuleDocument, ...]:
     return tuple(sorted(documents, key=rule_order))
 
 
-def find_rule(rule_id: str) -> RuleDocument:
-    documents = {document.rule_id: document for document in rule_documents()}
-    if rule_id.upper() not in documents:
-        raise UnknownRule(rule_id)
-    return documents[rule_id.upper()]
+def chapter_of(document: RuleDocument) -> str:
+    return document.rule_id.partition("-")[0]
+
+
+def select_rules(selector: str) -> list[RuleDocument]:
+    wanted = selector.upper()
+    selected = [
+        document for document in rule_documents() if wanted in (ALL_RULES, document.rule_id, chapter_of(document))
+    ]
+    if not selected:
+        raise UnknownRule(selector)
+    return selected
