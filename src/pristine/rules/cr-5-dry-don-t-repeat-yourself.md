@@ -1,6 +1,6 @@
 # CR-5 DRY (Don't Repeat Yourself)
 
-Many bugs and inconsistencies in software come from behaviors that should be shared and are duplicated: misaligned frontend components, backend discrepancies, and objects that do the same thing with no common class, interface, or owning entity.
+Behavior that two or more units share has one owner: a shared function, class, interface, or owning entity. Duplicated behavior drifts into misaligned frontend components, backend discrepancies, and objects that do the same thing with no common owner. Extract only behavior that is genuinely shared. Code that merely looks similar stays separate.
 
 If two or more things share behavior, extract a shared unit for that behavior. The unit may be a function, a class, an interface, or an owning entity. Sharing prevents inconsistencies, makes debugging easier, and produces clear diffs when editing code.
 
