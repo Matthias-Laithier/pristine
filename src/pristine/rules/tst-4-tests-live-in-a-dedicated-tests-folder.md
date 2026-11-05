@@ -1,4 +1,4 @@
-# TST-4 Tests Live in a Dedicated tests Folder
+# TST-4 Tests Live in a Dedicated `tests` Folder
 
 Every component of the app owns one `tests/` folder, such as `backend/tests/`, `frontend/tests/`, and `worker/tests/`. Tests never live beside source: no `test_invoice.py` next to `invoice.py`, no `__tests__` directory inside `src`, no `InvoiceList.test.jsx` beside `InvoiceList.jsx`. The source tree is the contract of the component. Tests are its first consumer and live outside it, like every other consumer.
 

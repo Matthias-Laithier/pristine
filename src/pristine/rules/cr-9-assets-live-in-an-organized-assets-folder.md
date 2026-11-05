@@ -1,4 +1,4 @@
-# CR-9 Assets Live in an Organized assets Folder
+# CR-9 Assets Live in an Organized `assets` Folder
 
 Every component that ships static files owns an `assets/` folder at its root, beside `src/`, such as `frontend/assets/` and `worker/assets/`. Assets are files shipped read-only with the code and never rewritten at runtime: images, icons, logos, fonts, static data, and templates such as email bodies. Files the program generates while it runs, such as logs, uploads, and exports, are artifacts. Artifacts are no assets and stay out of the repository tree.
 

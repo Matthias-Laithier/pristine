@@ -1,4 +1,4 @@
-# CR-8 Services Live in a Dedicated services Folder
+# CR-8 Services Live in a Dedicated `services` Folder
 
 Every component that talks to an external system owns a `services/` folder, such as `backend/src/services/` and `worker/src/services/`. Each service gets exactly one file, named after the service, holding the service class and its external-client operations. Client construction and service assembly happen once in the application's composition root, never inside business logic. A directory listing of `services/` is the manifest of every external system the component talks to.
 
