@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from pristine.outcomes import Checked, Outcome, Unchecked
-from pristine.project import automation, gates, layout, lockfiles, strict_mode
+from pristine.project import automation, gates, installs, layout, lockfiles, runtimes, strict_mode
 from pristine.project.loading import load_project
 from pristine.report import Report, build_report
 
@@ -12,7 +12,10 @@ PROJECT_RULE_SUMMARIES = {
         "A formatter, a linter, and a type checker are configured and run by make check, the formatter in check mode "
         "and the type checker in strict mode."
     ),
-    "TL-4": "A deployable project commits its lockfile.",
+    "TL-4": (
+        "A deployable project commits its lockfile, Makefile installs never rewrite the lockfile, "
+        "and the Python and Node.js runtime versions are pinned."
+    ),
 }
 
 PROJECT_CHECKS = (
@@ -21,6 +24,8 @@ PROJECT_CHECKS = (
     *automation.CHECKS,
     *strict_mode.CHECKS,
     *lockfiles.CHECKS,
+    *installs.CHECKS,
+    *runtimes.CHECKS,
 )
 
 

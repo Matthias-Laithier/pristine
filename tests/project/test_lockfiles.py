@@ -9,7 +9,7 @@ APPLICATION = {"Makefile": CONTRACT, "Dockerfile": "FROM python\n", "go.mod": "m
 def test_deployable_application_without_committed_lockfile(run_project: RunProject, tmp_path: Path) -> None:
     run_project({**APPLICATION, "go.sum": ""})
     track_all(tmp_path)
-    _, report = run_project({"package.json": "{}", "pnpm-lock.yaml": ""})
+    _, report = run_project({"package.json": '{"engines": {"node": "22"}}', "pnpm-lock.yaml": ""})
     assert rule_findings(report, "TL-4") == [
         (
             "warning",

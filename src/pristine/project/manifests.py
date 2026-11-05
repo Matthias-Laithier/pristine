@@ -10,6 +10,8 @@ PYPROJECT = "pyproject.toml"
 PACKAGE_JSON = "package.json"
 REQUIREMENT_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 PYTHON_NAME_SEPARATORS = re.compile(r"[-_.]+")
+JAVASCRIPT_RUNTIMES = frozenset({"node", "bun"})
+BUN_PACKAGE_MANAGER = "bun@"
 PACKAGE_DEPENDENCY_TABLES = ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies")
 
 
@@ -19,6 +21,7 @@ class Manifest:
     dependencies: frozenset[str]
     settings: Mapping[str, object]
     scripts: Mapping[str, str]
+    pins_runtime: bool
 
 
 def table(document: object, key: str) -> dict[str, object]:
@@ -58,10 +61,21 @@ def pyproject_dependencies(document: dict[str, object]) -> frozenset[str]:
     return frozenset(names | {python_name(name) for dependencies in poetry_tables for name in dependencies})
 
 
+def pins_python_runtime(document: dict[str, object]) -> bool:
+    poetry_dependencies = table(table(table(document, "tool"), "poetry"), "dependencies")
+    return "requires-python" in table(document, "project") or "python" in poetry_dependencies
+
+
 def read_pyproject(path: str, text: str) -> Manifest:
     document = tomllib.loads(text)
     tool = table(document, "tool")
-    return Manifest(path, pyproject_dependencies(document), tool, {})
+    return Manifest(path, pyproject_dependencies(document), tool, {}, pins_python_runtime(document))
+
+
+def pins_javascript_runtime(document: dict[str, object]) -> bool:
+    package_manager = document.get("packageManager")
+    runs_on_bun = isinstance(package_manager, str) and package_manager.startswith(BUN_PACKAGE_MANAGER)
+    return runs_on_bun or not table(document, "engines").keys().isdisjoint(JAVASCRIPT_RUNTIMES)
 
 
 def read_package_json(path: str, text: str) -> Manifest:
@@ -70,7 +84,7 @@ def read_package_json(path: str, text: str) -> Manifest:
         raise TypeError("the top level is not a JSON object")
     dependencies = frozenset(name for key in PACKAGE_DEPENDENCY_TABLES for name in table(document, key))
     scripts = {name: body for name, body in table(document, "scripts").items() if isinstance(body, str)}
-    return Manifest(path, dependencies, document, scripts)
+    return Manifest(path, dependencies, document, scripts, pins_javascript_runtime(document))
 
 
 MANIFEST_READERS: dict[Ecosystem, tuple[str, Callable[[str, str], Manifest]]] = {
