@@ -4,7 +4,7 @@ Every read-modify-write transition that can overlap with another execution stays
 
 Reading, checking, and writing separately is unsafe even when each step is atomic on its own. On conflict, fail, retry from fresh state, or apply an explicitly defined resolution. Never silently overwrite newer state.
 
-A documented, enforced single-writer architecture is the exception. An assumption that concurrent execution is unlikely is no exception.
+A single-writer architecture is the exception when a mechanism enforces it and a decision record of the project states it (see [CR-3](cr-3-no-comments-except-machine-read-text.md)). An assumption that concurrent execution is unlikely is no exception.
 
 ## Bad
 
