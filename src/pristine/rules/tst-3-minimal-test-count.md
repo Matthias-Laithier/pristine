@@ -16,27 +16,27 @@ Tests are code. Every rule of [the coding rules](README.md) applies to them, [CR
 
 ```python
 def test_format_price_returns_a_string():
-    assert isinstance(format_price(10), str)
+    assert isinstance(format_price_in_cents(1000), str)
 
 
 def test_format_price_uses_the_eur_symbol():
-    assert "EUR" in format_price(10)
+    assert "EUR" in format_price_in_cents(1000)
 
 
 def test_format_price_has_two_decimals():
-    assert format_price(10).endswith(".00")
+    assert format_price_in_cents(1000).endswith(".00")
 
 
-def test_format_price_handles_an_int():
-    assert format_price(10) == "10.00 EUR"
+def test_format_price_handles_whole_euros():
+    assert format_price_in_cents(1000) == "10.00 EUR"
 
 
-def test_format_price_handles_a_float():
-    assert format_price(10.5) == "10.50 EUR"
+def test_format_price_handles_cents():
+    assert format_price_in_cents(1050) == "10.50 EUR"
 
 
 def test_format_price_handles_zero():
-    assert format_price(0) == "0.00 EUR"
+    assert format_price_in_cents(0) == "0.00 EUR"
 ```
 
 Six tests for one behavior. The first three assert fragments the exact-value cases already cover, so they add lines without adding protection.
@@ -45,9 +45,9 @@ Six tests for one behavior. The first three assert fragments the exact-value cas
 
 ```python
 def test_format_price_renders_two_decimals_and_the_eur_symbol():
-    assert format_price(10) == "10.00 EUR"
-    assert format_price(10.5) == "10.50 EUR"
-    assert format_price(0) == "0.00 EUR"
+    assert format_price_in_cents(1000) == "10.00 EUR"
+    assert format_price_in_cents(1050) == "10.50 EUR"
+    assert format_price_in_cents(0) == "0.00 EUR"
 ```
 
 One focused test pins the full contract for the same three representative values, the zero boundary included. The suite lost five tests without losing a checked behavior or combining unrelated failures.
