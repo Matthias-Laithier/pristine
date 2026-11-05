@@ -26,12 +26,12 @@ class Manifest:
 
 def table(document: object, key: str) -> dict[str, object]:
     value = document.get(key) if isinstance(document, dict) else None
-    return value if isinstance(value, dict) else {}
+    return dict[str, object](value) if isinstance(value, dict) else {}
 
 
 def array(document: object, key: str) -> list[object]:
     value = document.get(key) if isinstance(document, dict) else None
-    return value if isinstance(value, list) else []
+    return list[object](value) if isinstance(value, list) else []
 
 
 def python_name(name: str) -> str:

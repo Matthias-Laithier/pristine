@@ -66,7 +66,7 @@ def bound_names(binding: Node) -> set[str]:
     targets = [target for field_name in NAME_FIELDS for target in binding.children_by_field_name(field_name)]
     if any(target.type in MUTATION_TARGET_KINDS for target in targets):
         return set()
-    return set().union(*map(identifiers, targets))
+    return {name for target in targets for name in identifiers(target)}
 
 
 def value_of(binding: Node) -> Node | None:

@@ -47,6 +47,7 @@ def decoded_outcome(line: str) -> tuple[str, Outcome]:
         document = json.loads(line)
     except json.JSONDecodeError as error:
         raise MalformedOutcomeLine("the line is not JSON") from error
-    if not isinstance(document, dict) or not isinstance(document.get("path"), str):
+    path = document.get("path") if isinstance(document, dict) else None
+    if not isinstance(path, str):
         raise MalformedOutcomeLine("the line is not an object with a path")
-    return document["path"], decoded_body(document)
+    return path, decoded_body(document)

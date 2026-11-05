@@ -45,4 +45,4 @@ def read_json_config(project: Project, path: str) -> dict[str, object]:
         raise UnverifiedConfigError(path, f"{path} is not valid JSON with comments ({error})") from error
     if not isinstance(document, dict):
         raise UnverifiedConfigError(path, f"the top level of {path} is not a JSON object")
-    return document
+    return dict[str, object](document)

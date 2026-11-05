@@ -45,11 +45,11 @@ def import_bindings(node: Node) -> Iterator[tuple[str, str]]:
     is_require = value is not None and value.type == "call_expression"
     if is_require and node_text(value.child_by_field_name("function")) == REQUIRE:
         source = string_value(first_argument(value))
-        yield from pattern_bindings(node.child_by_field_name("name") or node) if source in CHILD_PROCESS_MODULES else []
+        yield from pattern_bindings(node.child_by_field_name("name") or node) if source in CHILD_PROCESS_MODULES else ()
     clause = next((child for child in node.named_children if child.type == "import_clause"), None)
     if node.type == "import_statement" and clause is not None:
         source = string_value(node.child_by_field_name("source"))
-        yield from clause_bindings(clause) if source in CHILD_PROCESS_MODULES else []
+        yield from clause_bindings(clause) if source in CHILD_PROCESS_MODULES else ()
 
 
 def promisified(node: Node, bindings: dict[str, str]) -> str | None:

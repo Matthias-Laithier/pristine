@@ -19,7 +19,7 @@ FIX_HINT = "give the state an owner passed to its consumers and keep module-leve
 
 
 def enclosing_scopes(node: Node) -> list[Node]:
-    scopes = []
+    scopes: list[Node] = []
     parent = node.parent
     while parent is not None:
         scopes.extend([parent] if parent.type in SCOPE_KINDS else [])

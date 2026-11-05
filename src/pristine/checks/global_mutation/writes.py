@@ -32,7 +32,7 @@ _FINDERS: dict[str, MutationFinder] = {}
 
 def kinds_of(globals_kinds: Globals, node: Node | None) -> frozenset[str]:
     name = node_text(node) if node is not None and node.type == "identifier" else None
-    return globals_kinds.get(name or "", frozenset())
+    return globals_kinds.get(name or "", frozenset[str]())
 
 
 def item_root(node: Node | None) -> Node | None:
