@@ -53,7 +53,12 @@ def is_constant_attribute(node: Node) -> bool:
 def is_constant_name(node: Node) -> bool:
     name = node_text(node) or ""
     sources = (loop.child_by_field_name("right") for loop in enclosing_loops(node) if loop_variable(loop) == name)
-    return is_constant_reference(name) or is_placeholder_name(name) or any(map(is_trusted, sources))
+    outside_sources = (source for source in sources if source is not None and not encloses(source, node))
+    return is_constant_reference(name) or is_placeholder_name(name) or any(map(is_trusted, outside_sources))
+
+
+def encloses(outer: Node, inner: Node) -> bool:
+    return outer.start_byte <= inner.start_byte and inner.end_byte <= outer.end_byte
 
 
 @registering(_TRUST_RULES, "binary_operator")

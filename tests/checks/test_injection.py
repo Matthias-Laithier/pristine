@@ -82,3 +82,14 @@ def test_script_markup_processes_and_raw_queries(run_pristine: RunPristine) -> N
 def test_go_sql_and_shell(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing.go": GO_SOURCE})
     assert [line for line, _ in rule_findings(report, RULE_ID)] == [3, 4, 7]
+
+
+def test_a_comprehension_reusing_its_loop_name_is_resolved_without_recursion(run_pristine: RunPristine) -> None:
+    source = (
+        "def total(calls):\n"
+        "    for call in (call for call in calls):\n"
+        '        cursor.execute(f"SELECT * FROM invoices WHERE id = {call}")\n'
+    )
+    _, report = run_pristine({"billing.py": source})
+    assert report["unchecked"] == []
+    assert rule_findings(report, "BS-10") == [(3, "error")]
