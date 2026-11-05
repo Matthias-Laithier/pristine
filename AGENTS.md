@@ -50,6 +50,12 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 - `tree-sitter` stays below 0.26. Version 0.26.0 crashed with segmentation faults and bus errors while walking TSX and TypeScript trees, and 0.25.2 parses the same files cleanly. Lift the pin once a newer release walks large TSX and TypeScript code bases without a crash.
 - gitleaks must be on the path for the secret scan of BS-2. When it is missing or fails, the report carries a BS-2 warning that the scan did not run.
 
+## Lint exceptions
+The per-file ignores of `pyproject.toml` hold only rules that flag intended code:
+- `S101` in `tests/**`. pytest asserts with `assert`.
+- `S603` in `services/git.py`, `services/gitleaks.py`, `services/isolated_inspection.py`, and `tests/conftest.py`. Each runs git, gitleaks, or the Python interpreter through an argument list without a shell. Ruff flags every such call whose arguments are not all literals.
+- `T20` in `cli.py`. It is the module that writes the user-facing output of the command-line program, as TL-3 allows.
+
 ## Commits
 - One-line conventional messages: `type(scope): summary`, such as `feat(checks): exempt interactive terminal processes from BS-3`.
 - Each commit passes `make check`.
