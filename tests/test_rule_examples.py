@@ -22,6 +22,7 @@ UNASSERTED_PROJECT_RULES = {
 FAILING_SEVERITIES = {"error", "warning"}
 PYTHON_PROJECT_CONTEXT = {"pyproject.toml": '[project]\nname = "invoices"\n\n[tool.ruff]\n\n[tool.mypy]\n'}
 UNASSERTED_BAD_EXAMPLES = {
+    "BS-1-bad:request payload": "payload validation is semantic, and BS-1 checks only scattered environment reads",
     "BS-3-bad": "the HTTP client is an injected collaborator, and BS-3 recognizes only known libraries by their import",
     "BS-8-bad:file": "the example leaks a file handle, and BS-8 detects only dropped asyncio tasks and swallowed cancellation",
     "CO-5-bad": "a method that ignores self may implement a protocol, so CO-5 checks only classes of static methods",
