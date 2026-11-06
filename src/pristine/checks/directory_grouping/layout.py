@@ -6,7 +6,7 @@ from pristine.inspection import is_generated
 from pristine.path_roles import is_test_path, is_vendored
 
 RULE_ID = "CR-15"
-HEADER_BYTES = 1024
+HEADER_BYTES = 8192
 CODE_SUFFIXES = frozenset(
     {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts", ".vue", ".svelte"}
     | {".go", ".rs", ".java", ".kt", ".scala", ".rb", ".php", ".swift", ".cs", ".c", ".cc", ".cpp", ".h", ".hpp"}
