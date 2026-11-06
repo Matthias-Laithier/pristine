@@ -7,7 +7,7 @@ lazy from tree_sitter import Node
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text
 from pristine.syntax.syntax_kinds import COMMENT_KINDS, IF_KINDS
 
 RULE_ID = "CR-14"
@@ -130,7 +130,7 @@ def switch_finding(parsed: ParsedFile, switch: Node) -> Finding | None:
 
 
 def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
-    nodes = list(all_nodes(parsed))
+    nodes = parsed.nodes
     if_nodes = [node for node in nodes if node.type in IF_KINDS]
     else_ifs = {else_if.start_byte for node in if_nodes if (else_if := else_if_of(node)) is not None}
     chains = [chain_finding(parsed, node) for node in if_nodes if node.start_byte not in else_ifs]
