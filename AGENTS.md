@@ -43,7 +43,7 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 
 ## Adding a check
 1. Add a module to the chapter folder of `src/pristine/checks/` that registers a file check or a path check for one rule ID.
-2. Test it through the `run_pristine` fixture of [tests/conftest.py](tests/conftest.py), which writes files to a temporary directory and runs `pristine check` on them. Tests live in `tests/checks/`.
+2. Test it through the `run_pristine` fixture of [tests/conftest.py](tests/conftest.py), which writes files to a temporary directory and runs `pristine check` on them. Tests live in `tests/checks/`, mirroring the folder of the check, such as `tests/checks/boundaries/data_flow/test_injection.py`.
 3. Validate it on real code. Run it on several real repositories and inspect every finding by hand.
 4. Favor reliability over recall. A check reports only what it judges with certainty. A false positive costs more than a missed finding, since agents act on every finding. Leave the uncertain cases to the agent's own review.
 

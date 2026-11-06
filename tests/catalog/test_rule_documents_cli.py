@@ -8,7 +8,7 @@ from pristine.checks.registry import file_checks, path_checks
 from pristine.cli.main import main
 from pristine.project.inspection import PROJECT_RULE_SUMMARIES
 
-RULES_SOURCE = Path(__file__).parents[1] / "src" / "pristine" / "rules"
+RULES_SOURCE = Path(__file__).parents[2] / "src" / "pristine" / "rules"
 
 
 def listed_rules(capsys: pytest.CaptureFixture[str]) -> dict[str, dict[str, str]]:

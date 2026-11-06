@@ -85,5 +85,5 @@ def test_version_prints_the_package_version(capsys: pytest.CaptureFixture[str]) 
     with pytest.raises(SystemExit) as exit_info:
         main(["--version"])
     assert exit_info.value.code == 0
-    pyproject = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
+    pyproject = tomllib.loads((Path(__file__).parents[2] / "pyproject.toml").read_text(encoding="utf-8"))
     assert capsys.readouterr().out == f"pristine {pyproject['project']['version']}\n"
