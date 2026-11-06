@@ -14,22 +14,18 @@ EQUALITY = "=="
 IDENTITY = "is"
 PAIR_SIZE = 2
 UNITTEST_COMPARISONS = {"self.assertEqual": EQUALITY, "self.assertIs": IDENTITY}
-RAISING_CONTEXTS = re.compile(r"(\w+\.)*(raises|assertRaises\w*)")
-STATEFUL_CALLEES = re.compile(
-    r"(.*\.)?(next|anext|pop|popleft|popitem|read|readline|recv|receive|send|get_nowait|uuid\d|now|utcnow|today"
-    r"|time|monotonic|perf_counter|random|randint|choice|sample|shuffle|token_hex|urandom)"
-)
-PROPERTY_NAME = re.compile(
-    r"(^|_)(eq|equal[a-z]*|reflexiv[a-z]*|identity|same|hash[a-z]*|determinis[a-z]*|idempoten[a-z]*|stab[a-z]*"
-    r"|consistent|repeatable|reproducible|cach[a-z]*|memoized|singleton|pure|cop(y|ies))(_|$)"
-)
 CALL_KIND = "call"
-AWAIT_KIND = "await"
-EVALUATING_KINDS = frozenset({CALL_KIND, AWAIT_KIND})
+RAISING_CONTEXTS = re.compile(r"(\w+\.)*(raises|assertRaises\w*)")
+SINGLETON_KINDS = frozenset({"true", "false", "none", "ellipsis"})
+IDENTITY_KINDS = SINGLETON_KINDS | {"identifier"}
+LITERAL_KINDS = (
+    SINGLETON_KINDS
+    | {"integer", "float", "unary_operator", "concatenated_string"}
+    | {"string", "string_start", "string_content", "string_end", "escape_sequence"}
+    | {"tuple", "list", "set", "dictionary", "pair", "parenthesized_expression"}
+)
 WRAPPER_KINDS = frozenset({"expression_statement", "parenthesized_expression"})
-BLOCK_KINDS = frozenset({"block", "module"})
 SAME_SIDES = "both sides of the assertion are the same expression '{text}'"
-SAME_CALL = "the expected value '{text}' is computed by the same call as the actual value"
 FIX = "compare against a hand-checked value or an independent invariant derived from the contract"
 
 
@@ -74,53 +70,26 @@ def is_in_raising_context(node: Node) -> bool:
     return False
 
 
-def is_computed_by_production(side: Node, local_names: frozenset[str]) -> bool:
-    nodes = list(all_nodes(side))
-    callees = [callee_of(node) for node in nodes if node.type == CALL_KIND]
-    is_local = any(callee.removeprefix("self.") in local_names for callee in callees)
-    is_constructor = any(callee.rsplit(".", 1)[-1][:1].isupper() for callee in callees)
-    is_stateful = any(STATEFUL_CALLEES.fullmatch(callee) for callee in callees)
-    return not (is_local or is_constructor or is_stateful or any(node.type == AWAIT_KIND for node in nodes))
+def cannot_differ(side: Node, operator: str) -> bool:
+    if operator == IDENTITY:
+        return side.type in IDENTITY_KINDS
+    return all(node.type in LITERAL_KINDS for node in all_nodes(side) if node.is_named)
 
 
-def is_shared_call(actual: Node, expected: Node, assertion: Node) -> bool:
-    statement = assertion if assertion.parent is None or assertion.parent.type in BLOCK_KINDS else assertion.parent
-    previous = statement.prev_named_sibling
-    assignment = None if previous is None else unwrapped(previous)
-    if actual.type != CALL_KIND or expected.type != "identifier" or assignment is None:
-        return False
-    target = assignment.child_by_field_name("left")
-    source = assignment.child_by_field_name("right")
-    is_assigned = assignment.type == "assignment" and target is not None and normalized(target) == normalized(expected)
-    return is_assigned and source is not None and normalized(source) == normalized(actual)
-
-
-def dependent_assertion(node: Node, local_names: frozenset[str]) -> str | None:
+def dependent_assertion(node: Node) -> str | None:
     pair = compared_pair(node)
     if pair is None or is_in_raising_context(node):
         return None
     left, right, operator = pair
-    if normalized(left) == normalized(right):
-        is_plain = not any(side.type in EVALUATING_KINDS for side in all_nodes(left))
-        return SAME_SIDES.format(text=normalized(left)) if is_plain else None
-    for actual, expected in ((left, right), (right, left)):
-        is_dependent = is_shared_call(actual, expected, node) and is_computed_by_production(actual, local_names)
-        if operator == EQUALITY and is_dependent:
-            return SAME_CALL.format(text=normalized(expected))
-    return None
-
-
-def has_property_name(test: Node) -> bool:
-    name = node_text(test.child_by_field_name("name")) or ""
-    return PROPERTY_NAME.search(name.lower()) is not None
+    if normalized(left) != normalized(right) or not cannot_differ(left, operator):
+        return None
+    return SAME_SIDES.format(text=normalized(left))
 
 
 def dependent_assertions(root: Node) -> Iterator[tuple[Node, str]]:
-    definitions = [node for node in all_nodes(root) if node.type == "function_definition"]
-    local_names = frozenset(node_text(node.child_by_field_name("name")) or "" for node in definitions)
-    tests = [node for node in definitions if is_test_definition(node) and not has_property_name(node)]
+    tests = [node for node in all_nodes(root) if node.type == "function_definition" and is_test_definition(node)]
     for node in (node for test in tests for node in all_nodes(test)):
-        problem = dependent_assertion(node, local_names)
+        problem = dependent_assertion(node)
         if problem is not None:
             yield node, problem
 
@@ -138,10 +107,8 @@ register_file_check(
     FileCheck(
         rule_id=RULE_ID,
         summary=(
-            "Python test functions asserting == or is between two identical call-free expressions, or asserting == "
-            "against a variable assigned on the line before by the identical call. Constructors, helpers defined in "
-            "the file, stateful calls, awaits, pytest.raises blocks, and tests named for equality or determinism "
-            "properties are exempt."
+            "Python test functions asserting == between two identical literals, or is between two identical names "
+            "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks are exempt."
         ),
         run=check_dependent_oracles,
     )

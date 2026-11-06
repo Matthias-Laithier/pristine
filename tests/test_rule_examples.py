@@ -31,6 +31,7 @@ UNASSERTED_BAD_EXAMPLES = {
     "CR-22-bad:float money": "float money cannot be detected from syntax, and CR-22 checks only naive datetimes",
     "CR-5-bad": "each copy holds two statements under its own transport name, and CR-5 reports only exact bodies of six or more",
     "CR-8-bad": "a directory tree carries no file contents, and CR-8 judges client-library imports, not file names",
+    "TST-7-bad": "a determinism test has the same shape, so TST-7 checks only identical literals and names",
     "TST-8-bad": "the live client is injected, and TST-8 needs a client constructed from an environment key",
 }
 
