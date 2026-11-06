@@ -76,3 +76,9 @@ def test_minified_assets_are_skipped_as_generated(run_pristine: RunPristine) -> 
         "static/charts.MIN.mjs": "generated file",
         "static/bundle.js": "generated file",
     }
+
+
+def test_prose_prone_markers_count_only_in_the_first_five_lines(run_pristine: RunPristine) -> None:
+    body = "".join(f"value_{index} = {index}\n" for index in range(8))
+    _, report = run_pristine({"pipeline.py": body + "# auto-generated pull requests conflict, so rebase them\n"})
+    assert report["skipped"] == []
