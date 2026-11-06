@@ -22,12 +22,29 @@ async def notify_members(notifier, team):
     async with asyncio.TaskGroup() as task_group:
         for member in team.members:
             task_group.create_task(notifier.notify(member))
+
+
+async def check_probes(probes):
+    await asyncio.gather(*(run_probe(probe) for probe in probes))
+
+
+async def export_page(exporter, page):
+    await asyncio.gather(*(exporter.export(record) for record in page.records))
+
+
+async def export_stored(exporter, store):
+    stored = await store.list_records()
+    kept = [record for record in stored if record.kept]
+    await asyncio.gather(*(exporter.export(record) for record in kept))
 """
+UNBOUNDED_LINES = [(5, "warning"), (9, "warning"), (13, "warning"), (19, "warning"), (23, "warning")]
+UNBOUNDED_LINES += [(27, "warning"), (33, "warning")]
 BOUNDED_FAN_OUTS = """import asyncio
 
 from billing import ReportKind
 
 REGIONS = ("eu", "us")
+PAGE_SIZE = 50
 
 
 async def warm_regions(cache):
@@ -48,31 +65,21 @@ async def await_pending(tasks):
     await asyncio.gather(*(task for task in tasks))
 
 
-async def check_probes(probes):
-    await asyncio.gather(*(run_probe(probe) for probe in probes))
-
-
-async def export_page(exporter, page):
-    await asyncio.gather(*(exporter.export(record) for record in page.records))
-
-
-async def export_recent(exporter, store):
-    records = await store.list_records(limit=50)
+async def export_recent(exporter, store, limit: int):
+    records = await store.list_records(50)
     await asyncio.gather(*(exporter.export(record) for record in records))
-"""
-SEMAPHORE_MODULE = """import asyncio
+    paged = await store.list_records(size=PAGE_SIZE)
+    await asyncio.gather(*(exporter.export(record) for record in paged))
+    asked = await store.list_records(limit=min(limit, PAGE_SIZE))
+    await asyncio.gather(*(exporter.export(record) for record in asked))
 
-MAX_CONCURRENT_FETCHES = 8
+
+async def export_first(exporter, records):
+    await asyncio.gather(*(exporter.export(record) for record in records[:10]))
 
 
-async def fetch_invoices(client, invoice_ids):
-    limit = asyncio.Semaphore(MAX_CONCURRENT_FETCHES)
-
-    async def fetch(invoice_id):
-        async with limit:
-            return await client.fetch_invoice(invoice_id)
-
-    return await asyncio.gather(*(fetch(invoice_id) for invoice_id in invoice_ids))
+async def gather_all(*awaitables):
+    await asyncio.gather(*(asyncio.ensure_future(awaitable) for awaitable in awaitables))
 """
 FAN_OUT = """import asyncio
 
@@ -82,27 +89,21 @@ async def fetch_invoices(client, invoice_ids):
 """
 
 
-def test_fan_outs_over_data_collections_are_reported(run_pristine: RunPristine) -> None:
+def test_fan_outs_over_parameters_and_loads_are_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": UNBOUNDED_FAN_OUTS})
-    assert rule_findings(report, RULE_ID) == [(5, "warning"), (9, "warning"), (13, "warning"), (19, "warning")]
+    assert rule_findings(report, RULE_ID) == UNBOUNDED_LINES
 
 
-def test_fixed_component_and_bounded_collections_are_not_reported(run_pristine: RunPristine) -> None:
+def test_fixed_sliced_and_sized_collections_are_not_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": BOUNDED_FAN_OUTS})
     assert rule_findings(report, RULE_ID) == []
 
 
 @pytest.mark.parametrize(
     ("path", "source"),
-    [
-        ("invoices.py", SEMAPHORE_MODULE),
-        ("tests/test_invoices.py", FAN_OUT),
-        ("invoices.py", f"from temporalio import workflow\n{FAN_OUT}"),
-    ],
+    [("tests/test_invoices.py", FAN_OUT), ("invoices.py", f"from temporalio import workflow\n{FAN_OUT}")],
 )
-def test_bounded_modules_tests_and_durable_workflows_are_exempt(
-    run_pristine: RunPristine, path: str, source: str
-) -> None:
+def test_tests_and_durable_workflows_are_exempt(run_pristine: RunPristine, path: str, source: str) -> None:
     _, report = run_pristine({path: source})
     assert rule_findings(report, RULE_ID) == []
 

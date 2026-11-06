@@ -4,10 +4,12 @@ from pathlib import PurePath
 
 from tree_sitter import Node
 
+from pristine.checks.boundaries.execution.unbounded_fan_out.coroutines import SPAWN_METHODS, is_bounded_work
 from pristine.checks.boundaries.execution.unbounded_fan_out.fanned_collections import (
     loop_variables,
     unbounded_collection,
 )
+from pristine.checks.boundaries.execution.unbounded_fan_out.limiters import Limiters, holds_limiter, limiters_of
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -20,13 +22,8 @@ RULE_ID = "BS-14"
 GATHER = "asyncio.gather"
 MAP = "map"
 TASK_GROUPS = frozenset({"asyncio.TaskGroup", "anyio.create_task_group"})
-SPAWN_METHODS = frozenset({"create_task", "start_soon"})
 LOOP_KINDS = COMPREHENSION_KINDS | {"for_statement"}
 DURABLE_WORKFLOW_PACKAGE = re.compile(r"(temporalio|mistralai\.workflows)(\.|$)")
-CONCURRENCY_BOUND = re.compile(
-    r"Semaphore\b|CapacityLimiter|aiometer|\bbatched\(|\bQueue\(|to_thread|run_in_executor"
-    r"|(?i:chunk|batch_size|max_length|max_concurren)"
-)
 FIX = "run it through an asyncio.Semaphore or a bounded pool, or iterate a collection with a named fixed bound"
 
 
@@ -86,8 +83,21 @@ def task_group_loops(root: Node, bindings: dict[str, str]) -> Iterator[tuple[Nod
 
 def is_exempt(parsed: ParsedFile, bindings: dict[str, str]) -> bool:
     is_durable_workflow = any(DURABLE_WORKFLOW_PACKAGE.match(module) for module in bindings.values())
-    has_bound = CONCURRENCY_BOUND.search(parsed.text) is not None
-    return is_durable_workflow or has_bound or is_test_path(PurePath(parsed.path))
+    return is_durable_workflow or is_test_path(PurePath(parsed.path))
+
+
+def fanned_element(call: Node, loop: Node) -> Node | None:
+    if loop.type == "call":
+        arguments = loop.child_by_field_name("arguments")
+        return None if arguments is None or not arguments.named_children else arguments.named_children[0]
+    return loop.named_children[0] if call != loop and loop.type != "for_statement" else call
+
+
+def is_bounded(call: Node, loop: Node, limiters: Limiters) -> bool:
+    body = loop.child_by_field_name("body") if loop.type == "for_statement" else None
+    element = fanned_element(call, loop)
+    is_bounded_loop = body is not None and holds_limiter(body, limiters)
+    return is_bounded_loop or (element is not None and is_bounded_work(element, limiters))
 
 
 def fan_out_finding(parsed: ParsedFile, call: Node, collection: Node) -> Finding:
@@ -101,10 +111,11 @@ def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
     bindings = import_bindings(parsed.root)
     if is_exempt(parsed, bindings):
         return []
+    limiters = limiters_of(parsed.root, bindings)
     findings: dict[int, Finding] = {}
     for call, loop in [*gathered_loops(parsed.root, bindings), *task_group_loops(parsed.root, bindings)]:
         collection = unbounded_collection(loop)
-        if collection is not None:
+        if collection is not None and not is_bounded(call, loop, limiters):
             findings.setdefault(line_of(call), fan_out_finding(parsed, call, collection))
     return sorted(findings.values(), key=lambda finding: finding.line)
 
@@ -114,9 +125,9 @@ register_file_check(
         rule_id=RULE_ID,
         summary=(
             "Python asyncio.gather over a spread comprehension or map, and TaskGroup spawns in a loop, that start "
-            "work per item of a data collection (ids, records, files, messages, ...) in a file with no semaphore, "
-            "limiter, or chunking. Literal, constant, enum, range, page, and batch collections, tests, and durable "
-            "workflow modules are exempt."
+            "work per item of a parameter or of an awaited load, where neither the fanned coroutine nor the loop "
+            "body holds an asyncio or anyio semaphore or limiter with async with. Slices, literals, module-level "
+            "values, loads that pass a size, tests, and durable workflow modules are exempt."
         ),
         run=check_unbounded_fan_out,
     )
