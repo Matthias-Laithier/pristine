@@ -7,8 +7,8 @@ Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README
 ## Architecture
 
 ### Checks
-- Checks live in `src/pristine/checks/`, one module or package per rule.
-- Each check registers itself through [checks/registry.py](src/pristine/checks/registry.py). The registry imports every module of the `checks` package on first use, so a new check is a new module and nothing else.
+- Checks live in `src/pristine/checks/`, one module or package per rule, grouped by rule chapter: `core/` for CR, `boundaries/` for BS, `composition/` for CO, and `testing/` for TST. A chapter that outgrows 8 checks splits by topic, such as `core/readability/`, `core/placement/`, and `core/values/`, or `boundaries/data_flow/` and `boundaries/execution/`.
+- Each check registers itself through [checks/registry.py](src/pristine/checks/registry.py). The registry imports every module of the `checks` package and its subpackages on first use, so a new check is a new module and nothing else.
 - A file check, registered with `register_file_check`, receives one parsed file and returns its findings. It runs on every file with a grammar.
 - A path check, registered with `register_path_check`, receives the list of discovered paths and returns its findings. It runs once in the main process over every discovered file and never parses with tree-sitter.
 - Checks share helpers through neutral modules. A check never imports the internals of another check.
@@ -42,7 +42,7 @@ Each package of `src/pristine/` owns one responsibility, and no directory holds 
 Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded on first use of each language into the user cache. The tests parse with real grammars, so their first run needs network access to download the grammar of every language they cover.
 
 ## Adding a check
-1. Add a module to `src/pristine/checks/` that registers a file check or a path check for one rule ID.
+1. Add a module to the chapter folder of `src/pristine/checks/` that registers a file check or a path check for one rule ID.
 2. Test it through the `run_pristine` fixture of [tests/conftest.py](tests/conftest.py), which writes files to a temporary directory and runs `pristine check` on them. Tests live in `tests/checks/`.
 3. Validate it on real code. Run it on several real repositories and inspect every finding by hand.
 4. Favor reliability over recall. A check reports only what it judges with certainty. A false positive costs more than a missed finding, since agents act on every finding. Leave the uncertain cases to the agent's own review.
