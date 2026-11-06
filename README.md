@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.svg">
-    <img src="assets/brand/logo-light.svg" alt="pristine" width="400">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/soap-bar-dark.svg">
+    <img src="assets/brand/soap-bar-light.svg" alt="pristine" width="400">
   </picture>
 </p>
 
