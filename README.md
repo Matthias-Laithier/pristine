@@ -1,36 +1,33 @@
-# pristine
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/wordmark-dark.svg">
+    <img src="assets/brand/wordmark-light.svg" alt="pristine" width="336">
+  </picture>
+</p>
 
-Opinionated coding rules for AI coding agents, with a CLI that serves them and checks their mechanical part.
+<p align="center">Opinionated coding rules for AI agents, with a CLI that serves them and checks the mechanical ones.</p>
 
-[![check](https://github.com/Matthias-Laithier/pristine/actions/workflows/check.yml/badge.svg)](https://github.com/Matthias-Laithier/pristine/actions/workflows/check.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](pyproject.toml)
+<p align="center">
+  <a href="https://github.com/Matthias-Laithier/pristine/actions/workflows/check.yml"><img src="https://github.com/Matthias-Laithier/pristine/actions/workflows/check.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Matthias-Laithier/pristine/releases/latest"><img src="https://img.shields.io/github/v/release/Matthias-Laithier/pristine" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Matthias-Laithier/pristine" alt="License"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.13%2B-blue" alt="Python 3.13+"></a>
+</p>
 
-## Why
+pristine is a rulebook of 63 coding rules written for AI coding agents. Each rule has a stable ID, a short statement, its exceptions, and examples where they help. The CLI prints the rules to the agent and checks the ones a parser can decide, so every finding names a rule and its fix.
 
-Agents write a growing share of production code. Style guides written for humans are long and vague, and agents skim them or ignore them. pristine gives an agent a precise rulebook. Each rule has a stable ID, a one-paragraph statement, its exceptions, and Bad and Good examples where they help. A checker then judges the rules a parser can judge, and every finding names the rule and the fix.
-
-Linters such as ruff and eslint cover syntax, formatting, and known bug patterns. pristine covers code structure, trust boundaries, composability, testing, and project tooling. It also defines a workflow: the agent reads the rules, writes the code, checks its own work, and reports every violation by rule ID.
+Linters such as ruff and eslint cover syntax, formatting, and known bug patterns. pristine covers structure, trust boundaries, composability, testing, and project tooling.
 
 ## Quick start
 
-Install the CLI with [uv](https://docs.astral.sh/uv/):
-
-```
+```sh
 uv tool install git+https://github.com/Matthias-Laithier/pristine
 ```
 
-Pin a release with `uv tool install git+https://github.com/Matthias-Laithier/pristine@v0.4.0`.
-
-```
-pristine guide                 # print the rules hub and the rule index to read before coding
-pristine rule CR-13            # print one rule in full
-pristine rule BS               # print every rule of a chapter
-pristine rule all > rules.md   # write every rule to a file, to read in parts
-pristine rules                 # list every rule and how it is checked
-pristine check src tests       # check files and directories against the rules
-pristine project               # check the repository root against the Tooling chapter
-pristine --version             # print the installed version
+```sh
+pristine guide            # print the rules hub and the rule index
+pristine check src tests  # check files and directories against the rules
+pristine project          # check the repository root against the Tooling chapter
 ```
 
 Given this `reminders.py`:
@@ -57,65 +54,62 @@ by rule: BS-4 1, CR-13 1
 next: fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
 ```
 
-The `by rule:` line counts the findings per rule ID. A path that does not exist is listed as `missing:` and counted in the summary. On a big repository, `--max N` prints only the first N findings. The summary and the per-rule counts still cover every finding.
+`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error. `--json` prints a structured report.
 
-`pristine check` parses files in parallel worker processes, half the CPU cores by default, so an agent running it never saturates the machine. `--jobs N` sets the maximum number of workers, at least 1.
+Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.13 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
 
-The exit code is 0 without error findings, 1 with at least one error finding, and 2 on a usage problem. `--json` prints a structured report, and `--help` on each command documents the rest.
+## How it works
 
-## Requirements
+The agent reads the guide, writes the code, runs `pristine check` and `pristine project`, and fixes the findings. It then reviews its change against the rules no tool can decide, and reports every deliberate break by rule ID.
 
-- [uv](https://docs.astral.sh/uv/). It fetches Python 3.13 or later when the system lacks it.
-- [gitleaks](https://github.com/gitleaks/gitleaks) on the path, for the secret scan of BS-2. Without it, the report carries a warning that the scan did not run.
-- Network access on the first use of each language, to download its tree-sitter grammar into the user cache.
+The checks favor precision over recall. A check reports only what it can judge with certainty, because an agent acts on every finding and a false positive costs more than a miss. A finding is reliable. A clean run proves nothing about the rules a static analysis cannot decide, and the agent's review covers those.
 
-## What's inside
-
-The rules live in [src/pristine/rules/](src/pristine/rules/README.md), one file per rule, grouped in chapters:
-
-| Chapter | Covers |
-| --- | --- |
-| Core Rules (CR) | How code is written and organized: size, nesting, naming, comments, dispatch. |
-| Boundary Safety (BS) | Trust boundaries and failure paths: input validation, injection, secrets, timeouts, errors, logging. |
-| Composability (CO) | Design for composition: interfaces, dependencies, side effects, exports. |
-| Testing (TST) | What to test and how to keep the suite minimal and deterministic. |
-| Tooling (TL) | The Makefile contract, the check gates, code-quality tools, and lockfiles. |
-
-Each rule is covered in one of three ways:
-
-- `check`: `pristine check <paths>` judges it on source files.
-- `project`: `pristine project [root]` judges it on the repository root.
-- `review`: no automated check. The agent reviews its own code against the rule.
-
-`pristine rules` lists every rule with its coverage and what its check detects.
-
-The checks favor precision over recall. A finding is reliable, and a clean run proves nothing: many rules have no check, and a checked rule is often checked only in the part a static analysis can decide. An agent still reviews its change against every relevant rule. The CLI covers the mechanical half of the workflow, and the review covers the rest.
-
-### Languages
-
-Parsing uses the tree-sitter grammars of [tree-sitter-language-pack](https://github.com/xberg-io/tree-sitter-language-pack). The file size, function size, nesting, comment, and if/else dispatch checks run on every language it parses. The deeper checks target specific ecosystems, mostly Python, JavaScript, TypeScript, and Go. `pristine rules` names the languages and patterns each check covers.
-
-Files without a grammar are listed as unchecked.
-
-## How agents use it
-
-Add this line to the agent's instructions, such as an AGENTS.md or CLAUDE.md file:
+To set it up, add this line to the agent's instructions, such as `AGENTS.md` or `CLAUDE.md`:
 
 ```
 Before coding, run `pristine guide` and follow it.
 ```
 
-The guide then drives the workflow:
+## Rules
 
-1. Read the hub and its rule index, then every rule whose statement touches the task.
-2. Apply the rules while writing the code.
-3. Run `pristine check` on the directories the task touched and `pristine project` on the repository root, then fix the findings.
-4. Walk the review rules relevant to the change by hand.
-5. Report every deliberate break by rule ID with its reason, the pre-existing findings counted per rule ID, and the CR-20 growth account.
+The rules live in [src/pristine/rules/](src/pristine/rules/README.md), one file per rule.
 
-## Not the PyPI package
+| Chapter | Scope | Rules | `check` | `project` | Review |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Core Rules (CR) | Size, nesting, naming, comments, dispatch | 22 | 14 | | 8 |
+| Boundary Safety (BS) | Input, injection, secrets, timeouts, errors, logs | 15 | 9 | | 6 |
+| Composability (CO) | Interfaces, dependencies, side effects, exports | 14 | 5 | | 9 |
+| Testing (TST) | What to test, minimal and deterministic suites | 8 | 5 | | 3 |
+| Tooling (TL) | Makefile contract, quality gates, lockfiles | 4 | | 4 | |
+| Total | | 63 | 33 | 4 | 26 |
 
-The `pristine` package on PyPI is an unrelated project. Install this one from GitHub, as shown above.
+`check` rules are judged on source files, `project` rules on the repository root, and review rules by the agent.
+
+## Languages
+
+Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with a grammar gets the shared checks: file and function size, nesting, comments, if/else dispatch chains, asset and directory layout, test location, and secrets.
+
+| Language | Checks |
+| --- | --- |
+| Python | All checks |
+| TypeScript, JavaScript | Shared checks, plus BS-3, BS-4, BS-10, CO-8, CO-11, CO-13, CR-6, CR-7, CR-8, and TST-8. CR-21 for TypeScript. |
+| Go | Shared checks, plus BS-3, BS-4, BS-10, CR-6, and CR-8 |
+| Java, Kotlin, C# | Shared checks, plus BS-4 |
+| Rust | Shared checks, plus CR-6 |
+| Ruby, PHP, Swift, and others | Shared checks |
+
+`pristine rules` names the languages and patterns each check covers.
+
+## Performance
+
+Wall time of `pristine check` 0.4.0 on open-source repositories:
+
+| Repository | Language | Files | Time |
+| --- | --- | ---: | ---: |
+| [cobra](https://github.com/spf13/cobra) | Go | 66 | 1.4 s |
+| [fd](https://github.com/sharkdp/fd) | Rust | 61 | 1.9 s |
+| [gson](https://github.com/google/gson) | Java | 315 | 3.3 s |
+| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | C# | 1,176 | 10.1 s |
 
 ## Contributing
 
@@ -123,4 +117,4 @@ See [AGENTS.md](AGENTS.md) for the architecture, the quality gate, and the proce
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+[MIT](LICENSE)
