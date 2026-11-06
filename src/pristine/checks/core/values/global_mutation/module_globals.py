@@ -5,13 +5,17 @@ from tree_sitter import Node
 from pristine.registration import registering
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import all_nodes, module_statements, node_text
+from pristine.syntax.python_calls import import_bindings, qualified_callee
 
 REBINDABLE = "rebindable"
 PYTHON_COLLECTION = "python_collection"
 PYTHON_LITERALS = frozenset(
     {"list", "dictionary", "set", "list_comprehension", "dictionary_comprehension", "set_comprehension"}
 )
-PYTHON_FACTORIES = frozenset({"dict", "list", "set", "defaultdict", "Counter", "OrderedDict", "deque"})
+PYTHON_BUILTIN_FACTORIES = frozenset({"dict", "list", "set"})
+COLLECTIONS_FACTORIES = frozenset(
+    {"collections.defaultdict", "collections.Counter", "collections.OrderedDict", "collections.deque"}
+)
 JS_KINDS = {"array": "array", "object": "object", "Map": "collection", "Set": "collection"}
 JS_REBINDABLE_KEYWORDS = frozenset({"let", "var"})
 JS_DECLARATION_KINDS = frozenset({"lexical_declaration", "variable_declaration"})
@@ -43,20 +47,21 @@ type GlobalsCollector = Callable[[Node], Globals]
 _COLLECTORS: dict[str, GlobalsCollector] = {}
 
 
-def is_python_collection(value: Node | None) -> bool:
+def is_python_collection(value: Node | None, imports: dict[str, str]) -> bool:
     if value is not None and value.type == "call":
         callee = node_text(value.child_by_field_name("function")) or ""
-        return callee.rsplit(".", 1)[-1] in PYTHON_FACTORIES
+        return callee in PYTHON_BUILTIN_FACTORIES or qualified_callee(callee, imports) in COLLECTIONS_FACTORIES
     return value is not None and value.type in PYTHON_LITERALS
 
 
 @registering(_COLLECTORS, "python")
 def python_globals(root: Node) -> Globals:
+    imports = import_bindings(root)
     assignments = [statement for statement in module_statements(root) if statement.type == "assignment"]
     pairs = [
         (statement.child_by_field_name("left"), statement.child_by_field_name("right")) for statement in assignments
     ]
-    collections = [left for left, right in pairs if left is not None and is_python_collection(right)]
+    collections = [left for left, right in pairs if left is not None and is_python_collection(right, imports)]
     return {node_text(left) or "": frozenset({PYTHON_COLLECTION}) for left in collections if left.type == "identifier"}
 
 

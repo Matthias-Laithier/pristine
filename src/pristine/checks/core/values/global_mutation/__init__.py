@@ -1,19 +1,17 @@
 from tree_sitter import Node
 
+from pristine.checks.core.values.global_mutation.lazy_initialization import is_lazy_initialization
 from pristine.checks.core.values.global_mutation.module_globals import binds_locally, module_globals
+from pristine.checks.core.values.global_mutation.ownership import owned_collections
+from pristine.checks.core.values.global_mutation.scopes import SCOPE_KINDS
 from pristine.checks.core.values.global_mutation.writes import Mutation, find_mutation
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
-from pristine.syntax.syntax_kinds import CALL_KINDS, FUNCTION_KINDS
 
 RULE_ID = "CR-7"
-SCOPE_KINDS = FUNCTION_KINDS | {"generator_function"}
-ENCAPSULATED_NAME_PARTS = ("cache", "memo")
-OWNING_FUNCTION_PARTS = ("regist", "subscri", "listen")
 TEST_HOOKS = frozenset({"beforeEach", "beforeAll", "afterEach", "afterAll"})
 FIXTURE_MARKER = "fixture"
-MEMO_READ_METHODS = ("get", "has")
 LAZY_OPERATORS = frozenset({"??=", "||="})
 FIX_HINT = "give the state an owner passed to its consumers and keep module-level values as read-only config"
 
@@ -25,13 +23,6 @@ def enclosing_scopes(node: Node) -> list[Node]:
         scopes.extend([parent] if parent.type in SCOPE_KINDS else [])
         parent = parent.parent
     return scopes
-
-
-def is_encapsulated(mutation: Mutation, scopes: list[Node]) -> bool:
-    lowered = mutation.name.lower()
-    if mutation.name.startswith("_") or any(part in lowered for part in ENCAPSULATED_NAME_PARTS):
-        return True
-    return reads_back(scopes[0], mutation.name) or any(is_owning_writer(scope) for scope in scopes)
 
 
 def is_test_hook(scope: Node) -> bool:
@@ -46,15 +37,8 @@ def is_fixture(scope: Node) -> bool:
     return any(FIXTURE_MARKER in (node_text(node) or "") for node in decorators if node.type == "decorator")
 
 
-def is_owning_writer(scope: Node) -> bool:
-    lowered = function_name(scope).lower()
-    return is_test_hook(scope) or is_fixture(scope) or any(part in lowered for part in OWNING_FUNCTION_PARTS)
-
-
-def reads_back(scope: Node, name: str) -> bool:
-    lookups = {f"{name}.{method}" for method in MEMO_READ_METHODS}
-    calls = (node for node in all_nodes(scope) if node.type in CALL_KINDS)
-    return any(node_text(node.child_by_field_name("function")) in lookups for node in calls)
+def is_test_setup(scope: Node) -> bool:
+    return is_test_hook(scope) or is_fixture(scope)
 
 
 def lazily_initialized(root: Node) -> set[str]:
@@ -63,11 +47,16 @@ def lazily_initialized(root: Node) -> set[str]:
     return {node_text(node.child_by_field_name("left")) or "" for node in lazy}
 
 
-def is_reportable(mutation: Mutation) -> bool:
+def writes_module_state(mutation: Mutation) -> bool:
     scopes = enclosing_scopes(mutation.node)
-    if not scopes or is_encapsulated(mutation, scopes):
+    return bool(scopes) and not any(binds_locally(scope, mutation.name) for scope in scopes)
+
+
+def is_reportable(mutation: Mutation, owned: set[str]) -> bool:
+    scopes = enclosing_scopes(mutation.node)
+    if mutation.name in owned or is_lazy_initialization(mutation):
         return False
-    return not any(binds_locally(scope, mutation.name) for scope in scopes)
+    return not any(is_test_setup(scope) for scope in scopes)
 
 
 def mutation_finding(path: str, mutation: Mutation) -> Finding:
@@ -92,7 +81,9 @@ def check_global_mutation(parsed: ParsedFile) -> list[Finding]:
     globals_kinds = {name: kinds for name, kinds in collected.items() if name not in lazy_names}
     nodes = list(all_nodes(parsed.root))
     found = (find_mutation(node, globals_kinds) for node in nodes) if globals_kinds else iter(())
-    mutations = [mutation for mutation in found if mutation is not None and is_reportable(mutation)]
+    candidates = [mutation for mutation in found if mutation is not None and writes_module_state(mutation)]
+    owned = owned_collections(candidates)
+    mutations = [mutation for mutation in candidates if is_reportable(mutation, owned)]
     findings = [mutation_finding(parsed.path, mutation) for mutation in mutations]
     findings += [global_finding(parsed.path, node) for node in nodes if node.type == "global_statement"]
     return sorted(findings, key=lambda finding: finding.line)
@@ -104,7 +95,8 @@ register_file_check(
         summary=(
             "Module-level state written from functions: Python 'global' and in-place writes to module-level "
             "collections; JS/TS reassignment of top-level let/var and writes to top-level array, object, Map, "
-            "or Set literals. Private names, cache names, and registration functions are allowed registries."
+            "or Set literals. A collection that a function reads before writing it (a memo), stores a parameter "
+            "into and hands back (a registration decorator or a subscription), or that test setup resets is allowed."
         ),
         run=check_global_mutation,
     )

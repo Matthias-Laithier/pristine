@@ -23,18 +23,39 @@ PYTHON_WRITES = (
 )
 PYTHON_OWNED = (
     "import pytest\n"
-    "_HANDLERS = {}\n"
+    "HANDLERS = {}\n"
     "HOOKS = []\n"
     "ROWS = []\n"
+    "RATES = {}\n"
     "def handles(event_type):\n"
     "    def register(handler):\n"
     "        HOOKS.append(handler)\n"
-    "        _HANDLERS[event_type] = handler\n"
+    "        HANDLERS[event_type] = handler\n"
+    "        return handler\n"
     "    return register\n"
+    "def rate_for(currency):\n"
+    "    if currency not in RATES:\n"
+    "        RATES[currency] = fetch_rate(currency)\n"
+    "    return RATES[currency]\n"
+    "def load_rates():\n"
+    "    if not RATES:\n"
+    "        RATES.update(fetch_all_rates())\n"
+    "def reset_rates():\n"
+    "    RATES.clear()\n"
     "@pytest.fixture\n"
     "def rows():\n"
     "    ROWS.clear()\n"
     "ROWS.append(0)\n"
+)
+PYTHON_NAMED_LIKE_OWNED = (
+    "from metrics import Counter\n"
+    "_PENDING = []\n"
+    "_invoice_cache = {}\n"
+    "SENT = Counter(name='sent')\n"
+    "def register_invoice(invoice):\n"
+    "    _PENDING.append(invoice)\n"
+    "    _invoice_cache[invoice.id] = invoice\n"
+    "    SENT.add(1)\n"
 )
 JS_WRITES = (
     "let count = 0;\n"
@@ -62,8 +83,34 @@ JS_OWNED = (
     "  formats.set(locale, known ?? locale);\n"
     "  english ??= locale;\n"
     "}\n"
-    "export const subscribe = (listener) => { listeners.add(listener); };\n"
+    "export const subscribe = (listener) => {\n"
+    "  listeners.add(listener);\n"
+    "  return () => listeners.delete(listener);\n"
+    "};\n"
     "beforeEach(() => { seen = []; });\n"
+    "let highlighter;\n"
+    "export function loadHighlighter() {\n"
+    "  if (highlighter === undefined) { highlighter = createHighlighter(); }\n"
+    "  return highlighter;\n"
+    "}\n"
+)
+JS_FLAGS = (
+    "let reconnecting = false;\n"
+    "let context = null;\n"
+    "export function reconnect() {\n"
+    "  if (reconnecting) { return; }\n"
+    "  reconnecting = true;\n"
+    "  retry();\n"
+    "  reconnecting = false;\n"
+    "}\n"
+    "export function finishReconnect() {\n"
+    "  reconnecting = false;\n"
+    "}\n"
+    "export function canvasContext() {\n"
+    "  if (context) return context;\n"
+    "  context = createContext();\n"
+    "  return context;\n"
+    "}\n"
 )
 
 
@@ -78,9 +125,19 @@ def test_python_registries_fixtures_and_module_setup_are_allowed(run_pristine: R
     assert rule_findings(report, "CR-7") == []
 
 
+def test_private_cache_and_registration_names_alone_do_not_exempt(run_pristine: RunPristine) -> None:
+    _, report = run_pristine({"invoices.py": PYTHON_NAMED_LIKE_OWNED})
+    assert rule_findings(report, "CR-7") == [(6, "error"), (7, "error")]
+
+
 def test_js_writes_to_module_state_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.ts": JS_WRITES})
     assert rule_findings(report, "CR-7") == [(7, "error"), (8, "error"), (9, "error"), (10, "error")]
+
+
+def test_js_lazy_initialization_is_allowed_and_a_later_reset_is_an_error(run_pristine: RunPristine) -> None:
+    _, report = run_pristine({"connection.js": JS_FLAGS})
+    assert rule_findings(report, "CR-7") == [(7, "error"), (10, "error")]
 
 
 def test_js_memo_caches_listeners_and_test_hooks_are_allowed(run_pristine: RunPristine) -> None:

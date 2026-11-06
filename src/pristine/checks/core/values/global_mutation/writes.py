@@ -17,6 +17,7 @@ METHODS_BY_KIND = {
 }
 ITEM_KINDS = frozenset({"subscript", "subscript_expression", "member_expression"})
 METHOD_CALLEE_KINDS = frozenset({"attribute", "member_expression"})
+REBIND_ACTION = "reassigns"
 
 
 @dataclass(frozen=True)
@@ -43,7 +44,7 @@ def item_root(node: Node | None) -> Node | None:
 
 def written_target(node: Node, target: Node | None, globals_kinds: Globals) -> Mutation | None:
     if REBINDABLE in kinds_of(globals_kinds, target):
-        return Mutation(node, node_text(target) or "", "reassigns")
+        return Mutation(node, node_text(target) or "", REBIND_ACTION)
     root = item_root(target)
     is_item = target is not None and target.type in ITEM_KINDS
     if is_item and kinds_of(globals_kinds, root) - {REBINDABLE}:
