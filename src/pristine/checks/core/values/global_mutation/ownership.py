@@ -2,13 +2,14 @@ from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.scopes import (
     COMPARISON_KINDS,
+    SCOPE_KINDS,
     names_in,
     operator_tokens,
-    own_nodes,
     scope_of,
 )
 from pristine.checks.core.values.global_mutation.writes import REBIND_ACTION, Mutation
 from pristine.syntax.parsing import node_text
+from pristine.syntax.python_scopes import own_nodes
 from pristine.syntax.syntax_kinds import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 
 LOOKUP_METHODS = frozenset({"get", "has"})
@@ -33,7 +34,7 @@ def is_lookup(node: Node, name: str) -> bool:
 
 
 def earlier_nodes(scope: Node, mutation: Mutation) -> list[Node]:
-    return [node for node in own_nodes(scope) if node.start_byte < mutation.node.start_byte]
+    return [node for node in own_nodes(scope, SCOPE_KINDS) if node.start_byte < mutation.node.start_byte]
 
 
 def memoizes(scope: Node, mutation: Mutation) -> bool:
@@ -58,7 +59,7 @@ def returned_values(scope: Node) -> list[Node]:
     body = scope.child_by_field_name("body")
     if scope.type == "arrow_function" and body is not None and body.type != "statement_block":
         return [body]
-    returns = [node for node in own_nodes(scope) if node.type == "return_statement"]
+    returns = [node for node in own_nodes(scope, SCOPE_KINDS) if node.type == "return_statement"]
     return [node.named_children[0] for node in returns if node.named_children]
 
 

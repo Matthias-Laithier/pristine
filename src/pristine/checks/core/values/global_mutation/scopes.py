@@ -1,5 +1,3 @@
-from collections.abc import Iterator
-
 from tree_sitter import Node
 
 from pristine.syntax.parsing import all_nodes, node_text
@@ -14,10 +12,6 @@ def scope_of(node: Node) -> Node | None:
     while parent is not None and parent.type not in SCOPE_KINDS:
         parent = parent.parent
     return parent
-
-
-def own_nodes(scope: Node) -> Iterator[Node]:
-    return (node for node in all_nodes(scope) if node != scope and scope_of(node) == scope)
 
 
 def names_in(node: Node | None) -> set[str]:

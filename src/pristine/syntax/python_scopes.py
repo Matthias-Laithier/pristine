@@ -38,12 +38,12 @@ def enclosing_scope(node: Node) -> Node:
     return node if ancestor is None else ancestor
 
 
-def own_nodes(scope: Node) -> Iterator[Node]:
+def own_nodes(scope: Node, boundaries: frozenset[str] = NESTED_SCOPE_KINDS) -> Iterator[Node]:
     pending = list(reversed(scope.named_children))
     while pending:
         node = pending.pop()
         yield node
-        if node.type not in NESTED_SCOPE_KINDS:
+        if node.type not in boundaries:
             pending.extend(reversed(node.named_children))
 
 
@@ -64,6 +64,10 @@ def named_parameters(function: Node) -> dict[str, Node]:
 
 def parameter_names(function: Node) -> list[str]:
     return list(named_parameters(function))
+
+
+def all_parameter_names(root: Node) -> list[str]:
+    return [name for node in all_nodes(root) if node.type == FUNCTION_KIND for name in parameter_names(node)]
 
 
 def is_method(function: Node) -> bool:
