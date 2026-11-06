@@ -6,8 +6,8 @@ from pristine.project.inspection import PROJECT_RULE_SUMMARIES
 
 REVIEW = "review"
 RULES_NEXT_STEP = (
-    "next: read a rule with 'pristine rule <ID>'. Rules marked (review) have no automated check: review your "
-    "code against them yourself."
+    "next: read a rule with 'pristine rule <ID>'. Rules marked (review) have no automated check, and a checked "
+    "rule is often checked only in part: review your code against every relevant rule yourself."
 )
 INDEX_HEADING = (
     "## Rule index\n"

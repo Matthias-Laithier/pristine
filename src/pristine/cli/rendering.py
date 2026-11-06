@@ -7,7 +7,8 @@ from pristine.reports.report import Report
 
 NEXT_STEP = (
     "next: fix every finding, or report it by rule ID as a deliberate break with its reason. "
-    "Unchecked files and every rule this tool cannot check still need your own review against the coding rules."
+    "This check favors precision over recall: a clean result proves nothing about the rules it cannot "
+    "decide, so review your change against every relevant rule yourself."
 )
 
 

@@ -28,7 +28,7 @@ Apply the rules while writing the code. When a decision genuinely conflicts with
 6. Report three things: every deliberate break with its rule ID and reason, the pre-existing findings counted per rule ID, and the CR-20 growth account.
 
 ## Automated checks
-The installed `pristine` command checks the rules a parser or a file path can judge reliably.
+The installed `pristine` command checks the rules a parser or a file path can judge reliably. It favors precision over recall: a finding is reliable, and silence proves nothing. Many rules have no automated check at all, and a checked rule is often checked only in part, the part a static analysis can decide. A clean `pristine check` never replaces the review of every rule relevant to the change.
 - `pristine check <paths>` checks files and directories. `--exclude <glob>` skips paths, and `--json` prints a structured report. A path that does not exist is listed as missing, so a list of changed files may include deleted ones.
 - On a big repository, `--max N` prints only the first N findings. The summary and its `by rule:` line still count every finding per rule ID.
 - `pristine project [root]` checks the repository root against the Tooling chapter: the Makefile contract, the check gates, the code-quality tools, and the lockfile.

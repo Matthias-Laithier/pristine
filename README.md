@@ -54,7 +54,7 @@ reminders.py:6: CR-13 error: function 'send_overdue_reminders' nests 5 levels de
 reminders.py:8: BS-4 error: 'except Exception' swallows every failure with 'pass'; catch only what this code can recover from
 summary: 2 errors, 0 warnings, 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths
 by rule: BS-4 1, CR-13 1
-next: fix every finding, or report it by rule ID as a deliberate break with its reason. Unchecked files and every rule this tool cannot check still need your own review against the coding rules.
+next: fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
 ```
 
 The `by rule:` line counts the findings per rule ID. A path that does not exist is listed as `missing:` and counted in the summary. On a big repository, `--max N` prints only the first N findings. The summary and the per-rule counts still cover every finding.
@@ -86,6 +86,8 @@ Each rule is covered in one of three ways:
 - `review`: no automated check. The agent reviews its own code against the rule.
 
 `pristine rules` lists every rule with its coverage and what its check detects.
+
+The checks favor precision over recall. A finding is reliable, and a clean run proves nothing: many rules have no check, and a checked rule is often checked only in the part a static analysis can decide. An agent still reviews its change against every relevant rule. The CLI covers the mechanical half of the workflow, and the review covers the rest.
 
 ### Languages
 
