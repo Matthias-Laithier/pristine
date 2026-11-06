@@ -41,6 +41,23 @@ REDIS_ERRORS_ONLY = (
 ANNOTATION_ONLY = (
     "from openai import OpenAI\n\n\ndef summarize(client: OpenAI):\n    return client.chat.completions.create()\n"
 )
+PASSED_THROUGH = "from openai import OpenAI\n\n\ndef register(client: OpenAI):\n    return {'model': client}\n"
+INJECTED_ATTRIBUTE = (
+    "import httpx\n\n\nclass OrderFeed:\n    def __init__(self, http: httpx.AsyncClient | None):\n"
+    "        self.http = http\n\n    async def load(self):\n        return await self.http.get('/orders')\n"
+)
+ANNOTATED_FIELD = (
+    "from mistralai import Mistral\n\n\nclass Summarizer:\n    model: Mistral\n\n"
+    "    def run(self):\n        return self.model.chat.complete(model='small')\n"
+)
+SCRIPT_INJECTED = (
+    'import type OpenAI from "openai";\nimport * as pg from "pg";\n\nexport class OrderStore {\n'
+    '  constructor(private readonly pool: pg.Pool) {}\n  load() { return this.pool.query("select 1"); }\n}\n'
+    "export const ask = (client: OpenAI) => client.chat.completions.create({});\n"
+)
+SCRIPT_PASSED_THROUGH = (
+    'import type { AxiosInstance } from "axios";\nexport const keep = (http: AxiosInstance) => [http];\n'
+)
 
 
 @pytest.mark.parametrize(
@@ -64,7 +81,12 @@ ANNOTATION_ONLY = (
             [(1, "warning")],
         ),
         ("orders/cache.py", REDIS_ERRORS_ONLY, []),
-        ("orders/summary.py", ANNOTATION_ONLY, []),
+        ("orders/summary.py", ANNOTATION_ONLY, [(4, "warning")]),
+        ("orders/registry.py", PASSED_THROUGH, []),
+        ("orders/feed.py", INJECTED_ATTRIBUTE, [(5, "warning")]),
+        ("orders/summarizer.py", ANNOTATED_FIELD, [(5, "warning")]),
+        ("web/store.ts", SCRIPT_INJECTED, [(5, "warning")]),
+        ("web/keep.ts", SCRIPT_PASSED_THROUGH, []),
         ("web/api.ts", AXIOS_CLIENT, [(2, "warning")]),
         ("web/api.test.ts", AXIOS_CLIENT, []),
         ("web/billing.ts", SCRIPT_TYPES_ONLY, []),

@@ -86,3 +86,49 @@ GO_CLIENTS = (
     "go.temporal.io/sdk/client",
     *GO_MODEL_CLIENTS,
 )
+PYTHON_ENTRY_POINTS = frozenset(
+    {
+        "httpx.Client",
+        "httpx.AsyncClient",
+        "requests.Session",
+        "requests.sessions.Session",
+        "mistralai.Mistral",
+        "mistralai.client.Mistral",
+        "openai.OpenAI",
+        "openai.AsyncOpenAI",
+        "anthropic.Anthropic",
+        "anthropic.AsyncAnthropic",
+        "boto3.Session",
+        "boto3.session.Session",
+        "botocore.client.BaseClient",
+        "boto3.resources.base.ServiceResource",
+        "redis.Redis",
+        "redis.asyncio.Redis",
+        "asyncpg.Pool",
+        "asyncpg.pool.Pool",
+        "asyncpg.Connection",
+        "asyncpg.connection.Connection",
+        "aiohttp.ClientSession",
+    }
+)
+SCRIPT_ENTRY_POINTS = frozenset(
+    {
+        "axios/AxiosInstance",
+        "@mistralai/mistralai/Mistral",
+        "openai/default",
+        "openai/OpenAI",
+        "@anthropic-ai/sdk/default",
+        "@anthropic-ai/sdk/Anthropic",
+        "@aws-sdk/client-s3/S3Client",
+        "@aws-sdk/client-dynamodb/DynamoDBClient",
+        "@aws-sdk/lib-dynamodb/DynamoDBDocumentClient",
+        "ioredis/default",
+        "ioredis/Redis",
+        "redis/RedisClientType",
+        "pg/Pool",
+        "pg/PoolClient",
+        "pg/Client",
+        "undici/Client",
+        "undici/Pool",
+    }
+)

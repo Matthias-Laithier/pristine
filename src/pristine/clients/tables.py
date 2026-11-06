@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from tree_sitter import Node
 
 from pristine.clients.go_imports import go_import_modules
+from pristine.clients.injection import no_injected_clients
+from pristine.clients.injection.python import python_injected_clients
+from pristine.clients.injection.script import script_injected_clients
 from pristine.clients.libraries import (
     GO_CLIENTS,
     GO_MODEL_CLIENTS,
@@ -31,15 +34,16 @@ class ClientTable:
     model_packages: tuple[str, ...]
     separator: str
     read_imports: ImportReader
+    read_injected: ImportReader
 
     def clients(self, root: Node) -> list[ClientImport]:
-        return self.imports_of(root, self.packages)
+        return self.matches([*self.read_imports(root), *self.read_injected(root)], self.packages)
 
     def model_clients(self, root: Node) -> list[ClientImport]:
-        return self.imports_of(root, self.model_packages)
+        return self.matches(list(self.read_imports(root)), self.model_packages)
 
-    def imports_of(self, root: Node, packages: tuple[str, ...]) -> list[ClientImport]:
-        imports = [(line, self.package_of(module, packages)) for module, line in self.read_imports(root)]
+    def matches(self, modules: list[tuple[str, int]], packages: tuple[str, ...]) -> list[ClientImport]:
+        imports = [(line, self.package_of(module, packages)) for module, line in modules]
         return [ClientImport(line, client) for line, client in imports if client is not None]
 
     def package_of(self, module: str, packages: tuple[str, ...]) -> str | None:
@@ -49,10 +53,10 @@ class ClientTable:
         return module == package or module.startswith(package + self.separator)
 
 
-SCRIPT_TABLE = ClientTable(SCRIPT_CLIENTS, SCRIPT_MODEL_CLIENTS, "/", script_import_modules)
+SCRIPT_TABLE = ClientTable(SCRIPT_CLIENTS, SCRIPT_MODEL_CLIENTS, "/", script_import_modules, script_injected_clients)
 CLIENT_TABLES = {
-    "python": ClientTable(PYTHON_CLIENTS, PYTHON_MODEL_CLIENTS, ".", python_import_targets),
-    "go": ClientTable(GO_CLIENTS, GO_MODEL_CLIENTS, "/", go_import_modules),
+    "python": ClientTable(PYTHON_CLIENTS, PYTHON_MODEL_CLIENTS, ".", python_import_targets, python_injected_clients),
+    "go": ClientTable(GO_CLIENTS, GO_MODEL_CLIENTS, "/", go_import_modules, no_injected_clients),
     **dict.fromkeys(SCRIPT_LANGUAGES, SCRIPT_TABLE),
 }
 
