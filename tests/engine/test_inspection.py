@@ -82,3 +82,10 @@ def test_prose_prone_markers_count_only_in_the_first_five_lines(run_pristine: Ru
     body = "".join(f"value_{index} = {index}\n" for index in range(8))
     _, report = run_pristine({"pipeline.py": body + "# auto-generated pull requests conflict, so rebase them\n"})
     assert report["skipped"] == []
+
+
+def test_ruby_files_without_the_rb_suffix_are_checked(run_pristine: RunPristine) -> None:
+    ruby = "source 'https://rubygems.org'\n"
+    _, report = run_pristine({"Gemfile": ruby, "Podfile": ruby, "app.gemspec": ruby, "config.ru": "run App\n"})
+    assert report["unchecked"] == []
+    assert report["summary"]["checked_files"] == 4
