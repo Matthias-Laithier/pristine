@@ -57,6 +57,35 @@ def test_order_total_is_reported(order, queue, other):
     self.assertEqual(order.total, 4200)
 """
 
+RAISING = """import unittest
+from pytest import raises as fails
+
+
+class InvoiceCase(unittest.TestCase):
+    pass
+
+
+class TestInvoice(InvoiceCase):
+    def test_rejects_negative_totals(self):
+        with self.assertRaises(ValueError):
+            assert True is True
+        with self.assertRaisesRegex(ValueError, "negative"):
+            assert None is None
+
+
+class TestOrder:
+    def test_rejects_empty_orders(self):
+        with self.assertRaises(ValueError):
+            assert True is True
+
+
+def test_rejects_unknown_currency(validator):
+    with fails(ValueError):
+        assert False is False
+    with validator.raises(ValueError):
+        assert False is False
+"""
+
 
 def test_assertions_that_cannot_fail_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_orders.py": REPORTED})
@@ -72,3 +101,8 @@ def test_assertions_that_can_fail_are_exempt(run_pristine: RunPristine) -> None:
 def test_production_code_is_exempt(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"orders/pricing.py": REPORTED})
     assert rule_findings(report, RULE_ID) == []
+
+
+def test_only_resolved_raising_contexts_exempt_assertions(run_pristine: RunPristine) -> None:
+    _, report = run_pristine({"tests/test_invoice.py": RAISING})
+    assert rule_findings(report, RULE_ID) == [(20, "error"), (27, "error")]

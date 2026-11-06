@@ -1,4 +1,3 @@
-import re
 from collections.abc import Iterator
 
 from tree_sitter import Node
@@ -7,6 +6,7 @@ from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_tests import is_python_test_module, is_test_definition
 
 RULE_ID = "TST-7"
@@ -15,7 +15,9 @@ IDENTITY = "is"
 PAIR_SIZE = 2
 UNITTEST_COMPARISONS = {"self.assertEqual": EQUALITY, "self.assertIs": IDENTITY}
 CALL_KIND = "call"
-RAISING_CONTEXTS = re.compile(r"(\w+\.)*(raises|assertRaises\w*)")
+RAISING_FUNCTIONS = frozenset({"pytest.raises"})
+RAISING_METHODS = frozenset({"self.assertRaises", "self.assertRaisesRegex"})
+TEST_CASE_CLASSES = frozenset({"unittest.TestCase", "unittest.IsolatedAsyncioTestCase"})
 SINGLETON_KINDS = frozenset({"true", "false", "none", "ellipsis"})
 IDENTITY_KINDS = SINGLETON_KINDS | {"identifier"}
 LITERAL_KINDS = (
@@ -56,18 +58,50 @@ def compared_pair(node: Node) -> tuple[Node, Node, str] | None:
     return unwrapped(operands[0]), unwrapped(operands[1]), operator
 
 
-def opens_raising_context(statement: Node) -> bool:
-    items = (item for item in all_nodes(statement.named_children[0]) if item.type == "with_item")
-    return any(RAISING_CONTEXTS.fullmatch(callee_of(item.child_by_field_name("value") or item)) for item in items)
-
-
-def is_in_raising_context(node: Node) -> bool:
-    holder = node.parent
-    while holder is not None and not is_test_definition(holder):
-        if holder.type == "with_statement" and opens_raising_context(holder):
+def is_test_case(definition: Node, bindings: dict[str, str], classes: dict[str, Node]) -> bool:
+    superclasses = definition.child_by_field_name("superclasses")
+    for base in [] if superclasses is None else superclasses.named_children:
+        name = normalized(base)
+        local = classes.get(name)
+        if qualified_callee(name, bindings) in TEST_CASE_CLASSES:
             return True
-        holder = holder.parent
+        if local is not None and local is not definition and is_test_case(local, bindings, classes):
+            return True
     return False
+
+
+def enclosing_class(node: Node) -> Node | None:
+    holder = node.parent
+    while holder is not None and holder.type != "class_definition":
+        holder = holder.parent
+    return holder
+
+
+class RaisingContexts:
+    def __init__(self, root: Node) -> None:
+        self.bindings = import_bindings(root)
+        definitions = (node for node in all_nodes(root) if node.type == "class_definition")
+        self.classes = {node_text(node.child_by_field_name("name")) or "": node for node in definitions}
+
+    def opens(self, statement: Node) -> bool:
+        items = (item for item in all_nodes(statement.named_children[0]) if item.type == "with_item")
+        values = (item.child_by_field_name("value") for item in items)
+        return any(value is not None and value.type == CALL_KIND and self.raises(value) for value in values)
+
+    def raises(self, call: Node) -> bool:
+        callee = callee_of(call)
+        if qualified_callee(callee, self.bindings) in RAISING_FUNCTIONS:
+            return True
+        definition = enclosing_class(call) if callee in RAISING_METHODS else None
+        return definition is not None and is_test_case(definition, self.bindings, self.classes)
+
+    def encloses(self, node: Node) -> bool:
+        holder = node.parent
+        while holder is not None and not is_test_definition(holder):
+            if holder.type == "with_statement" and self.opens(holder):
+                return True
+            holder = holder.parent
+        return False
 
 
 def cannot_differ(side: Node, operator: str) -> bool:
@@ -76,9 +110,9 @@ def cannot_differ(side: Node, operator: str) -> bool:
     return all(node.type in LITERAL_KINDS for node in all_nodes(side) if node.is_named)
 
 
-def dependent_assertion(node: Node) -> str | None:
+def dependent_assertion(node: Node, contexts: RaisingContexts) -> str | None:
     pair = compared_pair(node)
-    if pair is None or is_in_raising_context(node):
+    if pair is None or contexts.encloses(node):
         return None
     left, right, operator = pair
     if normalized(left) != normalized(right) or not cannot_differ(left, operator):
@@ -87,9 +121,10 @@ def dependent_assertion(node: Node) -> str | None:
 
 
 def dependent_assertions(root: Node) -> Iterator[tuple[Node, str]]:
+    contexts = RaisingContexts(root)
     tests = [node for node in all_nodes(root) if node.type == "function_definition" and is_test_definition(node)]
     for node in (node for test in tests for node in all_nodes(test)):
-        problem = dependent_assertion(node)
+        problem = dependent_assertion(node, contexts)
         if problem is not None:
             yield node, problem
 
@@ -108,7 +143,7 @@ register_file_check(
         rule_id=RULE_ID,
         summary=(
             "Python test functions asserting == between two identical literals, or is between two identical names "
-            "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks are exempt."
+            "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt."
         ),
         run=check_dependent_oracles,
     )
