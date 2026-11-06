@@ -3,7 +3,7 @@ from collections import Counter
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import HandlerScope, callee_text, normalized
-from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text, root_of
 
 CONSOLE = "console"
 CONSTANT_KEYWORD = "const"
@@ -27,10 +27,6 @@ def binding_nodes(node: Node) -> list[Node | None]:
     if node.type in BARE_BINDING_KINDS:
         return [child for child in node.named_children if child.type == "identifier"]
     return [node] if node.type == SHORTHAND_PATTERN else []
-
-
-def root_of(source: Node | ParsedFile) -> Node:
-    return source.root if isinstance(source, ParsedFile) else source
 
 
 def bound_names(source: Node | ParsedFile) -> Counter[str]:

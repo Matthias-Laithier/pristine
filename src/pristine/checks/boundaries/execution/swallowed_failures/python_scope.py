@@ -3,7 +3,7 @@ from collections import Counter
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import HandlerScope, callee_text, normalized
-from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text, root_of
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_scopes import all_parameter_names
 
@@ -45,10 +45,6 @@ class LoggerResolver:
             return True
         receiver = function.child_by_field_name("object") if function.type == "attribute" else None
         return receiver is not None and self.is_logger(receiver)
-
-
-def root_of(source: Node | ParsedFile) -> Node:
-    return source.root if isinstance(source, ParsedFile) else source
 
 
 def assignments(source: Node | ParsedFile) -> list[tuple[str, Node]]:

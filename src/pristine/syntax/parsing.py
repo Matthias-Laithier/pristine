@@ -57,6 +57,10 @@ def line_of(node: Node) -> int:
     return node.start_point.row + 1
 
 
+def root_of(source: Node | ParsedFile) -> Node:
+    return source.root if isinstance(source, ParsedFile) else source
+
+
 def all_nodes(source: Node | ParsedFile) -> Iterator[Node]:
     if isinstance(source, ParsedFile):
         yield from source.nodes

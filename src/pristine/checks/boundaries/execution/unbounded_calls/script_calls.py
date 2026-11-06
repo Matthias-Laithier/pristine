@@ -5,7 +5,7 @@ lazy from tree_sitter import Node
 from pristine.checks.boundaries.execution.unbounded_calls.calls import Violation
 from pristine.reports.findings import Severity
 from pristine.syntax.calls import BoundedCall, calls_of, has_unknown_argument
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text, root_of
 
 AXIOS = "axios"
 AXIOS_FIX = "set timeout in the config, or call an axios.create({ timeout }) instance"
@@ -53,7 +53,7 @@ def has_client_directive(root: Node) -> bool:
 
 
 def is_browser_code(source: Node | ParsedFile) -> bool:
-    root = source.root if isinstance(source, ParsedFile) else source
+    root = root_of(source)
     return has_client_directive(root) or any(map(is_browser_node, all_nodes(source)))
 
 
