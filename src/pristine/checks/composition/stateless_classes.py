@@ -19,7 +19,6 @@ EXPORT_LIST = "__all__"
 NEUTRAL_MEMBER_KINDS = frozenset({"pass_statement", "comment"})
 STUB_STATEMENT_KINDS = frozenset({"pass_statement", "raise_statement", "comment", "ellipsis"})
 DUNDER_NAME = re.compile(r"__\w+__")
-EXTENSION_NAME = re.compile(r"(Base|Abstract)[A-Z_]\w*|\w*(Base|Mixin)")
 TEST_CLASS_NAME = re.compile(r"Test\w*")
 MESSAGE = "class '{name}' only groups functions that need no instance; make them module-level functions"
 
@@ -113,7 +112,7 @@ def is_used_as_namespace(root: Node, node: Node, name: str) -> bool:
 
 def is_exempt(name: str, extended: set[str], in_tests: bool) -> bool:
     is_test_class = in_tests and TEST_CLASS_NAME.fullmatch(name) is not None
-    return is_test_class or name in extended or EXTENSION_NAME.fullmatch(name) is not None
+    return is_test_class or name in extended
 
 
 def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:

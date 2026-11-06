@@ -21,6 +21,8 @@ FLAGGED = [
     NAMESPACE,
     "class Names:\n    @staticmethod\n    def full(given):\n        return given\n\n\n__all__ = ['Names']\n",
     "class Names:\n    @staticmethod\n    def full(given, family):\n        pass\n        return given + family\n",
+    "class BaseNames:\n    @staticmethod\n    def full(given):\n        return given\n",
+    "class NamesMixin:\n    @staticmethod\n    def full(given):\n        return given\n",
 ]
 KEPT = {
     "base class": "class Names(Formatter):\n    @staticmethod\n    def full(given):\n        return given\n",
@@ -37,8 +39,6 @@ KEPT = {
     "ellipsis stub": "class Names:\n    @staticmethod\n    def full(given):\n        ...\n",
     "no method": "class Names:\n    pass\n",
     "nested class": "class Names:\n    class Meta:\n        @staticmethod\n        def full(given):\n            return given\n",
-    "base name": "class BaseNames:\n    @staticmethod\n    def full(given):\n        return given\n",
-    "mixin name": "class NamesMixin:\n    @staticmethod\n    def full(given):\n        return given\n",
     "extended": "class Names:\n    @staticmethod\n    def full(given):\n        return given\n\n\nclass Short(Names):\n    pass\n",
     "instantiated": "class Names:\n    @staticmethod\n    def full(given):\n        return given\n\n\nNAMES = Names()\n",
     "passed": "class Names:\n    @staticmethod\n    def full(given):\n        return given\n\n\nregister(Names)\n",
