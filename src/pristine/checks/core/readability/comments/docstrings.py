@@ -1,4 +1,4 @@
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
 
@@ -66,9 +66,9 @@ def is_module_docstring_read(node: Node) -> bool:
     return node.type == "identifier" and node_text(node) == MODULE_DOCSTRING_NAME and not is_written_or_named
 
 
-def runtime_docstring_lines(root: Node) -> set[int]:
-    first = root.named_children[:1]
-    if not first or not is_docstring(first[0]) or not any(map(is_module_docstring_read, all_nodes(root))):
+def runtime_docstring_lines(parsed: ParsedFile) -> set[int]:
+    first = parsed.root.named_children[:1]
+    if not first or not is_docstring(first[0]) or not any(map(is_module_docstring_read, all_nodes(parsed))):
         return set()
     return {line_of(first[0])}
 
@@ -76,6 +76,6 @@ def runtime_docstring_lines(root: Node) -> set[int]:
 def machine_read_docstring_lines(parsed: ParsedFile) -> set[int]:
     if parsed.language != "python":
         return set()
-    decorated = [node for node in all_nodes(parsed.root) if node.type == "decorated_definition"]
+    decorated = [node for node in all_nodes(parsed) if node.type == "decorated_definition"]
     framework_lines = {line for line in map(framework_docstring_line, decorated) if line is not None}
-    return framework_lines | runtime_docstring_lines(parsed.root)
+    return framework_lines | runtime_docstring_lines(parsed)

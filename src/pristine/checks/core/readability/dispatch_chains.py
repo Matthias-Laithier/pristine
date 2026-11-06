@@ -2,7 +2,7 @@ import re
 from collections import Counter
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -130,7 +130,7 @@ def switch_finding(parsed: ParsedFile, switch: Node) -> Finding | None:
 
 
 def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
-    nodes = list(all_nodes(parsed.root))
+    nodes = list(all_nodes(parsed))
     if_nodes = [node for node in nodes if node.type in IF_KINDS]
     else_ifs = {else_if.start_byte for node in if_nodes if (else_if := else_if_of(node)) is not None}
     chains = [chain_finding(parsed, node) for node in if_nodes if node.start_byte not in else_ifs]

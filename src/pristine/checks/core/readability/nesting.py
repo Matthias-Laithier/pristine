@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Limit
@@ -51,8 +51,10 @@ def is_test_framework_callback(node: Node) -> bool:
 def opens_function_scope(node: Node) -> bool:
     if node.type in NAMED_FUNCTION_KINDS:
         return True
+    if node.type not in ANONYMOUS_FUNCTION_KINDS:
+        return False
     is_bound = node.parent is not None and node.parent.type in NAME_BINDING_KINDS
-    return node.type in ANONYMOUS_FUNCTION_KINDS and (is_bound or is_test_framework_callback(node))
+    return is_bound or is_test_framework_callback(node)
 
 
 def added_levels(node: Node) -> int:
