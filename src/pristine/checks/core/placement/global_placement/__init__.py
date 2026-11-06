@@ -4,13 +4,16 @@ from dataclasses import dataclass, field
 
 from tree_sitter import Node
 
+from pristine.checks.core.placement.global_placement.type_expressions import is_type_expression
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text
+from pristine.syntax.python_calls import import_bindings
 from pristine.syntax.syntax_kinds import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 
 RULE_ID = "CR-6"
+PYTHON = "python"
 BINDING_LIST_KINDS = frozenset({"var_spec_list", "const_spec_list"})
 VALUE_LIST_KINDS = frozenset({"expression_list"})
 REFERENCE_FIELDS = ("value", "right", "type")
@@ -18,7 +21,7 @@ NAME_FIELDS = ("name", "left")
 TYPE_ALIAS_ANNOTATION = "TypeAlias"
 IMPORT_CALL_PREFIXES = ("require(", "import(", "await import(")
 BLANK_NAME = re.compile(r"_")
-TYPE_OR_SPECIAL_NAME = re.compile(r"_|__\w*|_?[A-Z](\w*[a-z]\w*)?")
+SPECIAL_NAME = re.compile(r"_|__\w*")
 MESSAGE = "global '{names}' sits below a function or class; move it to the top of the file, right after the imports"
 MUTATION_TARGET_KINDS = frozenset({"attribute", "subscript", "member_expression", "subscript_expression"})
 RUST_STARTS = ("function_item", "impl_item", "struct_item", "enum_item", "trait_item")
@@ -28,11 +31,12 @@ RUST_STARTS = ("function_item", "impl_item", "struct_item", "enum_item", "trait_
 class LanguageSpec:
     binding_kinds: tuple[str, ...]
     start_kinds: tuple[str, ...]
-    exempt_name: re.Pattern[str] = TYPE_OR_SPECIAL_NAME
+    exempt_name: re.Pattern[str] = SPECIAL_NAME
 
 
 @dataclass
 class ModuleState:
+    imports: dict[str, str]
     started: bool = False
     known_names: set[str] = field(default_factory=set)
 
@@ -41,7 +45,7 @@ SCRIPT_SPEC = LanguageSpec(
     ("variable_declarator",), ("function_declaration", "generator_function_declaration", "class_declaration")
 )
 LANGUAGE_SPECS = dict.fromkeys(SCRIPT_LANGUAGES, SCRIPT_SPEC) | {
-    "python": LanguageSpec(("assignment",), ("function_definition", "class_definition")),
+    PYTHON: LanguageSpec(("assignment",), ("function_definition", "class_definition")),
     "go": LanguageSpec(("var_spec", "const_spec"), ("function_declaration", "method_declaration"), BLANK_NAME),
     "rust": LanguageSpec(("const_item", "static_item"), RUST_STARTS, BLANK_NAME),
 }
@@ -82,10 +86,11 @@ def is_function_valued(value: Node | None) -> bool:
     return any(candidate is not None and candidate.type in ANONYMOUS_FUNCTION_KINDS for candidate in candidates)
 
 
-def is_exempt(binding: Node, names: set[str], spec: LanguageSpec) -> bool:
+def is_exempt(binding: Node, names: set[str], spec: LanguageSpec, imports: dict[str, str]) -> bool:
     is_alias = (node_text(binding.child_by_field_name("type")) or "").endswith(TYPE_ALIAS_ANNOTATION)
+    is_type = binding.child_by_field_name("type") is None and is_type_expression(value_of(binding), imports)
     is_import = (node_text(value_of(binding)) or "").startswith(IMPORT_CALL_PREFIXES)
-    return is_alias or is_import or all(spec.exempt_name.fullmatch(name) for name in names)
+    return is_alias or is_type or is_import or all(spec.exempt_name.fullmatch(name) for name in names)
 
 
 def reads_known_name(binding: Node, state: ModuleState) -> bool:
@@ -97,7 +102,7 @@ def misplaced_bindings(item: Node, spec: LanguageSpec, state: ModuleState) -> It
     for binding in bindings(item, spec):
         names = bound_names(binding)
         is_definition = is_function_valued(value_of(binding))
-        is_exempt_binding = is_definition or not names or is_exempt(binding, names, spec)
+        is_exempt_binding = is_definition or not names or is_exempt(binding, names, spec, state.imports)
         if state.started and not is_exempt_binding and not reads_known_name(binding, state):
             yield binding, names
             continue
@@ -118,7 +123,7 @@ def check_global_placement(parsed: ParsedFile) -> list[Finding]:
     spec = LANGUAGE_SPECS.get(parsed.language)
     if spec is None:
         return []
-    state = ModuleState()
+    state = ModuleState(import_bindings(parsed.root) if parsed.language == PYTHON else {})
     findings = []
     for item in module_statements(parsed.root):
         record_definition(item, spec, state)
@@ -133,7 +138,8 @@ register_file_check(
         rule_id=RULE_ID,
         summary=(
             "Module-level variables and constants defined below the first function or class. A value that reads "
-            "an earlier definition, __all__, and type aliases are allowed."
+            "an earlier definition, __all__, and type aliases (TypeAlias annotations, typing generics, unions, "
+            "TypeVar, NewType, TypedDict and pydantic create_model calls) are allowed."
         ),
         run=check_global_placement,
     )

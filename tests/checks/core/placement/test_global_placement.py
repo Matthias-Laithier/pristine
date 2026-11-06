@@ -17,6 +17,19 @@ GO_PLACEMENT = (
     "package billing\n\nconst retryCount = 3\n\ntype Sender struct{}\n\nfunc send() {}\n\n"
     "var _ = Sender{}\nvar smtpPort = 587\n"
 )
+PYTHON_TYPES = (
+    "from typing import Literal, TypeVar\nimport typing as t\nfrom pydantic import create_model\n\n\n"
+    "def send(invoice):\n    return invoice\n\n\n"
+    "Status = Literal['paid', 'open']\nInvoiceT = TypeVar('InvoiceT')\nMaybeId = int | None\n"
+    "Lines = t.Sequence[str]\nAmount = float\nRefund = create_model('Refund', amount=(float, ...))\n"
+)
+PYTHON_CAPWORDS_VALUES = (
+    "from metrics import Counter\n\n\ndef send(invoice):\n    return invoice\n\n\n"
+    "DefaultCurrency = 'EUR'\nSentInvoices = Counter('sent')\nPermissions = READ | WRITE\n"
+)
+SCRIPT_CAPWORDS_VALUES = (
+    "export function send(invoice) {\n  return invoice;\n}\nexport const InvoiceStatus = { paid: 'paid' };\n"
+)
 RUST_PLACEMENT = "const RETRY_COUNT: u32 = 3;\n\nfn send() {}\n\nstatic SMTP_PORT: u32 = 587;\n"
 
 
@@ -25,7 +38,10 @@ RUST_PLACEMENT = "const RETRY_COUNT: u32 = 3;\n\nfn send() {}\n\nstatic SMTP_POR
     [
         ("billing.py", PYTHON_PLACEMENT, [(10, "warning")]),
         ("billing.py", PYTHON_EXCEPTIONS, []),
+        ("billing.py", PYTHON_TYPES, []),
+        ("billing.py", PYTHON_CAPWORDS_VALUES, [(8, "warning"), (9, "warning"), (10, "warning")]),
         ("billing.ts", SCRIPT_PLACEMENT, [(4, "warning")]),
+        ("billing.ts", SCRIPT_CAPWORDS_VALUES, [(4, "warning")]),
         ("billing.go", GO_PLACEMENT, [(10, "warning")]),
         ("billing.rs", RUST_PLACEMENT, [(5, "warning")]),
     ],
