@@ -3,8 +3,8 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
-from pristine.checks.boundaries.data_flow.injection.script_processes import scan_processes
-from pristine.checks.boundaries.data_flow.injection.script_values import is_trusted
+from pristine.checks.boundaries.data_flow.injection.scripts.processes import scan_processes
+from pristine.checks.boundaries.data_flow.injection.scripts.values import is_trusted
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 MARKUP_PROPERTIES = frozenset({"innerHTML", "outerHTML"})

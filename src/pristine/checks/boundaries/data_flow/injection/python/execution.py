@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
-from pristine.checks.boundaries.data_flow.injection.python_values import is_trusted
+from pristine.checks.boundaries.data_flow.injection.python.values import is_trusted
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import node_text
 from pristine.syntax.python_calls import import_bindings, keyword_values, positional_arguments, qualified_callee

@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
-from pristine.checks.boundaries.data_flow.injection.script_values import is_built, string_value
+from pristine.checks.boundaries.data_flow.injection.scripts.values import is_built, string_value
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import all_nodes, node_text
 

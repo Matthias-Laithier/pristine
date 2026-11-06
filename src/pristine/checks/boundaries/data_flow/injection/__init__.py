@@ -2,9 +2,9 @@ from collections.abc import Callable, Iterator
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.go_injection import scan_go
-from pristine.checks.boundaries.data_flow.injection.python_execution import scan_execution
-from pristine.checks.boundaries.data_flow.injection.python_sql import scan_sql
-from pristine.checks.boundaries.data_flow.injection.script_injection import scan_script
+from pristine.checks.boundaries.data_flow.injection.python.execution import scan_execution
+from pristine.checks.boundaries.data_flow.injection.python.sql import scan_sql
+from pristine.checks.boundaries.data_flow.injection.scripts.injection import scan_script
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
