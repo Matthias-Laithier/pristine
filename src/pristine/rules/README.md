@@ -31,6 +31,7 @@ Apply the rules while writing the code. When a decision genuinely conflicts with
 The installed `pristine` command checks the rules a parser or a file path can judge reliably. It favors precision over recall: a finding is reliable, and silence proves nothing. Many rules have no automated check at all, and a checked rule is often checked only in part, the part a static analysis can decide. A clean `pristine check` never replaces the review of every rule relevant to the change.
 - `pristine check <paths>` checks files and directories. `--exclude <glob>` skips paths, and `--json` prints a structured report. A path that does not exist is listed as missing, so a list of changed files may include deleted ones.
 - On a big repository, `--max N` prints only the first N findings. The summary and its `by rule:` line still count every finding per rule ID.
+- `--jobs N` caps the worker processes. The default is half the CPU cores.
 - `pristine project [root]` checks the repository root against the Tooling chapter: the Makefile contract, the check gates, the code-quality tools, and the lockfile.
 - `pristine rules` lists every rule and how it is checked: by `pristine check`, by `pristine project`, or by the agent's own review. That list is the authority on coverage. `--help` on each command documents the rest.
 - Each finding gives the file, the line, the rule ID, and a severity. An error breaks a hard limit or a strict rule. A warning passes a target.
