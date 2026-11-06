@@ -35,6 +35,7 @@ Each package of `src/pristine/` owns one responsibility, and no directory holds 
 - `services/` wraps every external dependency: git, gitleaks, the tree-sitter grammars, and the worker processes.
 - `project/` implements `pristine project`: it loads a repository root and checks it against the Tooling chapter, TL-1 to TL-4. Its root holds one module per check beside `inspection.py`. `repository/` loads the root, its Makefile, manifests, and the known tools, `commands/` parses shell commands and package scripts, and `strictness/` reads the strict settings of the type checkers.
 - `registration.py` and `package_modules.py` stay at the package root. They are the registration mechanism that the check, import-reader, and detector registries share, so they belong to none of those packages.
+- `clients/` holds the external-system client libraries per language and the import readers that find them, shared by CR-8 and TST-8.
 - `imports/` reads import edges for the import-cycle check, CO-8. Each reader registers itself for the file suffixes it handles, through the same auto-discovery as the checks.
 - `rules/` holds the rule documents. They ship inside the package. `pristine guide` prints the hub followed by a rule index built from each rule's title and statement. `pristine rule` prints rules selected by ID, by chapter prefix, or with `all`. Both print links between rule files as their plain label.
 
