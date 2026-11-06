@@ -30,6 +30,7 @@ UNASSERTED_BAD_EXAMPLES = {
     "CR-15-bad": "nine files form a small set, and CR-15 reports a crowded directory only from twelve code files on",
     "CR-18-bad": "delivery policy numbers need judgment, and CR-18 checks only model identifiers and sampling settings",
     "CR-22-bad:float money": "float money cannot be detected from syntax, and CR-22 checks only naive datetimes",
+    "CR-5-bad": "each copy holds two statements under its own transport name, and CR-5 reports only exact bodies of six or more",
     "CR-8-bad": "a directory tree carries no file contents, and CR-8 judges client-library imports, not file names",
     "TST-8-bad": "the live client is injected, and TST-8 needs a client constructed from an environment key",
 }
