@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from functools import lru_cache
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.syntax.parsing import all_nodes, module_statements, node_text
 from pristine.syntax.python_scopes import module_root

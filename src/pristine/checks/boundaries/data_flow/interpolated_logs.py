@@ -1,6 +1,6 @@
 import re
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -38,7 +38,7 @@ def message_builder(call: Node) -> str | None:
 def check_interpolated_logs(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    built = [(node, message_builder(node)) for node in all_nodes(parsed.root)]
+    built = [(node, message_builder(node)) for node in all_nodes(parsed)]
     return [
         Finding(
             parsed.path,

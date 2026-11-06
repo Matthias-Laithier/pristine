@@ -14,8 +14,8 @@ RULE_ID = "BS-10"
 
 
 def scan_python(parsed: ParsedFile) -> Iterator[Injection]:
-    yield from scan_sql(parsed.root)
-    yield from scan_execution(parsed.root)
+    yield from scan_sql(parsed)
+    yield from scan_execution(parsed)
 
 
 SCANNERS: dict[str, Callable[[ParsedFile], Iterator[Injection]]] = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {

@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection, starts_with_sql
 from pristine.syntax.calls import calls_of
@@ -74,7 +74,7 @@ def call_injection(callee: str, arguments: list[Node]) -> str | None:
 
 
 def scan_go(parsed: ParsedFile) -> Iterator[Injection]:
-    for node, callee, arguments in calls_of(parsed.root, "call_expression"):
+    for node, callee, arguments in calls_of(parsed, "call_expression"):
         message = call_injection(callee, arguments)
         if message is not None:
             yield Injection(node, message)

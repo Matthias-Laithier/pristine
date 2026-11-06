@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import is_constant_reference
 from pristine.checks.boundaries.data_flow.injection.python.flows import (
