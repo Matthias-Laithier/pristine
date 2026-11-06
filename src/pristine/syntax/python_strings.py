@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.registration import registering
 from pristine.syntax.parsing import node_text

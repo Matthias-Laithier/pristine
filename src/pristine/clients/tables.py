@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.clients.go_imports import go_import_modules
 from pristine.clients.injection import no_injected_clients
@@ -18,8 +18,9 @@ from pristine.clients.libraries import (
 from pristine.clients.python_imports import python_import_targets
 from pristine.clients.script_imports import script_import_modules
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.parsing import ParsedFile
 
-type ImportReader = Callable[[Node], Iterator[tuple[str, int]]]
+type ImportReader = Callable[[Node | ParsedFile], Iterator[tuple[str, int]]]
 
 
 @dataclass(frozen=True)
@@ -36,11 +37,11 @@ class ClientTable:
     read_imports: ImportReader
     read_injected: ImportReader
 
-    def clients(self, root: Node) -> list[ClientImport]:
-        return self.matches([*self.read_imports(root), *self.read_injected(root)], self.packages)
+    def clients(self, source: Node | ParsedFile) -> list[ClientImport]:
+        return self.matches([*self.read_imports(source), *self.read_injected(source)], self.packages)
 
-    def model_clients(self, root: Node) -> list[ClientImport]:
-        return self.matches(list(self.read_imports(root)), self.model_packages)
+    def model_clients(self, source: Node | ParsedFile) -> list[ClientImport]:
+        return self.matches(list(self.read_imports(source)), self.model_packages)
 
     def matches(self, modules: list[tuple[str, int]], packages: tuple[str, ...]) -> list[ClientImport]:
         imports = [(line, self.package_of(module, packages)) for module, line in modules]

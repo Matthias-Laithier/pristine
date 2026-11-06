@@ -1,12 +1,12 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.clients.injection import RECEIVER, InjectedClient, called_injections, dotted_path
 from pristine.clients.libraries import SCRIPT_ENTRY_POINTS
 from pristine.clients.literals import string_content
 from pristine.clients.script_imports import bound_name, import_bindings
-from pristine.syntax.parsing import all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_scopes import ancestors
 
 PARAMETER_KINDS = frozenset({"required_parameter", "optional_parameter"})
@@ -29,8 +29,8 @@ def binding_targets(binding: Node, source: str) -> Iterator[tuple[str, str]]:
         yield bound_name(binding), f"{source}/default"
 
 
-def type_bindings(root: Node) -> dict[str, str]:
-    statements = (node for node in all_nodes(root) if node.type == "import_statement")
+def type_bindings(source: Node | ParsedFile) -> dict[str, str]:
+    statements = (node for node in all_nodes(source) if node.type == "import_statement")
     sources = ((statement, string_content(statement.child_by_field_name("source"))) for statement in statements)
     pairs = (
         binding_targets(binding, source)
@@ -81,9 +81,9 @@ def field_injections(field: Node, client: str) -> Iterator[InjectedClient]:
         yield InjectedClient(owner, (RECEIVER, node_text(name) or ""), client, line_of(field))
 
 
-def script_injections(root: Node) -> Iterator[InjectedClient]:
-    bindings = type_bindings(root)
-    for node in all_nodes(root):
+def script_injections(source: Node | ParsedFile) -> Iterator[InjectedClient]:
+    bindings = type_bindings(source)
+    for node in all_nodes(source):
         client = entry_point(node.child_by_field_name("type"), bindings)
         if client is not None and node.type in PARAMETER_KINDS:
             yield from parameter_injections(node, client)
@@ -97,5 +97,5 @@ def callee_paths(scope: Node) -> set[tuple[str, ...]]:
     return {(RECEIVER, *path[1:]) if path[0] == THIS else path for path in paths if path is not None}
 
 
-def script_injected_clients(root: Node) -> Iterator[tuple[str, int]]:
-    return called_injections(script_injections(root), callee_paths)
+def script_injected_clients(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
+    return called_injections(script_injections(source), callee_paths)
