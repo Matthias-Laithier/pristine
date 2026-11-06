@@ -9,6 +9,8 @@ TYPE_CHECKING_CONDITIONS = frozenset({"TYPE_CHECKING", "typing.TYPE_CHECKING"})
 PLAIN_IMPORT_KIND = "import_statement"
 FROM_IMPORT_KIND = "import_from_statement"
 
+RAISE_KIND = "raise_statement"
+
 type AttributeUses = dict[str, set[str]]
 
 
@@ -43,31 +45,38 @@ def qualified(module: str, name: str) -> str:
     return f"{module}.{name}" if name else module
 
 
-def plain_import_targets(statement: Node, uses: AttributeUses) -> Iterator[str]:
+def called_references(root: Node) -> set[str]:
+    calls = (node for node in all_nodes(root) if node.type == "call" and node.parent and node.parent.type != RAISE_KIND)
+    callees = ("".join((node_text(call.child_by_field_name("function")) or "").split()) for call in calls)
+    segments = (callee.split("(", 1)[0].split(".") for callee in callees)
+    return {".".join(parts[:end]) for parts in segments for end in range(1, len(parts) + 1)}
+
+
+def plain_import_targets(statement: Node, uses: AttributeUses, called: set[str]) -> Iterator[str]:
     for name in statement.children_by_field_name("name"):
-        module = imported_name(name)
-        attributes = uses.get(bound_name(name)) or {""}
-        yield from (qualified(module, attribute) for attribute in attributes)
+        module, bound = imported_name(name), bound_name(name)
+        attributes = uses.get(bound) or {""}
+        yield from (qualified(module, attribute) for attribute in attributes if qualified(bound, attribute) in called)
 
 
-def from_import_targets(statement: Node) -> Iterator[str]:
+def from_import_targets(statement: Node, called: set[str]) -> Iterator[str]:
     module = node_text(statement.child_by_field_name("module_name")) or ""
-    names = [imported_name(name) for name in statement.children_by_field_name("name")]
-    yield from (qualified(module, name) for name in names or [""])
+    names = [name for name in statement.children_by_field_name("name") if bound_name(name) in called]
+    yield from (qualified(module, imported_name(name)) for name in names)
 
 
-def statement_targets(statement: Node, uses: AttributeUses) -> list[str]:
+def statement_targets(statement: Node, uses: AttributeUses, called: set[str]) -> list[str]:
     if is_type_checking_only(statement):
         return []
     if statement.type == PLAIN_IMPORT_KIND:
-        return list(plain_import_targets(statement, uses))
+        return list(plain_import_targets(statement, uses, called))
     if statement.type == FROM_IMPORT_KIND:
-        return list(from_import_targets(statement))
+        return list(from_import_targets(statement, called))
     return []
 
 
 def python_import_targets(root: Node) -> Iterator[tuple[str, int]]:
-    uses = attribute_uses(root)
+    uses, called = attribute_uses(root), called_references(root)
     for statement in all_nodes(root):
-        targets = statement_targets(statement, uses)
+        targets = statement_targets(statement, uses, called)
         yield from ((target, line_of(statement)) for target in targets)
