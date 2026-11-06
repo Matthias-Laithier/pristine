@@ -20,7 +20,7 @@ Install the CLI with [uv](https://docs.astral.sh/uv/):
 uv tool install git+https://github.com/Matthias-Laithier/pristine
 ```
 
-Pin a release with `uv tool install git+https://github.com/Matthias-Laithier/pristine@v0.2.0`.
+Pin a release with `uv tool install git+https://github.com/Matthias-Laithier/pristine@v0.3.0`.
 
 ```
 pristine guide                 # print the rules hub and the rule index to read before coding
