@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from itertools import pairwise
 
-from tree_sitter import Node, Tree
+lazy from tree_sitter import Node, Tree
 
 from pristine.services.grammars import parser_for
 from pristine.syntax.syntax_kinds import (
@@ -44,6 +44,7 @@ class ParsedFile:
     language: str
     text: str
     tree: Tree
+    nodes: tuple[Node, ...]
     functions: list[FunctionSpan]
     comments: list[CommentText]
 
@@ -56,8 +57,11 @@ def line_of(node: Node) -> int:
     return node.start_point.row + 1
 
 
-def all_nodes(root: Node) -> Iterator[Node]:
-    pending = [root]
+def all_nodes(source: Node | ParsedFile) -> Iterator[Node]:
+    if isinstance(source, ParsedFile):
+        yield from source.nodes
+        return
+    pending = [source]
     while pending:
         node = pending.pop()
         yield node
@@ -134,7 +138,7 @@ def comment_text(node: Node) -> CommentText:
 
 def parse_file(path: str, text: str, language: str) -> ParsedFile:
     tree = parser_for(language).parse(_parser_text(text, language).encode())
-    nodes = list(all_nodes(tree.root_node))
+    nodes = tuple(all_nodes(tree.root_node))
     functions = [
         FunctionSpan(function_name(node), line_of(node), node.end_point.row + 1)
         for node in nodes
@@ -144,4 +148,4 @@ def parse_file(path: str, text: str, language: str) -> ParsedFile:
     comments = [
         comment_text(node) for node in nodes if node.type in COMMENT_KINDS or (has_docstrings and is_docstring(node))
     ]
-    return ParsedFile(path, language, text, tree, functions, sorted(comments, key=lambda comment: comment.line))
+    return ParsedFile(path, language, text, tree, nodes, functions, sorted(comments, key=lambda comment: comment.line))
