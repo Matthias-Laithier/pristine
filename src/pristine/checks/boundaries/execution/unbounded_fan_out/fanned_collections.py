@@ -2,18 +2,18 @@ from collections.abc import Callable, Iterator
 
 from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.unbounded_fan_out.scopes import (
+from pristine.checks.boundaries.execution.unbounded_fan_out.sizes import passes_size
+from pristine.registration import registering
+from pristine.syntax.calls import callee_of
+from pristine.syntax.parsing import all_nodes, node_text
+from pristine.syntax.python_calls import import_bindings, qualified_callee
+from pristine.syntax.python_scopes import (
     assigned_values,
     enclosing_functions,
     module_root,
     parameter_names,
     receiver_name,
 )
-from pristine.checks.boundaries.execution.unbounded_fan_out.sizes import passes_size
-from pristine.registration import registering
-from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import all_nodes, node_text
-from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS
 
 TRANSPARENT_WRAPPERS = frozenset({"enumerate", "sorted", "reversed", "list", "tuple", "set"})

@@ -1,15 +1,11 @@
-from collections.abc import Iterator
-
 from tree_sitter import Node
 
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import all_nodes, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
-from pristine.syntax.syntax_kinds import NESTED_SCOPE_KINDS
+from pristine.syntax.python_scopes import defined_function, enclosing_scope, module_root, own_nodes
 
-FUNCTION_KIND = "function_definition"
 ASSIGNMENT_KINDS = frozenset({"assignment", "augmented_assignment"})
-RETURN_KIND = "return_statement"
 MUTATING_METHODS = frozenset({"append", "extend", "insert", "add", "update", "setdefault"})
 BUILTIN_CONVERSIONS = frozenset({"int", "float", "len", "bool"})
 ESCAPING_APIS = frozenset(
@@ -27,23 +23,6 @@ ESCAPING_APIS = frozenset(
 )
 IDENTIFIER_PREPARER = "identifier_preparer"
 PREPARER_METHODS = frozenset({"quote", "quote_identifier", "quote_schema"})
-
-
-def enclosing_scope(node: Node) -> Node:
-    ancestor = node.parent
-    while ancestor is not None and ancestor.type not in NESTED_SCOPE_KINDS and ancestor.parent is not None:
-        ancestor = ancestor.parent
-    return node if ancestor is None else ancestor
-
-
-def own_nodes(scope: Node) -> Iterator[Node]:
-    return (node for node in all_nodes(scope) if node != scope and enclosing_scope(node) == scope)
-
-
-def parameter_names(scope: Node) -> set[str]:
-    parameters = scope.child_by_field_name("parameters") if scope.type == FUNCTION_KIND else None
-    names = (node for node in all_nodes(parameters) if node.type == "identifier") if parameters else iter(())
-    return {node_text(name) or "" for name in names}
 
 
 def assigned_values(scope: Node, name: str, before: Node) -> list[Node]:
@@ -77,13 +56,6 @@ def call_arguments(call: Node) -> list[Node]:
     return [] if arguments is None else arguments.named_children
 
 
-def module_root(node: Node) -> Node:
-    root = node
-    while root.parent is not None:
-        root = root.parent
-    return root
-
-
 def is_escaping_api(call: Node) -> bool:
     callee = callee_of(call)
     if callee in BUILTIN_CONVERSIONS:
@@ -111,15 +83,7 @@ def local_helper(call: Node) -> Node | None:
     function = call.child_by_field_name("function")
     if function is None or function.type != "identifier":
         return None
-    name = node_text(function)
-    root = module_root(call)
-    definitions = (node for node in own_nodes(root) if node.type == FUNCTION_KIND)
-    return next((node for node in definitions if node_text(node.child_by_field_name("name")) == name), None)
-
-
-def returned_values(definition: Node) -> list[Node | None]:
-    returns = (node for node in own_nodes(definition) if node.type == RETURN_KIND)
-    return [node.named_children[0] if node.named_children else None for node in returns]
+    return defined_function(module_root(call), node_text(function))
 
 
 def calls_local_helper(node: Node) -> bool:

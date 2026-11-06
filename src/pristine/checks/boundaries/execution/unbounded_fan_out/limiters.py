@@ -3,7 +3,10 @@ from dataclasses import dataclass
 
 from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.unbounded_fan_out.scopes import (
+from pristine.syntax.calls import callee_of
+from pristine.syntax.parsing import all_nodes, is_async, node_text
+from pristine.syntax.python_calls import keyword_values, positional_arguments, qualified_callee
+from pristine.syntax.python_scopes import (
     ASSIGNMENT_KIND,
     CLASS_KIND,
     FUNCTION_KIND,
@@ -12,9 +15,6 @@ from pristine.checks.boundaries.execution.unbounded_fan_out.scopes import (
     parameter_names,
     receiver_name,
 )
-from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import all_nodes, is_async, node_text
-from pristine.syntax.python_calls import keyword_values, positional_arguments, qualified_callee
 
 LIMITER_FACTORIES = frozenset(
     {"asyncio.Semaphore", "asyncio.BoundedSemaphore", "asyncio.Queue", "anyio.Semaphore", "anyio.CapacityLimiter"}

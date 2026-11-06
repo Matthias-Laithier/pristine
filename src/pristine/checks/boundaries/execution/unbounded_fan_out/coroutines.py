@@ -1,18 +1,10 @@
-from collections.abc import Iterator
-
 from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_fan_out.limiters import Limiters, acquires_limiter, last_segment
-from pristine.checks.boundaries.execution.unbounded_fan_out.scopes import (
-    CLASS_KIND,
-    FUNCTION_KIND,
-    enclosing_functions,
-    module_root,
-    own_nodes,
-)
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import node_text
 from pristine.syntax.python_calls import qualified_callee
+from pristine.syntax.python_scopes import CLASS_KIND, ancestors, defined_function, enclosing_functions, module_root
 
 POOLED_CALLS = frozenset({"asyncio.to_thread"})
 TASK_WRAPPERS = frozenset({"asyncio.create_task", "asyncio.ensure_future"})
@@ -37,15 +29,8 @@ def coroutine_definition(reference: Node, site: Node) -> Node | None:
         scopes = [] if holder is None else [holder]
     else:
         scopes = [*enclosing_functions(site), module_root(site)]
-    definitions = (node for scope in scopes for node in own_nodes(scope) if node.type == FUNCTION_KIND)
-    return next((node for node in definitions if node_text(node.child_by_field_name("name")) == name), None)
-
-
-def ancestors(node: Node) -> Iterator[Node]:
-    ancestor = node.parent
-    while ancestor is not None:
-        yield ancestor
-        ancestor = ancestor.parent
+    definitions = (defined_function(scope, name) for scope in scopes)
+    return next((definition for definition in definitions if definition is not None), None)
 
 
 def is_bounded_work(element: Node, limiters: Limiters) -> bool:

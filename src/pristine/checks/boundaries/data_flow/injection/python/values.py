@@ -3,17 +3,16 @@ from collections.abc import Callable, Iterator
 from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import is_constant_reference
-from pristine.checks.boundaries.data_flow.injection.python.scopes import (
+from pristine.checks.boundaries.data_flow.injection.python.flows import (
     assigned_values,
     calls_local_helper,
     enclosing_scope,
     is_escaping_api,
     local_helper,
-    parameter_names,
-    returned_values,
 )
 from pristine.registration import registering
 from pristine.syntax.parsing import node_text
+from pristine.syntax.python_scopes import parameters, returned_values
 from pristine.syntax.python_strings import interpolations
 from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS
 
@@ -69,7 +68,7 @@ def is_constant_name(node: Node) -> bool:
 def is_trusted_local(node: Node) -> bool:
     name = node_text(node) or ""
     scope = enclosing_scope(node)
-    values = [] if name in parameter_names(scope) else assigned_values(scope, name, node)
+    values = [] if name in parameters(scope) else assigned_values(scope, name, node)
     return bool(values) and all(map(is_trusted, values))
 
 

@@ -1,13 +1,13 @@
 from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.unbounded_fan_out.scopes import (
+from pristine.syntax.calls import callee_of
+from pristine.syntax.parsing import node_text
+from pristine.syntax.python_scopes import (
     assigned_values,
     enclosing_functions,
     module_root,
     named_parameters,
 )
-from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import node_text
 
 SIZE_KINDS = frozenset({"integer"})
 SIZE_TYPE = "int"
