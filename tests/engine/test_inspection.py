@@ -89,3 +89,12 @@ def test_ruby_files_without_the_rb_suffix_are_checked(run_pristine: RunPristine)
     _, report = run_pristine({"Gemfile": ruby, "Podfile": ruby, "app.gemspec": ruby, "config.ru": "run App\n"})
     assert report["unchecked"] == []
     assert report["summary"]["checked_files"] == 4
+
+
+def test_project_and_interface_data_files_are_skipped(run_pristine: RunPristine) -> None:
+    xml = "<Project></Project>\n"
+    _, report = run_pristine(
+        {"App.csproj": xml, "App.sln": "Microsoft Visual Studio Solution File\n", "Info.plist": xml}
+    )
+    assert report["unchecked"] == []
+    assert len(report["skipped"]) == 3

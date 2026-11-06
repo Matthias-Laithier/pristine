@@ -22,6 +22,8 @@ PROSE_AND_DATA_SUFFIXES = frozenset(
     {".md", ".mdx", ".rst", ".txt", ".adoc", ".json", ".jsonc", ".json5", ".yaml", ".yml", ".toml", ".ini", ".cfg"}
     | {".conf", ".env", ".csv", ".tsv", ".xml", ".svg", ".html", ".htm", ".css", ".lock", ".properties", ".po"}
     | {".log", ".example", ".typed", ".dat", ".in", ".out", ".golden", ".snap"}
+    | {".csproj", ".fsproj", ".vbproj", ".props", ".targets", ".config", ".resx", ".nuspec", ".sln", ".aml"}
+    | {".plist", ".pbxproj", ".xcscheme", ".xctestplan", ".xcworkspacedata", ".storyboard", ".xib", ".entitlements"}
 )
 IGNORE_LIST_NAME = re.compile(r"\.?[\w-]*ignore")
 PROSE_AND_DATA_NAMES = frozenset(
