@@ -1,7 +1,7 @@
 from pathlib import PurePath
 
-from pristine.checks.core.placement.service_location.languages import client_table, library_names
 from pristine.checks.registry import FileCheck, register_file_check
+from pristine.clients.tables import client_table, library_names
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile

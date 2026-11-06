@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from tree_sitter import Node
 
-from pristine.checks.core.placement.service_location.clients import (
+from pristine.clients.libraries import (
     GO_CLIENTS,
     GO_MODEL_CLIENTS,
     PYTHON_CLIENTS,
@@ -11,7 +11,7 @@ from pristine.checks.core.placement.service_location.clients import (
     SCRIPT_CLIENTS,
     SCRIPT_MODEL_CLIENTS,
 )
-from pristine.checks.core.placement.service_location.python_imports import python_import_targets
+from pristine.clients.python_imports import python_import_targets
 from pristine.registration import registering
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import all_nodes, line_of, node_text
