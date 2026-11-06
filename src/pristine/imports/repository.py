@@ -15,11 +15,12 @@ def repository_root(directory: Path) -> Path | None:
     return None if directory.parent == directory else repository_root(directory.parent)
 
 
-def repository_files(root: Path) -> list[str]:
+@cache
+def repository_files(root: Path) -> tuple[str, ...]:
     listed_prefix, resolved_root = f"{root.as_posix()}/", root.resolve().as_posix()
     names = (file.as_posix().removeprefix(listed_prefix) for file in listed_files(root) or [])
     kept = (name for name in names if not is_vendored(PurePath(name)) and not is_cache(PurePath(name)))
-    return [cwd_relative(f"{resolved_root}/{name}") for name in kept]
+    return tuple(cwd_relative(f"{resolved_root}/{name}") for name in kept)
 
 
 def with_repository_files(paths: list[str]) -> list[str]:
