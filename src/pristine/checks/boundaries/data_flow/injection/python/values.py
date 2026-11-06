@@ -2,10 +2,15 @@ from collections.abc import Callable, Iterator
 
 from tree_sitter import Node
 
-from pristine.checks.boundaries.data_flow.injection.constructed import (
-    is_constant_reference,
-    is_escaping_callee,
-    is_placeholder_name,
+from pristine.checks.boundaries.data_flow.injection.constructed import is_constant_reference
+from pristine.checks.boundaries.data_flow.injection.python.scopes import (
+    assigned_values,
+    calls_local_helper,
+    enclosing_scope,
+    is_escaping_api,
+    local_helper,
+    parameter_names,
+    returned_values,
 )
 from pristine.registration import registering
 from pristine.syntax.parsing import node_text
@@ -58,7 +63,14 @@ def is_constant_name(node: Node) -> bool:
     name = node_text(node) or ""
     sources = (loop.child_by_field_name("right") for loop in enclosing_loops(node) if loop_variable(loop) == name)
     outside_sources = (source for source in sources if source is not None and not encloses(source, node))
-    return is_constant_reference(name) or is_placeholder_name(name) or any(map(is_trusted, outside_sources))
+    return is_constant_reference(name) or any(map(is_trusted, outside_sources)) or is_trusted_local(node)
+
+
+def is_trusted_local(node: Node) -> bool:
+    name = node_text(node) or ""
+    scope = enclosing_scope(node)
+    values = [] if name in parameter_names(scope) else assigned_values(scope, name, node)
+    return bool(values) and all(map(is_trusted, values))
 
 
 def encloses(outer: Node, inner: Node) -> bool:
@@ -83,7 +95,19 @@ def is_escaping_or_literal_join(node: Node) -> bool:
     is_join = function.type == "attribute" and node_text(function.child_by_field_name("attribute")) == JOIN_METHOD
     values = arguments.named_children if arguments.type == ARGUMENT_LIST_KIND else [arguments]
     is_literal_join = is_join and is_trusted(function.child_by_field_name("object")) and all(map(is_trusted, values))
-    return is_escaping_callee(node_text(function) or "") or is_literal_join
+    return is_literal_join or is_escaping_api(node) or is_escaping_helper(node)
+
+
+def is_escaping_helper(call: Node) -> bool:
+    helper = local_helper(call)
+    if helper is None or helper.start_byte <= call.start_byte < helper.end_byte:
+        return False
+    returned = returned_values(helper)
+    return (
+        bool(returned)
+        and all(value is not None and not calls_local_helper(value) for value in returned)
+        and all(map(is_trusted, returned))
+    )
 
 
 def loop_variable(loop: Node) -> str | None:

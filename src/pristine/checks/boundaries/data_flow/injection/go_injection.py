@@ -1,4 +1,3 @@
-import re
 from collections.abc import Iterator
 
 from tree_sitter import Node
@@ -7,10 +6,9 @@ from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, node_text
 
-SQL_METHODS = frozenset({"Query", "QueryRow", "Exec", "QueryContext", "QueryRowContext", "ExecContext"})
+SQL_QUERY_POSITIONS = {"Query": 0, "QueryRow": 0, "Exec": 0, "QueryContext": 1, "QueryRowContext": 1, "ExecContext": 1}
 STRING_KINDS = frozenset({"interpreted_string_literal", "raw_string_literal"})
 LITERAL_KINDS = STRING_KINDS | {"int_literal", "float_literal"}
-CONTEXT_ARGUMENT = re.compile(r"ctx$|context", re.IGNORECASE)
 FORMATTER = "fmt.Sprintf"
 NUMBER_FORMATTER_PREFIX = "strconv."
 COMMAND_FUNCTIONS = {"exec.Command": 0, "exec.CommandContext": 1}
@@ -65,9 +63,9 @@ def shell_script(callee: str, arguments: list[Node]) -> Node | None:
 
 
 def call_injection(callee: str, arguments: list[Node]) -> str | None:
-    has_context = len(arguments) > 1 and CONTEXT_ARGUMENT.search(node_text(arguments[0]) or "") is not None
-    query = arguments[int(has_context)] if arguments else None
-    if callee.rpartition(".")[2] in SQL_METHODS and query is not None and is_built_sql(query):
+    position = SQL_QUERY_POSITIONS.get(callee.rpartition(".")[2])
+    query = arguments[position] if position is not None and position < len(arguments) else None
+    if query is not None and is_built_sql(query):
         return f"'{callee}' receives SQL built from non-literal values; {SQL_FIX}"
     script = shell_script(callee, arguments)
     if script is None or is_trusted(script):

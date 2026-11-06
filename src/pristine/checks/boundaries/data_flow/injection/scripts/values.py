@@ -2,11 +2,8 @@ from collections.abc import Callable
 
 from tree_sitter import Node
 
-from pristine.checks.boundaries.data_flow.injection.constructed import (
-    is_constant_reference,
-    is_escaping_callee,
-    is_placeholder_name,
-)
+from pristine.checks.boundaries.data_flow.injection.constructed import is_constant_reference
+from pristine.checks.boundaries.data_flow.injection.scripts.escaping import is_escaping_api
 from pristine.registration import registering
 from pristine.syntax.parsing import module_statements, node_text
 
@@ -16,6 +13,10 @@ COMPOSITE_KINDS = frozenset(
 )
 BUILT_KINDS = frozenset({"template_string", "binary_expression"})
 CONSTANT_KEYWORD = "const"
+DECLARATION_KIND = "lexical_declaration"
+JOIN_METHOD = "join"
+FILL_METHOD = "fill"
+MAP_METHOD = "map"
 TEXT_KINDS = frozenset({"string_fragment", "escape_sequence"})
 
 _TRUST_RULES: dict[str, Callable[[Node], bool]] = {}
@@ -29,7 +30,39 @@ def is_trusted(node: Node) -> bool:
 @registering(_TRUST_RULES, "identifier", "member_expression")
 def is_constant_name(node: Node) -> bool:
     text = node_text(node) or ""
-    return is_constant_reference(text) or is_placeholder_name(text) or text in module_literal_names(node)
+    return is_constant_reference(text) or text in module_literal_names(node) or is_trusted_constant(node)
+
+
+def is_trusted_constant(node: Node) -> bool:
+    values = constant_values(node) if node.type == "identifier" else []
+    return bool(values) and all(map(is_trusted, values))
+
+
+def constant_values(node: Node) -> list[Node]:
+    scope = node.parent
+    while scope is not None:
+        values = declared_values(scope, node)
+        if values:
+            return values
+        scope = scope.parent
+    return []
+
+
+def declared_values(scope: Node, use: Node) -> list[Node]:
+    declarations = (
+        statement
+        for statement in scope.named_children
+        if statement.type == DECLARATION_KIND
+        and statement.children[0].type == CONSTANT_KEYWORD
+        and statement.end_byte < use.start_byte
+    )
+    declarators = [declarator for declaration in declarations for declarator in declaration.named_children]
+    values = (
+        declarator.child_by_field_name("value")
+        for declarator in declarators
+        if node_text(declarator.child_by_field_name("name")) == node_text(use)
+    )
+    return [value for value in values if value is not None]
 
 
 def is_pure_literal(node: Node | None) -> bool:
@@ -54,7 +87,41 @@ def module_literal_names(node: Node) -> set[str]:
 
 @registering(_TRUST_RULES, "call_expression")
 def is_escaping_call(node: Node) -> bool:
-    return is_escaping_callee(node_text(node.child_by_field_name("function")) or "")
+    return is_escaping_api(node) or is_literal_join(node)
+
+
+@registering(_TRUST_RULES, "array")
+def is_literal_array(node: Node) -> bool:
+    return all(map(is_trusted, node.named_children))
+
+
+def call_parts(node: Node) -> tuple[Node | None, str | None, list[Node]]:
+    function = node.child_by_field_name("function")
+    arguments = node.child_by_field_name("arguments")
+    listed = [] if arguments is None else arguments.named_children
+    if function is None or function.type != "member_expression":
+        return None, None, listed
+    return function.child_by_field_name("object"), node_text(function.child_by_field_name("property")), listed
+
+
+def is_literal_join(node: Node) -> bool:
+    receiver, method, arguments = call_parts(node)
+    return (
+        method == JOIN_METHOD
+        and receiver is not None
+        and is_literal_sequence(receiver)
+        and all(map(is_trusted, arguments))
+    )
+
+
+def is_literal_sequence(node: Node) -> bool:
+    if node.type == "array":
+        return is_trusted(node)
+    _, method, arguments = call_parts(node) if node.type == "call_expression" else (None, None, [])
+    if method == FILL_METHOD:
+        return all(map(is_trusted, arguments))
+    bodies = [argument.child_by_field_name("body") for argument in arguments if argument.type == "arrow_function"]
+    return method == MAP_METHOD and len(bodies) == 1 and bodies[0] is not None and is_trusted(bodies[0])
 
 
 @registering(_TRUST_RULES, *COMPOSITE_KINDS)
