@@ -41,7 +41,7 @@ def check_service_location(parsed: ParsedFile) -> list[Finding]:
     table = client_table(parsed.language)
     if table is None or is_exempt(parsed.path):
         return []
-    clients = table.clients(parsed.root)
+    clients = table.clients(parsed)
     if not clients:
         return []
     message = (

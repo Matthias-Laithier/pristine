@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.core.placement.global_placement.type_expressions import is_type_expression
 from pristine.checks.registry import FileCheck, register_file_check
@@ -123,7 +123,7 @@ def check_global_placement(parsed: ParsedFile) -> list[Finding]:
     spec = LANGUAGE_SPECS.get(parsed.language)
     if spec is None:
         return []
-    state = ModuleState(import_bindings(parsed.root) if parsed.language == PYTHON else {})
+    state = ModuleState(import_bindings(parsed) if parsed.language == PYTHON else {})
     findings = []
     for item in module_statements(parsed.root):
         record_definition(item, spec, state)
