@@ -32,7 +32,7 @@ def table(value: object, key: str) -> dict[object, object]:
 def manifest_entry_modules(directory: Path) -> frozenset[str]:
     try:
         manifest = tomllib.loads((directory / MANIFEST).read_text())
-    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+    except OSError, UnicodeDecodeError, tomllib.TOMLDecodeError:
         return frozenset[str]()
     project = table(manifest, "project")
     poetry = table(table(manifest, "tool"), "poetry")
@@ -55,7 +55,7 @@ def import_sources(node: ast.ImportFrom, package: str) -> list[str]:
 def package_main_imports(directory: Path) -> frozenset[str]:
     try:
         tree = ast.parse((directory / PACKAGE_MAIN).read_text())
-    except (OSError, UnicodeDecodeError, SyntaxError, ValueError):
+    except OSError, UnicodeDecodeError, SyntaxError, ValueError:
         return frozenset[str]()
     imports = (node for node in ast.walk(tree) if isinstance(node, ast.ImportFrom))
     return frozenset[str](source for node in imports for source in import_sources(node, directory.name))

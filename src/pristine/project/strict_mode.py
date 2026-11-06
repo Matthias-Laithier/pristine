@@ -12,10 +12,11 @@ from pristine.project.automation import (
 from pristine.project.commands.shell import program_calls
 from pristine.project.repository.loading import Project
 from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role
+from pristine.project.strictness.linting import LINT_CHECKS
 from pristine.project.strictness.python_strictness import PYTHON_PROBES
 from pristine.project.strictness.strictness import Arguments, UnverifiedConfigError
 from pristine.project.strictness.typescript_strictness import TYPESCRIPT_PROBES
-from pristine.reports.findings import Finding, Severity
+from pristine.reports.findings import Finding, FindingKind, Severity
 
 FIRST_LINE = 1
 PROBES = PYTHON_PROBES | TYPESCRIPT_PROBES
@@ -58,7 +59,14 @@ def probe_finding(project: Project, name: str, calls: Arguments) -> Finding | No
         shortfall = probe.check(project, calls)
     except UnverifiedConfigError as error:
         message = f"cannot verify that {probe.subject} type-checks in strict mode: {error.reason}"
-        return Finding(project.shown(error.path), FIRST_LINE, RULE_ID, Severity.WARNING, message)
+        return Finding(
+            project.shown(error.path),
+            FIRST_LINE,
+            RULE_ID,
+            Severity.WARNING,
+            message,
+            FindingKind.VERIFICATION,
+        )
     if shortfall is None:
         return None
     message = f"{probe.subject} does not type-check in strict mode; {shortfall.fix}"
@@ -73,4 +81,4 @@ def strict_type_checking(project: Project) -> list[Finding]:
     return list(dict.fromkeys(finding for finding in findings if finding))
 
 
-CHECKS = (strict_type_checking,)
+CHECKS = (strict_type_checking, *LINT_CHECKS)

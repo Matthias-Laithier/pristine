@@ -11,6 +11,12 @@ WORKER_COMMAND = (sys.executable, "-m", "pristine.engine.worker")
 WORKER_STARTUP_SECONDS = 60
 SECONDS_PER_FILE = 10
 LOST_FILE_REASON = "the parser crashed or timed out on this file"
+UNREPORTED_FILE_REASON = "the worker finished without reporting this file"
+UNLAUNCHABLE_WORKER_REASON = "the worker could not start"
+
+
+class WorkerLaunchFailed(Exception):
+    pass
 
 
 def reported_outcomes(lines: list[str]) -> Iterator[tuple[str, Outcome]]:
@@ -32,6 +38,8 @@ def run_worker(command: tuple[str, ...], paths: list[str]) -> tuple[dict[str, Ou
         result = subprocess.run(command, input=request, capture_output=True, timeout=timeout, check=False)
     except subprocess.TimeoutExpired as expired:
         return decoded_results(expired.stdout), False
+    except OSError as error:
+        raise WorkerLaunchFailed(f"{UNLAUNCHABLE_WORKER_REASON}: {' '.join(command)}: {error}") from error
     return decoded_results(result.stdout), result.returncode == 0
 
 
@@ -39,11 +47,16 @@ def inspect_in_one_worker(command: tuple[str, ...], paths: list[str]) -> dict[st
     outcomes: dict[str, Outcome] = {}
     pending = paths
     while pending:
-        reported, finished = run_worker(command, pending)
+        try:
+            reported, finished = run_worker(command, pending)
+        except WorkerLaunchFailed as failure:
+            outcomes.update(dict.fromkeys(pending, Unchecked(str(failure))))
+            return outcomes
         outcomes.update(reported)
         pending = [path for path in pending if path not in reported]
-        if pending and not finished:
-            outcomes[pending[0]] = Unchecked(LOST_FILE_REASON)
+        if pending:
+            reason = UNREPORTED_FILE_REASON if finished else LOST_FILE_REASON
+            outcomes[pending[0]] = Unchecked(reason)
             pending = pending[1:]
     return outcomes
 

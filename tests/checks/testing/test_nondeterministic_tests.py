@@ -48,6 +48,17 @@ UNIMPORTED = """def test_welcome_email_is_sent(smtp_server):
 def test_timer_is_a_parameter(time):
     time.sleep(2)
 """
+MIXED_IMPLICIT_MODULES = """def test_welcome_email_is_sent(time):
+    time.sleep(2)
+    assert random.choice(["marc", "lea"]) == "marc"
+
+
+def test_shipping_method_is_random():
+    assert random.choice(["standard", "express"]) in {"standard", "express"}
+"""
+UNSHADOWED_TIME = """def test_retry_backs_off():
+    time.sleep(2)
+"""
 
 
 def test_reads_of_the_outside_world_are_warnings(run_pristine: RunPristine) -> None:
@@ -65,6 +76,17 @@ def test_files_without_tests_are_exempt_unless_they_are_conftest(run_pristine: R
 def test_unimported_time_module_is_resolved_unless_shadowed(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_welcome.py": UNIMPORTED})
     assert rule_findings(report, RULE_ID) == []
+
+
+def test_implicit_modules_are_resolved_per_file(run_pristine: RunPristine) -> None:
+    files = {"tests/test_mixed.py": MIXED_IMPLICIT_MODULES, "tests/test_retry.py": UNSHADOWED_TIME}
+    _, report = run_pristine(files, "--jobs", "1")
+    findings = [(finding["path"], finding["line"], finding["severity"]) for finding in report["findings"]]
+    assert findings == [
+        ("tests/test_mixed.py", 3, "warning"),
+        ("tests/test_mixed.py", 7, "warning"),
+        ("tests/test_retry.py", 2, "warning"),
+    ]
 
 
 def test_seeds_patched_sleeps_and_production_code_are_exempt(run_pristine: RunPristine) -> None:

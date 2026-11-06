@@ -2,9 +2,9 @@ DESCRIPTION = (
     "Check code against the coding rules and print the rules themselves. Built for agents: run 'pristine guide' "
     "before coding to read how to apply the rules, 'pristine rule <ID>' to read a rule, and, before finishing a "
     "task, 'pristine check' on the files you wrote or changed and 'pristine project' on the repository root. Exit "
-    "code 0 means success with no error findings (warnings may remain), 1 means at least one error finding, 2 "
-    "means a usage problem such as an invalid option, an unknown rule ID or chapter, or a project path that is "
-    "no directory."
+    "code 0 means verification completed with no error findings (warnings may remain), 1 means at least one error "
+    "finding, 2 means a usage problem such as an invalid option, an unknown rule ID or chapter, or a project path "
+    "that is no directory, and 3 means verification did not complete; 3 takes priority over 1."
 )
 GUIDE_DESCRIPTION = (
     "Print the rules hub as markdown: precedence, the steps to follow before coding, while coding, and before "
@@ -30,7 +30,8 @@ CHECK_DESCRIPTION = (
     "Check files and directories. Directories expand to their git-tracked and untracked, non-ignored files, "
     "or to every non-hidden file outside a git repository. Prose, data, lockfiles, binaries, and files marked "
     "as generated are skipped. Files without a known grammar, unreadable files, and files whose parser crashes or "
-    "times out are listed as unchecked, so no file passes silently. Files are parsed in parallel worker "
+    "times out are listed as unchecked, so no file passes silently. Files without a known grammar are listed as "
+    "unsupported and are not runtime failures. Files are parsed in parallel worker "
     "processes, at most --jobs N of them, half the CPU cores by default so a run never saturates the machine. "
     "The first use of a language downloads its grammar, announced by one 'pristine: downloading' line "
     "on stderr. Each text finding reads 'path:line: RULE-ID severity: message'. Lines for missing, unchecked, and "
@@ -40,8 +41,10 @@ CHECK_DESCRIPTION = (
     "--max N prints only the first N findings and a line counting the omitted ones. The summary and the per-rule "
     "counts still cover every finding. A path that does not exist is listed as 'missing: <path>' (the JSON "
     "'missing' list) and counted in the summary. It causes no usage error, so 'git diff --name-only | xargs "
-    "pristine check' survives deleted files. The exit code follows the error findings alone, so a run whose paths "
-    "are all missing exits 0. Fix every finding, or report it by rule ID as a deliberate break with its reason."
+    "pristine check' survives deleted files. Exit code 3 means verification did not complete: an operational "
+    "unchecked file or a verification finding, with priority over exit code 1. Missing paths, intentional skips, "
+    "and unsupported formats do not cause it. Fix every finding, or report it by rule ID as a deliberate break "
+    "with its reason."
 )
 PROJECT_DESCRIPTION = (
     "Check the tooling contract of a repository, given its root directory. TL-1: a root Makefile (error if "
@@ -55,6 +58,6 @@ PROJECT_DESCRIPTION = (
     "a deployable application, detected by a container build file, has a committed lockfile for each root "
     "manifest, verified with git ls-files (warning). Paths under node_modules, vendor, third_party, and template "
     "directories are ignored. Output, --json, --max, and exit codes match 'check': exit 0 without error findings, "
-    "1 with at least one, 2 when PATH is not a directory. Makefiles and manifests read count as checked files. "
-    "Unreadable or invalid ones are listed as unchecked."
+    "1 with at least one, 2 when PATH is not a directory, and 3 when verification did not complete. Makefiles and "
+    "manifests read count as checked files. Unreadable or invalid ones are listed as unchecked."
 )

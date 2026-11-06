@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from fnmatch import fnmatchcase
 
 from pristine.project.commands.scripts import with_package_scripts
-from pristine.project.commands.shell import program_calls
+from pristine.project.commands.shell import guarded_program_calls, program_calls
 from pristine.project.repository.loading import Project
 from pristine.project.repository.makefile import FAST_GATE, reach
 from pristine.project.repository.makefile_syntax import Rule
@@ -55,16 +55,35 @@ REQUIREMENTS = (
     Requirement(Ecosystem.JAVASCRIPT, Role.FORMATTER, every_project),
     Requirement(Ecosystem.JAVASCRIPT, Role.LINTER, every_project),
     Requirement(Ecosystem.JAVASCRIPT, Role.TYPE_CHECKER, is_typescript),
+    Requirement(Ecosystem.GO, Role.FORMATTER, every_project),
+    Requirement(Ecosystem.GO, Role.LINTER, every_project),
+    Requirement(Ecosystem.GO, Role.TYPE_CHECKER, every_project),
+    Requirement(Ecosystem.RUST, Role.FORMATTER, every_project),
+    Requirement(Ecosystem.RUST, Role.LINTER, every_project),
+    Requirement(Ecosystem.RUST, Role.TYPE_CHECKER, every_project),
 )
 
 
 def invocations(commands: Iterable[str]) -> frozenset[Invocation]:
-    calls = [call for command in commands for call in program_calls(command, TOOL_NAMES)]
+    normal_calls = [
+        (name, tuple(arguments)) for command in commands for name, arguments in program_calls(command, TOOL_NAMES)
+    ]
+    guarded_calls = {
+        (name, tuple(arguments))
+        for command in commands
+        for name, arguments in guarded_program_calls(command, TOOL_NAMES)
+    }
+    calls = normal_calls + [*guarded_calls]
     return frozenset(
         (name, role)
         for name, arguments in calls
         for role, test in TOOLS_BY_NAME[name].checks.items()
-        if test(arguments)
+        if test(list(arguments))
+        and (
+            role is not Role.FORMATTER
+            or TOOLS_BY_NAME[name].ecosystem is not Ecosystem.GO
+            or (name, arguments) in guarded_calls
+        )
     )
 
 

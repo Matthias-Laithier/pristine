@@ -34,6 +34,13 @@ def test_scan_that_cannot_run_is_one_warning(
     monkeypatch.setenv("PATH", str(tools))
     exit_code, report = run_pristine({"ship.py": "def ship():\n    return 1\n"})
     findings = [finding for finding in report["findings"] if finding["rule_id"] == "BS-2"]
-    assert exit_code == 0
+    assert exit_code == 3
     assert [(finding["path"], finding["line"], finding["severity"]) for finding in findings] == [(".", 0, "warning")]
+    assert findings[0]["kind"] == "verification"
     assert reason in findings[0]["message"]
+
+
+def test_secret_finding_is_a_code_finding(run_pristine: RunPristine) -> None:
+    _, report = run_pristine({"settings.json": f'{{\n  "token": "{FAKE_TOKEN}"\n}}\n'})
+    finding = next(finding for finding in report["findings"] if finding["rule_id"] == "BS-2")
+    assert "kind" not in finding

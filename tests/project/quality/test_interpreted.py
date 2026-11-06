@@ -1,8 +1,13 @@
 import json
 
 from tests.project.conftest import RunProject, rule_findings
+from tests.project.quality_manifests import ESLINT_CONFIG, PACKAGE
 
-PYPROJECT = '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\ndev = ["ruff>=0.6", "MyPy[reports]==1.0"]\n'
+PYPROJECT = (
+    '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\n'
+    'dev = ["ruff>=0.6", "MyPy[reports]==1.0"]\n\n[tool.ruff.lint]\n'
+    'extend-select = ["S", "ASYNC", "DTZ", "G", "T20"]\n'
+)
 PYTHON_MAKEFILE = (
     "RUN := uv run --project app\n"
     "dev:\n\t./run\n"
@@ -11,11 +16,6 @@ PYTHON_MAKEFILE = (
     "format-check:\n\t@$(RUN) ruff format {format_mode} app\n"
     "lint:\n\tcd app && $(RUN) ruff check .\n"
 )
-PACKAGE = {
-    "engines": {"node": ">=22"},
-    "devDependencies": {"eslint": "9", "prettier": "3", "typescript": "5"},
-    "scripts": {"lint": "eslint . && prettier --check .", "typecheck": "tsc --noEmit", "verify": "npm run lint"},
-}
 JAVASCRIPT_MAKEFILE = "dev:\n\tnpm start\ncheck:\n\tnpm run verify\n\tpnpm typecheck\ncheck-all: check\n"
 
 
@@ -23,6 +23,17 @@ def test_python_gate_followed_through_targets_and_variables(run_project: RunProj
     exit_code, report = run_project(
         {"pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE.format(format_mode="--check")}
     )
+    assert (exit_code, report["findings"]) == (0, [])
+
+
+def test_wrapper_flags_precede_the_child_program(run_project: RunProject) -> None:
+    files = {"pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE}
+    files["Makefile"] = files["Makefile"].replace(
+        "\t$(RUN) mypy --strict app",
+        "\tuv run --all-extras --project app mypy --strict app",
+    )
+    files["Makefile"] = files["Makefile"].format(format_mode="--check")
+    exit_code, report = run_project(files)
     assert (exit_code, report["findings"]) == (0, [])
 
 
@@ -50,13 +61,21 @@ def test_python_project_without_tools(run_project: RunProject) -> None:
 
 
 def test_javascript_gate_resolves_package_scripts(run_project: RunProject) -> None:
-    files = {"package.json": json.dumps(PACKAGE), "Makefile": JAVASCRIPT_MAKEFILE}
+    files = {
+        "package.json": json.dumps(PACKAGE),
+        ".eslintrc.json": ESLINT_CONFIG,
+        "Makefile": JAVASCRIPT_MAKEFILE,
+    }
     exit_code, report = run_project(files)
     assert (exit_code, report["findings"]) == (0, [])
 
 
 def test_typescript_needs_a_type_checker_run(run_project: RunProject) -> None:
-    files = {"package.json": json.dumps(PACKAGE), "Makefile": JAVASCRIPT_MAKEFILE.replace("\tpnpm typecheck\n", "")}
+    files = {
+        "package.json": json.dumps(PACKAGE),
+        ".eslintrc.json": ESLINT_CONFIG,
+        "Makefile": JAVASCRIPT_MAKEFILE.replace("\tpnpm typecheck\n", ""),
+    }
     _, report = run_project(files)
     assert [message for _, message, _ in rule_findings(report, "TL-3")] == [
         "make check does not run the type checker (configured: tsc)"

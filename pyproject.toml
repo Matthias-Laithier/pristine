@@ -5,13 +5,13 @@ description = "Opinionated coding rules for AI coding agents, with a CLI that se
 readme = "README.md"
 authors = [{name = "Matthias Laithier", email = "matthias.laithier@gmail.com"}]
 license = "MIT"
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 keywords = ["ai-agents", "coding-standards", "code-quality", "static-analysis", "linter", "tree-sitter"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [

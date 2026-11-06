@@ -33,6 +33,14 @@ def test_lazy_and_type_checking_imports_close_a_cycle(run_pristine: RunPristine)
     ]
 
 
+def test_native_lazy_imports_close_a_cycle(run_pristine: RunPristine) -> None:
+    exit_code, report = run_pristine(
+        {"orders.py": "lazy from invoices import total\n", "invoices.py": "import orders\n"}
+    )
+    assert exit_code == 1
+    assert reported_cycles(report) == [("invoices.py", 1, "invoices.py -> orders.py -> invoices.py")]
+
+
 @pytest.mark.parametrize(
     ("files", "expected"),
     [
