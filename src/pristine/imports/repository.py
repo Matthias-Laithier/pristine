@@ -1,8 +1,7 @@
-import posixpath
 from functools import cache
 from pathlib import Path, PurePath
 
-from pristine.discovery import display_path
+from pristine.discovery import cwd_relative
 from pristine.path_roles import is_cache, is_vendored
 from pristine.services.git import listed_files
 
@@ -17,10 +16,10 @@ def repository_root(directory: Path) -> Path | None:
 
 
 def repository_files(root: Path) -> list[str]:
-    shown_root = display_path(root)
-    names = (PurePath(file.as_posix()[len(root.as_posix()) + 1 :]) for file in listed_files(root) or [])
-    kept = (name for name in names if not is_vendored(name) and not is_cache(name))
-    return [posixpath.normpath(posixpath.join(shown_root, name.as_posix())) for name in kept]
+    listed_prefix, resolved_root = f"{root.as_posix()}/", root.resolve().as_posix()
+    names = (file.as_posix().removeprefix(listed_prefix) for file in listed_files(root) or [])
+    kept = (name for name in names if not is_vendored(PurePath(name)) and not is_cache(PurePath(name)))
+    return [cwd_relative(f"{resolved_root}/{name}") for name in kept]
 
 
 def with_repository_files(paths: list[str]) -> list[str]:

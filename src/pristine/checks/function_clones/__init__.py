@@ -1,4 +1,3 @@
-import os
 import re
 from collections import defaultdict
 from pathlib import Path, PurePath
@@ -78,9 +77,7 @@ def clone_finding(group: list[FunctionBody], checked: set[str]) -> Finding | Non
 
 
 def compared_paths(paths: list[str]) -> list[str]:
-    inside = os.getcwd() + os.sep
-    python_paths = (path for path in with_repository_files(paths) if path.endswith(PYTHON_SUFFIX))
-    return sorted({os.path.abspath(path).removeprefix(inside) for path in python_paths})
+    return [path for path in with_repository_files(paths) if path.endswith(PYTHON_SUFFIX)]
 
 
 def check_function_clones(paths: list[str]) -> list[Finding]:

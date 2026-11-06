@@ -1,3 +1,4 @@
+import os
 from pathlib import Path, PurePath
 
 from pristine.path_roles import is_cache, is_vendored
@@ -20,12 +21,13 @@ def expand(path: Path) -> list[Path]:
     return [file for file, inside in relative if not is_vendored(inside) and not is_cache(inside)]
 
 
+def cwd_relative(resolved: str) -> str:
+    current = os.getcwd()
+    return "." if resolved == current else resolved.removeprefix(current.rstrip("/") + "/")
+
+
 def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(Path.cwd()).as_posix()
-    except ValueError:
-        return absolute.as_posix()
+    return cwd_relative(path.resolve().as_posix())
 
 
 def is_excluded(shown_path: str, patterns: list[str]) -> bool:
