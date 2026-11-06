@@ -42,8 +42,36 @@ def enable_billing_debug():
     del os.environ["BILLING_TRACE"]
 
 
-def main():
-    serve(port=int(os.environ["PORT"]))
+def pytest_configure(config):
+    config.billing_region = os.environ["BILLING_REGION"]
+"""
+CONSTANT_KEYS = """import os
+
+REGION_VARIABLE = "BILLING_REGION"
+
+
+def billing_region():
+    return os.environ[REGION_VARIABLE]
+
+
+def invoice_bucket(bucket_variable):
+    return os.environ[bucket_variable]
+"""
+INHERITED_SETTINGS = """import os
+
+from pydantic_settings import BaseSettings
+
+
+class ServiceSettings(BaseSettings):
+    region: str
+
+
+class BillingSettings(ServiceSettings):
+    payment_term_days: int
+
+
+def legacy_region():
+    return os.environ["BILLING_REGION"]
 """
 SETTINGS_MODULE = """import os
 
@@ -73,12 +101,9 @@ def test_module_level_writes_dynamic_process_and_startup_reads_are_not_reported(
     ("path", "source"),
     [
         ("settings_loader.py", SETTINGS_MODULE),
-        ("billing/config.py", READ_IN_FUNCTION),
-        ("billing/main.py", READ_IN_FUNCTION),
-        ("billing/cli.py", READ_IN_FUNCTION),
-        ("billing/tasks.py", READ_IN_FUNCTION),
+        ("settings_loader.py", INHERITED_SETTINGS),
+        ("billing/__main__.py", READ_IN_FUNCTION),
         ("tests/test_billing.py", READ_IN_FUNCTION),
-        ("scripts/backfill_invoices.py", READ_IN_FUNCTION),
         ("backfill_invoices.py", f"#!/usr/bin/env python3\n{READ_IN_FUNCTION}"),
         ("backfill_invoices.py", f"{READ_IN_FUNCTION}\n\nif __name__ == '__main__':\n    payment_term_days()\n"),
     ],
@@ -93,3 +118,8 @@ def test_settings_modules_entrypoints_tests_and_scripts_are_exempt(
 def test_read_in_an_application_module_is_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing/reminders.py": READ_IN_FUNCTION})
     assert rule_findings(report, RULE_ID) == [(5, "warning")]
+
+
+def test_constant_keys_are_resolved_and_computed_keys_skipped(run_pristine: RunPristine) -> None:
+    _, report = run_pristine({"billing.py": CONSTANT_KEYS})
+    assert rule_findings(report, RULE_ID) == [(7, "warning")]
