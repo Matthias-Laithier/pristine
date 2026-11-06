@@ -18,7 +18,16 @@ await liveClient.messages.create(request);
 def test_tests_calling_real_model_clients_are_warnings(run_pristine: RunPristine) -> None:
     files = {"tests/test_summary.py": PYTHON_SOURCE, "src/summary.test.ts": SCRIPT_SOURCE}
     _, report = run_pristine(files)
-    assert rule_findings(report, RULE_ID) == [(2, "warning"), (2, "warning")]
+    assert rule_findings(report, RULE_ID) == [(3, "warning"), (5, "warning")]
+
+
+def test_the_key_is_traced_from_the_environment_into_the_client(run_pristine: RunPristine) -> None:
+    traced = "from os import environ\nimport openai\n\ntoken = environ.get('LLM_TOKEN')\nopenai.OpenAI(api_key=token).chat.completions.create()\n"
+    implicit = "import os\nimport openai\n\nos.getenv('OPENAI_API_KEY')\nopenai.OpenAI().chat.completions.create()\n"
+    _, report = run_pristine({"tests/test_traced.py": traced, "tests/test_implicit.py": implicit})
+    findings = [finding for finding in report["findings"] if finding["rule_id"] == RULE_ID]
+    assert [(finding["path"], finding["line"]) for finding in findings] == [("tests/test_traced.py", 5)]
+    assert "the LLM_TOKEN key" in findings[0]["message"]
 
 
 def test_evals_production_code_fakes_and_non_client_imports_are_exempt(run_pristine: RunPristine) -> None:
@@ -37,4 +46,4 @@ def test_evals_production_code_fakes_and_non_client_imports_are_exempt(run_prist
 
 def test_conftest_counts_and_test_support_files_are_exempt(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/recorded/record.py": PYTHON_SOURCE, "tests/conftest.py": PYTHON_SOURCE})
-    assert rule_findings(report, RULE_ID) == [(2, "warning")]
+    assert rule_findings(report, RULE_ID) == [(5, "warning")]
