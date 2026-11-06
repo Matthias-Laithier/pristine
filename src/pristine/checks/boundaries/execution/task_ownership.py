@@ -1,7 +1,7 @@
 import re
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -34,7 +34,7 @@ def spawns_task(call: Node, bindings: dict[str, str]) -> bool:
 
 
 def dropped_tasks(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[Finding]:
-    for call in (node for node in all_nodes(parsed.root) if node.type == "call"):
+    for call in (node for node in all_nodes(parsed) if node.type == "call"):
         is_statement = call.parent is not None and call.parent.type in STATEMENT_CONTAINERS
         if is_statement and spawns_task(call, bindings):
             message = f"'{callee_of(call)}(...)' creates a task and drops its reference; {OWN_TASK_HINT}"
@@ -115,7 +115,7 @@ def propagates(clause: Node) -> bool:
 
 
 def swallowed_cancellations(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[Finding]:
-    for clause in (node for node in all_nodes(parsed.root) if node.type == "except_clause"):
+    for clause in (node for node in all_nodes(parsed) if node.type == "except_clause"):
         if catches_cancellation(clause, bindings) and not propagates(clause):
             caught = clause.child_by_field_name("value")
             head = "except" if caught is None else f"except {' '.join((node_text(caught) or '').split())}"
@@ -126,7 +126,7 @@ def swallowed_cancellations(parsed: ParsedFile, bindings: dict[str, str]) -> Ite
 def check_task_ownership(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    bindings = import_bindings(parsed.root)
+    bindings = import_bindings(parsed)
     findings = [*dropped_tasks(parsed, bindings), *swallowed_cancellations(parsed, bindings)]
     return sorted(findings, key=lambda finding: finding.line)
 

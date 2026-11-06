@@ -1,9 +1,9 @@
 from collections import Counter
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import HandlerScope, callee_text, normalized
-from pristine.syntax.parsing import all_nodes, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_scopes import all_parameter_names
 
@@ -19,10 +19,10 @@ DEFINITION_KINDS = frozenset({"function_definition", "class_definition"})
 
 
 class LoggerResolver:
-    def __init__(self, root: Node) -> None:
-        reassigned = {target for target, _ in assignments(root)}
-        shadowed = reassigned | set(all_parameter_names(root))
-        self.bindings = {name: module for name, module in import_bindings(root).items() if name not in shadowed}
+    def __init__(self, source: Node | ParsedFile) -> None:
+        reassigned = {target for target, _ in assignments(source)}
+        shadowed = reassigned | set(all_parameter_names(root_of(source)))
+        self.bindings = {name: module for name, module in import_bindings(source).items() if name not in shadowed}
         self.loggers: set[str] = set()
 
     def qualified(self, node: Node) -> str:
@@ -47,50 +47,56 @@ class LoggerResolver:
         return receiver is not None and self.is_logger(receiver)
 
 
-def assignments(root: Node) -> list[tuple[str, Node]]:
+def root_of(source: Node | ParsedFile) -> Node:
+    return source.root if isinstance(source, ParsedFile) else source
+
+
+def assignments(source: Node | ParsedFile) -> list[tuple[str, Node]]:
     pairs = (
         (node.child_by_field_name("left"), node.child_by_field_name("right"))
-        for node in all_nodes(root)
+        for node in all_nodes(source)
         if node.type == "assignment"
     )
     return [(callee_text(left), right) for left, right in pairs if left is not None and right is not None]
 
 
-def resolved_loggers(resolver: LoggerResolver, root: Node) -> set[str]:
-    pairs = assignments(root)
+def resolved_loggers(resolver: LoggerResolver, source: Node | ParsedFile) -> set[str]:
+    pairs = assignments(source)
     changed = True
     while changed:
         found = {target for target, value in pairs if resolver.is_logger(value)}
         changed = not found <= resolver.loggers
         resolver.loggers |= found
-    rebound = {target for target, value in pairs if not resolver.is_logger(value)} | set(all_parameter_names(root))
+    rebound = {
+        target for target, value in pairs if not resolver.is_logger(value)
+    } | set(all_parameter_names(root_of(source)))
     return resolver.loggers - rebound
 
 
-def print_is_builtin(root: Node, bindings: dict[str, str]) -> bool:
+def print_is_builtin(source: Node | ParsedFile, bindings: dict[str, str]) -> bool:
     definitions = (
-        node_text(node.child_by_field_name("name")) for node in all_nodes(root) if node.type in DEFINITION_KINDS
+        node_text(node.child_by_field_name("name")) for node in all_nodes(source) if node.type in DEFINITION_KINDS
     )
-    assigned = (target for target, _ in assignments(root))
-    return PRINT not in bindings and PRINT not in {*definitions, *assigned, *all_parameter_names(root)}
+    assigned = (target for target, _ in assignments(source))
+    return PRINT not in bindings and PRINT not in {*definitions, *assigned, *all_parameter_names(root_of(source))}
 
 
-def logging_callees(root: Node) -> frozenset[str]:
-    resolver = LoggerResolver(root)
-    resolver.loggers = resolved_loggers(resolver, root)
-    functions = (node.child_by_field_name("function") for node in all_nodes(root) if node.type == "call")
+def logging_callees(source: Node | ParsedFile) -> frozenset[str]:
+    resolver = LoggerResolver(source)
+    resolver.loggers = resolved_loggers(resolver, source)
+    functions = (node.child_by_field_name("function") for node in all_nodes(source) if node.type == "call")
     callees = {callee_text(function) for function in functions if function and resolver.is_logging_callee(function)}
-    if print_is_builtin(root, resolver.bindings):
+    if print_is_builtin(source, resolver.bindings):
         callees.add(PRINT)
     return frozenset(callees)
 
 
-def default_constants(root: Node, default_values: frozenset[str]) -> frozenset[str]:
-    statements = (statement for statement in module_statements(root) if statement.type == "assignment")
+def default_constants(source: Node | ParsedFile, default_values: frozenset[str]) -> frozenset[str]:
+    statements = (statement for statement in module_statements(root_of(source)) if statement.type == "assignment")
     pairs = (
         (statement.child_by_field_name("left"), statement.child_by_field_name("right")) for statement in statements
     )
-    bound = Counter([target for target, _ in assignments(root)] + list(all_parameter_names(root)))
+    bound = Counter([target for target, _ in assignments(source)] + list(all_parameter_names(root_of(source))))
     return frozenset(
         node_text(left) or ""
         for left, right in pairs
@@ -102,5 +108,5 @@ def default_constants(root: Node, default_values: frozenset[str]) -> frozenset[s
     )
 
 
-def python_scope(root: Node, default_values: frozenset[str]) -> HandlerScope:
-    return HandlerScope(logging_callees(root), default_constants(root, default_values))
+def python_scope(source: Node | ParsedFile, default_values: frozenset[str]) -> HandlerScope:
+    return HandlerScope(logging_callees(source), default_constants(source, default_values))

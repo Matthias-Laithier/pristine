@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_fan_out.sizes import passes_size
 from pristine.registration import registering

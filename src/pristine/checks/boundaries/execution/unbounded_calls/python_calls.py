@@ -1,7 +1,7 @@
 import re
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_calls.calls import Violation
 from pristine.syntax.calls import calls_of
@@ -29,8 +29,8 @@ def is_interactive_launch(qualified: str, arguments: list[Node]) -> bool:
 
 
 def scan_python(parsed: ParsedFile) -> Iterator[Violation]:
-    bindings = import_bindings(parsed.root)
-    for node, callee, arguments in calls_of(parsed.root, "call"):
+    bindings = import_bindings(parsed)
+    for node, callee, arguments in calls_of(parsed, "call"):
         qualified = qualified_callee(callee, bindings) or ""
         call = EXTERNAL_CALLS.get(qualified)
         if call is None or has_bound(arguments, call) or is_interactive_launch(qualified, arguments):

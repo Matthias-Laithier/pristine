@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_calls.calls import Violation
 from pristine.reports.findings import Severity
@@ -52,8 +52,9 @@ def has_client_directive(root: Node) -> bool:
     return string_value(directive) == CLIENT_DIRECTIVE
 
 
-def is_browser_code(root: Node) -> bool:
-    return has_client_directive(root) or any(map(is_browser_node, all_nodes(root)))
+def is_browser_code(source: Node | ParsedFile) -> bool:
+    root = source.root if isinstance(source, ParsedFile) else source
+    return has_client_directive(root) or any(map(is_browser_node, all_nodes(source)))
 
 
 def script_call(callee: str, arguments: list[Node]) -> BoundedCall | None:
@@ -85,9 +86,9 @@ def is_unknown_or_relative(arguments: list[Node]) -> bool:
 
 
 def scan_script(parsed: ParsedFile) -> Iterator[Violation]:
-    if is_browser_code(parsed.root) or AXIOS_DEFAULT_TIMEOUT in parsed.text:
+    if is_browser_code(parsed) or AXIOS_DEFAULT_TIMEOUT in parsed.text:
         return
-    for node, callee, arguments in calls_of(parsed.root, "call_expression"):
+    for node, callee, arguments in calls_of(parsed, "call_expression"):
         call = None if is_unknown_or_relative(arguments) else script_call(callee, arguments)
         if call is not None and lacks_bound(arguments, call):
             yield Violation(node, callee, call)

@@ -2,7 +2,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import cache
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.package_modules import import_package_modules

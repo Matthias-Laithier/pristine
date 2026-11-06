@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import (
     NARROW_HINT,
@@ -70,8 +70,8 @@ def logged_verdict(names: frozenset[str], block: Node, scope: HandlerScope) -> t
 
 @detects("python")
 def python_swallows(parsed: ParsedFile) -> Iterator[Finding]:
-    scope = python_scope(parsed.root, returned_values(LOGGED_DEFAULTS))
-    for clause in (node for node in all_nodes(parsed.root) if node.type == "except_clause"):
+    scope = python_scope(parsed, returned_values(LOGGED_DEFAULTS))
+    for clause in (node for node in all_nodes(parsed) if node.type == "except_clause"):
         caught = clause.child_by_field_name("value")
         names, block = caught_names(caught), clause.named_children[-1]
         verdict = python_verdict(clause, names, body_text(block)) or logged_verdict(names, block, scope)

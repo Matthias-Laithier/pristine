@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterator
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_fan_out.coroutines import SPAWN_METHODS, is_bounded_work
 from pristine.checks.boundaries.execution.unbounded_fan_out.fanned_collections import (
@@ -40,8 +40,8 @@ def is_fan_out(spread: Node) -> bool:
     return (spread.type in COMPREHENSION_KINDS or is_mapped) and starts_new_work(spread)
 
 
-def gathered_loops(root: Node, bindings: dict[str, str]) -> Iterator[tuple[Node, Node]]:
-    for gather, callee, arguments in calls_of(root, "call"):
+def gathered_loops(source: Node | ParsedFile, bindings: dict[str, str]) -> Iterator[tuple[Node, Node]]:
+    for gather, callee, arguments in calls_of(source, "call"):
         spreads = [argument.named_children[0] for argument in arguments if argument.type == "list_splat"]
         is_gather = qualified_callee(callee, bindings) == GATHER
         yield from ((gather, spread) for spread in spreads if is_gather and is_fan_out(spread))
@@ -73,8 +73,8 @@ def spawns_in_task_group(statement: Node, alias: str) -> Iterator[tuple[Node, No
             yield spawn, loop
 
 
-def task_group_loops(root: Node, bindings: dict[str, str]) -> Iterator[tuple[Node, Node]]:
-    for item in (node for node in all_nodes(root) if node.type == "with_item"):
+def task_group_loops(source: Node | ParsedFile, bindings: dict[str, str]) -> Iterator[tuple[Node, Node]]:
+    for item in (node for node in all_nodes(source) if node.type == "with_item"):
         alias = task_group_alias(item, bindings)
         statement = None if item.parent is None else item.parent.parent
         if alias is not None and statement is not None:
@@ -108,12 +108,12 @@ def fan_out_finding(parsed: ParsedFile, call: Node, collection: Node) -> Finding
 def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    bindings = import_bindings(parsed.root)
+    bindings = import_bindings(parsed)
     if is_exempt(parsed, bindings):
         return []
-    limiters = limiters_of(parsed.root, bindings)
+    limiters = limiters_of(parsed, bindings)
     findings: dict[int, Finding] = {}
-    for call, loop in [*gathered_loops(parsed.root, bindings), *task_group_loops(parsed.root, bindings)]:
+    for call, loop in [*gathered_loops(parsed, bindings), *task_group_loops(parsed, bindings)]:
         collection = unbounded_collection(loop)
         if collection is not None and not is_bounded(call, loop, limiters):
             findings.setdefault(line_of(call), fan_out_finding(parsed, call, collection))

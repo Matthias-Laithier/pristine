@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -47,8 +47,8 @@ def async_function_findings(path: str, function: Node, bindings: dict[str, str])
 def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    bindings = import_bindings(parsed.root)
-    functions = [node for node in all_nodes(parsed.root) if node.type == FUNCTION_KIND and is_async(node)]
+    bindings = import_bindings(parsed)
+    functions = [node for node in all_nodes(parsed) if node.type == FUNCTION_KIND and is_async(node)]
     findings = (async_function_findings(parsed.path, function, bindings) for function in functions)
     return sorted((finding for group in findings for finding in group), key=lambda finding: finding.line)
 

@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import (
     PROPAGATE_HINT,
@@ -29,5 +29,5 @@ def is_silent_catch(clause: Node) -> bool:
 
 @detects("java", "csharp", "kotlin")
 def typed_catch_swallows(parsed: ParsedFile) -> Iterator[Finding]:
-    for clause in (node for node in all_nodes(parsed.root) if node.type in TYPED_CATCH_KINDS and is_silent_catch(node)):
+    for clause in (node for node in all_nodes(parsed) if node.type in TYPED_CATCH_KINDS and is_silent_catch(node)):
         yield swallow(parsed, clause, Severity.WARNING, f"empty catch block hides the failure; {PROPAGATE_HINT}")

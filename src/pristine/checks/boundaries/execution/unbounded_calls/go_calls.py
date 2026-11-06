@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_calls.calls import Violation
 from pristine.reports.findings import Severity
@@ -40,5 +40,5 @@ def node_violation(node: Node) -> Violation | None:
 def scan_go(parsed: ParsedFile) -> Iterator[Violation]:
     if HTTP_IMPORT not in parsed.text:
         return
-    violations = (node_violation(node) for node in all_nodes(parsed.root))
+    violations = (node_violation(node) for node in all_nodes(parsed))
     yield from (violation for violation in violations if violation is not None)

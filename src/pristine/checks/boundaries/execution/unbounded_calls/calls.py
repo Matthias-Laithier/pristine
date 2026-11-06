@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.syntax.calls import BoundedCall
 

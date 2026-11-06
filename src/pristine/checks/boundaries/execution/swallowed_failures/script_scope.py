@@ -1,9 +1,9 @@
 from collections import Counter
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import HandlerScope, callee_text, normalized
-from pristine.syntax.parsing import all_nodes, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text
 
 CONSOLE = "console"
 CONSTANT_KEYWORD = "const"
@@ -29,15 +29,19 @@ def binding_nodes(node: Node) -> list[Node | None]:
     return [node] if node.type == SHORTHAND_PATTERN else []
 
 
-def bound_names(root: Node) -> Counter[str]:
-    bindings = (binding for node in all_nodes(root) for binding in binding_nodes(node))
+def root_of(source: Node | ParsedFile) -> Node:
+    return source.root if isinstance(source, ParsedFile) else source
+
+
+def bound_names(source: Node | ParsedFile) -> Counter[str]:
+    bindings = (binding for node in all_nodes(source) for binding in binding_nodes(node))
     return Counter(node_text(binding) or "" for binding in bindings if binding is not None)
 
 
-def logging_callees(root: Node, names: Counter[str]) -> frozenset[str]:
+def logging_callees(source: Node | ParsedFile, names: Counter[str]) -> frozenset[str]:
     if names[CONSOLE]:
         return frozenset[str]()
-    functions = (node.child_by_field_name("function") for node in all_nodes(root) if node.type == "call_expression")
+    functions = (node.child_by_field_name("function") for node in all_nodes(source) if node.type == "call_expression")
     receivers = (
         (function, function.child_by_field_name("object"))
         for function in functions
@@ -46,10 +50,10 @@ def logging_callees(root: Node, names: Counter[str]) -> frozenset[str]:
     return frozenset(callee_text(function) for function, receiver in receivers if node_text(receiver) == CONSOLE)
 
 
-def default_constants(root: Node, names: Counter[str], default_values: frozenset[str]) -> frozenset[str]:
+def default_constants(source: Node | ParsedFile, names: Counter[str], default_values: frozenset[str]) -> frozenset[str]:
     declarations = (
         statement
-        for statement in module_statements(root)
+        for statement in module_statements(root_of(source))
         if statement.type == "lexical_declaration" and statement.children[0].type == CONSTANT_KEYWORD
     )
     declarators = (declarator for declaration in declarations for declarator in declaration.named_children)
@@ -67,6 +71,6 @@ def default_constants(root: Node, names: Counter[str], default_values: frozenset
     )
 
 
-def script_scope(root: Node, default_values: frozenset[str]) -> HandlerScope:
-    names = bound_names(root)
-    return HandlerScope(logging_callees(root, names), default_constants(root, names, default_values))
+def script_scope(source: Node | ParsedFile, default_values: frozenset[str]) -> HandlerScope:
+    names = bound_names(source)
+    return HandlerScope(logging_callees(source, names), default_constants(source, names, default_values))
