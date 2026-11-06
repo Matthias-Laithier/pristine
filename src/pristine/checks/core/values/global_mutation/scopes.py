@@ -1,4 +1,4 @@
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.syntax.parsing import all_nodes, node_text
 from pristine.syntax.syntax_kinds import FUNCTION_KINDS

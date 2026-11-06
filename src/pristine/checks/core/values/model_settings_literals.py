@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterator
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.clients.libraries import PYTHON_MODEL_CLIENTS
@@ -43,8 +43,8 @@ def is_tuned_number(node: Node, neutral: float) -> bool:
     return operand.type in NUMBER_KINDS and not is_neutral
 
 
-def module_literals(root: Node) -> dict[str, Node]:
-    assignments = (statement for statement in module_statements(root) if statement.type == "assignment")
+def module_literals(parsed: ParsedFile) -> dict[str, Node]:
+    assignments = (statement for statement in module_statements(parsed.root) if statement.type == "assignment")
     pairs = ((node_text(node.child_by_field_name("left")), node.child_by_field_name("right")) for node in assignments)
     return {name: value for name, value in pairs if name is not None and value is not None}
 
@@ -76,8 +76,8 @@ def names_model_client(source: Node, bindings: dict[str, str]) -> bool:
     return source.type == "type" and any(is_model_sdk(name, bindings) for name in names)
 
 
-def model_clients(root: Node, bindings: dict[str, str]) -> set[str]:
-    pairs = (pair for node in all_nodes(root) for pair in bound_sources(node))
+def model_clients(parsed: ParsedFile, bindings: dict[str, str]) -> set[str]:
+    pairs = (pair for node in all_nodes(parsed) for pair in bound_sources(node))
     return {
         node_text(target) or ""
         for target, source in pairs
@@ -115,11 +115,11 @@ def setting_finding(parsed: ParsedFile, name: str, value: Node, literals: dict[s
 def check_model_settings_literals(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python" or is_test_path(PurePath(parsed.path)) or parsed.text.startswith(SHEBANG):
         return []
-    literals = module_literals(parsed.root)
-    bindings = import_bindings(parsed.root)
-    clients = model_clients(parsed.root, bindings)
+    literals = module_literals(parsed)
+    bindings = import_bindings(parsed)
+    clients = model_clients(parsed, bindings)
     findings = []
-    for _, callee, arguments in calls_of(parsed.root, "call"):
+    for _, callee, arguments in calls_of(parsed, "call"):
         is_client = is_client_call(callee, bindings, clients)
         settings = hardcoded_settings(keyword_values(arguments), literals, is_client)
         findings.extend(setting_finding(parsed, name, value, literals) for name, value in settings)

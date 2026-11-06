@@ -1,4 +1,4 @@
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.lazy_initialization import is_lazy_initialization
 from pristine.checks.core.values.global_mutation.module_globals import binds_locally, module_globals
@@ -41,8 +41,8 @@ def is_test_setup(scope: Node) -> bool:
     return is_test_hook(scope) or is_fixture(scope)
 
 
-def lazily_initialized(root: Node) -> set[str]:
-    writes = [node for node in all_nodes(root) if node.type == "augmented_assignment_expression"]
+def lazily_initialized(parsed: ParsedFile) -> set[str]:
+    writes = [node for node in all_nodes(parsed) if node.type == "augmented_assignment_expression"]
     lazy = [node for node in writes if node_text(node.child_by_field_name("operator")) in LAZY_OPERATORS]
     return {node_text(node.child_by_field_name("left")) or "" for node in lazy}
 
@@ -74,12 +74,12 @@ def global_finding(path: str, statement: Node) -> Finding:
 
 
 def check_global_mutation(parsed: ParsedFile) -> list[Finding]:
-    collected = module_globals(parsed.language, parsed.root)
+    collected = module_globals(parsed.language, parsed)
     if collected is None:
         return []
-    lazy_names = lazily_initialized(parsed.root)
+    lazy_names = lazily_initialized(parsed)
     globals_kinds = {name: kinds for name, kinds in collected.items() if name not in lazy_names}
-    nodes = list(all_nodes(parsed.root))
+    nodes = list(all_nodes(parsed))
     found = (find_mutation(node, globals_kinds) for node in nodes) if globals_kinds else iter(())
     candidates = [mutation for mutation in found if mutation is not None and writes_module_state(mutation)]
     owned = owned_collections(candidates)

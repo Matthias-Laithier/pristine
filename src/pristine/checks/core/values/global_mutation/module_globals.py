@@ -1,10 +1,10 @@
 from collections.abc import Callable
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.registration import registering
 from pristine.services.grammars import SCRIPT_LANGUAGES
-from pristine.syntax.parsing import all_nodes, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
 REBINDABLE = "rebindable"
@@ -43,7 +43,7 @@ BINDING_FIELDS = {
 BINDING_KINDS = frozenset({"identifier", "shorthand_property_identifier_pattern"})
 
 type Globals = dict[str, frozenset[str]]
-type GlobalsCollector = Callable[[Node], Globals]
+type GlobalsCollector = Callable[[ParsedFile], Globals]
 _COLLECTORS: dict[str, GlobalsCollector] = {}
 
 
@@ -55,9 +55,9 @@ def is_python_collection(value: Node | None, imports: dict[str, str]) -> bool:
 
 
 @registering(_COLLECTORS, "python")
-def python_globals(root: Node) -> Globals:
-    imports = import_bindings(root)
-    assignments = [statement for statement in module_statements(root) if statement.type == "assignment"]
+def python_globals(parsed: ParsedFile) -> Globals:
+    imports = import_bindings(parsed)
+    assignments = [statement for statement in module_statements(parsed.root) if statement.type == "assignment"]
     pairs = [
         (statement.child_by_field_name("left"), statement.child_by_field_name("right")) for statement in assignments
     ]
@@ -87,8 +87,10 @@ def is_named_binding(declarator: Node) -> bool:
 
 
 @registering(_COLLECTORS, *SCRIPT_LANGUAGES)
-def js_globals(root: Node) -> Globals:
-    declarations = [statement for statement in module_statements(root) if statement.type in JS_DECLARATION_KINDS]
+def js_globals(parsed: ParsedFile) -> Globals:
+    declarations = [
+        statement for statement in module_statements(parsed.root) if statement.type in JS_DECLARATION_KINDS
+    ]
     declared = [
         declared_kinds(node_text(declaration.children[0]) or "", declarator)
         for declaration in declarations
@@ -98,9 +100,9 @@ def js_globals(root: Node) -> Globals:
     return {name: kinds for name, kinds in declared if kinds}
 
 
-def module_globals(language: str, root: Node) -> Globals | None:
+def module_globals(language: str, parsed: ParsedFile) -> Globals | None:
     collector = _COLLECTORS.get(language)
-    return None if collector is None else collector(root)
+    return None if collector is None else collector(parsed)
 
 
 def is_binding(node: Node) -> bool:

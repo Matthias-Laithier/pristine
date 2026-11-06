@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.module_globals import PYTHON_COLLECTION, REBINDABLE, Globals
 from pristine.registration import registering
