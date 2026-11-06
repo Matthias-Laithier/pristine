@@ -102,16 +102,16 @@ Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with 
 
 ## Performance
 
-Wall time of `pristine check` 0.4.1 on open-source repositories, on an Apple silicon laptop with the default worker count (half the cores):
+Wall time of `pristine check` 0.4.1 on open-source repositories, on an Apple silicon laptop with the default worker count (half the cores). Files and lines count the code files pristine checks.
 
-| Repository | Language | Files | Time |
-| --- | --- | ---: | ---: |
-| [requests](https://github.com/psf/requests) | Python | 130 | 1.5 s |
-| [ky](https://github.com/sindresorhus/ky) | TypeScript | 115 | 1.6 s |
-| [cobra](https://github.com/spf13/cobra) | Go | 66 | 0.9 s |
-| [fd](https://github.com/sharkdp/fd) | Rust | 61 | 0.7 s |
-| [gson](https://github.com/google/gson) | Java | 315 | 1.5 s |
-| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | C# | 1,176 | 5.3 s |
+| Repository | Language | Files | Lines | Time |
+| --- | --- | ---: | ---: | ---: |
+| [requests](https://github.com/psf/requests) | Python | 49 | 12,753 | 1.4 s |
+| [ky](https://github.com/sindresorhus/ky) | TypeScript | 98 | 36,231 | 1.3 s |
+| [cobra](https://github.com/spf13/cobra) | Go | 38 | 16,810 | 0.7 s |
+| [fd](https://github.com/sharkdp/fd) | Rust | 33 | 9,515 | 0.8 s |
+| [gson](https://github.com/google/gson) | Java | 274 | 58,233 | 1.3 s |
+| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | C# | 954 | 196,120 | 6.7 s |
 
 ## Contributing
 
