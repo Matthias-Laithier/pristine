@@ -125,9 +125,12 @@ register_file_check(
         rule_id=RULE_ID,
         summary=(
             "Python asyncio.gather over a spread comprehension or map, and TaskGroup spawns in a loop, that start "
-            "work per item of a parameter or of an awaited load, where neither the fanned coroutine nor the loop "
-            "body holds an asyncio or anyio semaphore or limiter with async with. Slices, literals, module-level "
-            "values, loads that pass a size, tests, and durable workflow modules are exempt."
+            "work per item of an awaited load, where neither the fanned coroutine nor the loop body holds an "
+            "asyncio or anyio semaphore or limiter with async with. A load is the awaited result of an imported "
+            "function or of a method on another object than the method's own receiver, or a collection derived "
+            "from one, and every assignment of the iterated name must be a load. Parameters, functions and methods "
+            "of the same file, fields and items of a loaded record, slices, literals, loads that pass a size, "
+            "tests, and durable workflow modules are exempt."
         ),
         run=check_unbounded_fan_out,
     )

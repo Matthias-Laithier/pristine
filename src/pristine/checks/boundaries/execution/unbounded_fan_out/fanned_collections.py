@@ -6,7 +6,7 @@ from pristine.checks.boundaries.execution.unbounded_fan_out.sizes import passes_
 from pristine.registration import registering
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import all_nodes, node_text
-from pristine.syntax.python_calls import import_bindings, qualified_callee
+from pristine.syntax.python_calls import import_bindings, imported_names, qualified_callee
 from pristine.syntax.python_scopes import (
     assigned_values,
     enclosing_functions,
@@ -60,10 +60,23 @@ def is_data(node: Node | None) -> bool:
 def is_awaited_load(node: Node) -> bool:
     awaited = node.named_children[0] if node.named_children else None
     if awaited is None or awaited.type != "call":
-        return True
+        return False
     if qualified_callee(callee_of(awaited), import_bindings(module_root(node))) == GATHER:
         return is_gathered_data(awaited)
-    return not passes_size(awaited)
+    return is_external_call(awaited) and not passes_size(awaited)
+
+
+def is_external_call(call: Node) -> bool:
+    function = call.child_by_field_name("function")
+    if function is not None and function.type == "identifier":
+        return node_text(function) in imported_names(module_root(call))
+    receiver = None if function is None or function.type != "attribute" else function.child_by_field_name("object")
+    return receiver is not None and not is_own_receiver(receiver)
+
+
+def is_own_receiver(receiver: Node) -> bool:
+    name = node_text(receiver) if receiver.type == "identifier" else None
+    return name is not None and any(receiver_name(function) == name for function in enclosing_functions(receiver))
 
 
 def is_gathered_data(gather: Node) -> bool:
@@ -83,17 +96,6 @@ def is_mapping_view(node: Node) -> bool:
     )
 
 
-@registering(_DATA_RULES, "attribute")
-def is_data_attribute(node: Node) -> bool:
-    return is_data(node.child_by_field_name("object"))
-
-
-@registering(_DATA_RULES, "subscript")
-def is_data_lookup(node: Node) -> bool:
-    is_slice = any(child.type == "slice" for child in node.children_by_field_name("subscript"))
-    return not is_slice and is_data(node.child_by_field_name("value"))
-
-
 @registering(_DATA_RULES, *COMPREHENSION_KINDS)
 def is_derived_collection(node: Node) -> bool:
     clauses = (clause for clause in node.named_children if clause.type == "for_in_clause")
@@ -105,10 +107,10 @@ def is_data_name(node: Node) -> bool:
     name = node_text(node) or ""
     for function in enclosing_functions(node):
         if name in parameter_names(function):
-            return name != receiver_name(function)
+            return False
         earlier = [value for value in assigned_values(function, name) if value.end_byte < node.start_byte]
         if earlier:
-            return any(map(is_data, earlier))
+            return all(map(is_data, earlier))
     return False
 
 

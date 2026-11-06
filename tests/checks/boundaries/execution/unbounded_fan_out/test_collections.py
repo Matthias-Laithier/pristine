@@ -5,40 +5,44 @@ from tests.conftest import RunPristine, rule_findings
 RULE_ID = "BS-14"
 UNBOUNDED_FAN_OUTS = """import asyncio
 
+from archive import list_documents
 
-async def summarize_documents(summarizer, documents):
+
+async def summarize_archive(summarizer):
+    documents = await list_documents()
     return await asyncio.gather(*(summarizer.summarize(document) for document in documents))
 
 
-async def delete_blobs(storage, blobs_list):
+async def delete_blobs(storage, prefix):
+    blobs_list = await storage.list_blobs(prefix=prefix)
     await asyncio.gather(*[storage.delete(blob.name) for blob in blobs_list])
 
 
-async def fetch_invoices(client, invoice_ids):
-    return await asyncio.gather(*map(client.fetch_invoice, invoice_ids))
+async def fetch_invoices(client):
+    return await asyncio.gather(*map(client.fetch_invoice, await client.list_invoice_ids()))
 
 
-async def notify_members(notifier, team):
+async def notify_members(notifier, directory):
     async with asyncio.TaskGroup() as task_group:
-        for member in team.members:
+        for member in await directory.list_members():
             task_group.create_task(notifier.notify(member))
 
 
-async def check_probes(probes):
-    await asyncio.gather(*(run_probe(probe) for probe in probes))
+class Exporter:
+    def __init__(self, store):
+        self.store = store
 
+    async def export_stored(self, exporter):
+        stored = await self.store.list_records()
+        kept = [record for record in stored if record.kept]
+        await asyncio.gather(*(exporter.export(record) for record in kept))
 
-async def export_page(exporter, page):
-    await asyncio.gather(*(exporter.export(record) for record in page.records))
-
-
-async def export_stored(exporter, store):
-    stored = await store.list_records()
-    kept = [record for record in stored if record.kept]
-    await asyncio.gather(*(exporter.export(record) for record in kept))
+    async def export_held(self, exporter):
+        held = {record.key: record for record in await self.store.list_records()}
+        await asyncio.gather(*(exporter.export(record) for record in held.values()))
 """
-UNBOUNDED_LINES = [(5, "warning"), (9, "warning"), (13, "warning"), (19, "warning"), (23, "warning")]
-UNBOUNDED_LINES += [(27, "warning"), (33, "warning")]
+UNBOUNDED_LINES = [(8, "warning"), (13, "warning"), (17, "warning"), (23, "warning"), (33, "warning")]
+UNBOUNDED_LINES += [(37, "warning")]
 BOUNDED_FAN_OUTS = """import asyncio
 
 from billing import ReportKind
@@ -57,12 +61,8 @@ async def drain_workers(queue, worker_count):
     await asyncio.gather(*(drain(queue) for _ in range(worker_count)))
 
 
-async def close_connections(connections):
-    await asyncio.gather(*(connection.close() for connection in connections))
-
-
-async def await_pending(tasks):
-    await asyncio.gather(*(task for task in tasks))
+async def summarize_documents(summarizer, documents):
+    return await asyncio.gather(*(summarizer.summarize(document) for document in documents))
 
 
 async def export_recent(exporter, store, limit: int):
@@ -74,8 +74,38 @@ async def export_recent(exporter, store, limit: int):
     await asyncio.gather(*(exporter.export(record) for record in asked))
 
 
-async def export_first(exporter, records):
+async def export_first(exporter, store):
+    records = await store.list_records()
     await asyncio.gather(*(exporter.export(record) for record in records[:10]))
+
+
+async def export_sample_files(reader, jobs, job_id):
+    job = await jobs.get(job_id)
+    await asyncio.gather(*(reader.read(file) for file in job.files))
+
+
+async def rerank(rankers, groups):
+    current = groups
+    for ranker in rankers:
+        current = await ranker.rank(current)
+    await asyncio.gather(*(publish(group) for group in current))
+
+
+async def claim_items(batch_id):
+    return []
+
+
+async def dispatch_claimed(dispatcher, batch_id):
+    await asyncio.gather(*(dispatcher.dispatch(item) for item in await claim_items(batch_id)))
+
+
+class BatchConsumer:
+    async def fetch_batch(self, subscription):
+        return await subscription.fetch(batch=10)
+
+    async def run(self, subscription):
+        messages = await self.fetch_batch(subscription)
+        await asyncio.gather(*(self.process(message) for message in messages))
 
 
 async def gather_all(*awaitables):
@@ -84,17 +114,18 @@ async def gather_all(*awaitables):
 FAN_OUT = """import asyncio
 
 
-async def fetch_invoices(client, invoice_ids):
+async def fetch_invoices(client):
+    invoice_ids = await client.list_invoice_ids()
     return await asyncio.gather(*(client.fetch_invoice(invoice_id) for invoice_id in invoice_ids))
 """
 
 
-def test_fan_outs_over_parameters_and_loads_are_reported(run_pristine: RunPristine) -> None:
+def test_fan_outs_over_external_loads_are_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": UNBOUNDED_FAN_OUTS})
     assert rule_findings(report, RULE_ID) == UNBOUNDED_LINES
 
 
-def test_fixed_sliced_and_sized_collections_are_not_reported(run_pristine: RunPristine) -> None:
+def test_collections_that_are_not_external_loads_are_not_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": BOUNDED_FAN_OUTS})
     assert rule_findings(report, RULE_ID) == []
 
@@ -110,4 +141,4 @@ def test_tests_and_durable_workflows_are_exempt(run_pristine: RunPristine, path:
 
 def test_fan_out_in_an_application_module_is_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": FAN_OUT})
-    assert rule_findings(report, RULE_ID) == [(5, "warning")]
+    assert rule_findings(report, RULE_ID) == [(6, "warning")]

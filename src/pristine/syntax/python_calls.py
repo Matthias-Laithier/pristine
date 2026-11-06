@@ -8,6 +8,7 @@ from pristine.syntax.parsing import all_nodes, node_text
 
 DOTTED_CALLEE = re.compile(r"[A-Za-z_][\w.]*(\(\)\.\w+)?")
 KEYWORD_ARGUMENT_KIND = "keyword_argument"
+IMPORT_KINDS = frozenset({"import_statement", "import_from_statement"})
 TIMEOUT_FIX = "pass timeout=<seconds> sized to the operation's latency budget"
 HTTP_METHODS = ("get", "post", "put", "patch", "delete", "head", "options", "request")
 SUBPROCESS_FUNCTIONS = ("run", "call", "check_call", "check_output")
@@ -39,6 +40,18 @@ def import_binding(name: Node, prefix: str) -> tuple[str, str]:
     imported = node_text(name.child_by_field_name("name")) or node_text(name) or ""
     local = alias if alias is not None else (imported if prefix else imported.split(".")[0])
     return local, prefix + (imported if prefix or alias is not None else local)
+
+
+def imported_names(root: Node) -> frozenset[str]:
+    imports = (node for node in all_nodes(root) if node.type in IMPORT_KINDS)
+    names = (name for node in imports for name in node.children_by_field_name("name"))
+    return frozenset(local_name(name) for name in names)
+
+
+def local_name(name: Node) -> str:
+    alias = name.child_by_field_name("alias")
+    bound = alias if alias is not None else name.child_by_field_name("name") or name
+    return (node_text(bound) or "").split(".")[0]
 
 
 def qualified_callee(callee: str, bindings: dict[str, str]) -> str | None:

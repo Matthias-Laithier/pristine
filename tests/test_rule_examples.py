@@ -23,6 +23,7 @@ FAILING_SEVERITIES = {"error", "warning"}
 PYTHON_PROJECT_CONTEXT = {"pyproject.toml": '[project]\nname = "invoices"\n\n[tool.ruff]\n\n[tool.mypy]\n'}
 UNASSERTED_BAD_EXAMPLES = {
     "BS-1-bad:request payload": "payload validation is semantic, and BS-1 checks only scattered environment reads",
+    "BS-14-bad": "the documents arrive as a parameter, and BS-14 counts only the awaited result of an external load",
     "BS-3-bad": "the HTTP client is an injected collaborator, and BS-3 recognizes only known libraries by their import",
     "BS-8-bad:file": "the example leaks a file handle, and BS-8 detects only dropped asyncio tasks and swallowed cancellation",
     "CO-14-bad": "an edited migration exists only in git history, and CO-14 compares files with the default branch",
