@@ -1,8 +1,7 @@
 import json
 from collections import Counter
-from dataclasses import asdict
 
-from pristine.reports.findings import Severity
+from pristine.reports.findings import Severity, finding_record
 from pristine.reports.report import Report
 
 NEXT_STEP = (
@@ -30,10 +29,18 @@ def summary(report: Report) -> dict[str, int]:
 def render_json(report: Report, limit: int | None) -> str:
     shown = report.findings[:limit]
     document = {
-        "summary": {**summary(report), "by_rule": report.by_rule(), "omitted": len(report.findings) - len(shown)},
-        "findings": [asdict(finding) for finding in shown],
+        "verification_status": "incomplete" if report.verification_failed else "complete",
+        "summary": {
+            **summary(report),
+            "unsupported_files": len(report.unsupported),
+            "verification_failures": report.verification_failures,
+            "by_rule": report.by_rule(),
+            "omitted": len(report.findings) - len(shown),
+        },
+        "findings": [finding_record(finding) for finding in shown],
         "unchecked": [{"path": path, "reason": reason} for path, reason in report.unchecked.items()],
         "skipped": [{"path": path, "reason": reason} for path, reason in report.skipped.items()],
+        "unsupported": list(report.unsupported),
         "missing": report.missing,
     }
     return json.dumps(document, indent=2)
@@ -58,5 +65,10 @@ def render_text(report: Report, limit: int | None) -> str:
     )
     if report.findings:
         lines.append("by rule: " + ", ".join(f"{rule_id} {count}" for rule_id, count in report.by_rule().items()))
+    lines.append(
+        "verification: "
+        + ("incomplete" if report.verification_failed else "complete")
+        + f", {report.verification_failures} failures"
+    )
     lines.append(NEXT_STEP)
     return "\n".join(lines)

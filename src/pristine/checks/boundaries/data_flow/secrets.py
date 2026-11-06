@@ -1,5 +1,5 @@
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.reports.findings import Finding, Severity
+from pristine.reports.findings import Finding, FindingKind, Severity
 from pristine.services.gitleaks import Leak, SecretScanFailed, scan_paths
 
 RULE_ID = "BS-2"
@@ -20,7 +20,16 @@ def check_secrets(paths: list[str]) -> list[Finding]:
         leaks = scan_paths(paths)
     except SecretScanFailed as error:
         message = f"secret scan did not run: {error}; install gitleaks or fix the failure, then rerun"
-        return [Finding(SCAN_SCOPE_PATH, SCAN_SCOPE_LINE, RULE_ID, Severity.WARNING, message)]
+        return [
+            Finding(
+                SCAN_SCOPE_PATH,
+                SCAN_SCOPE_LINE,
+                RULE_ID,
+                Severity.WARNING,
+                message,
+                FindingKind.VERIFICATION,
+            )
+        ]
     return [leak_finding(leak) for leak in leaks]
 
 

@@ -19,6 +19,8 @@ class RuntimePin:
 RUNTIME_PINS = (
     RuntimePin(Ecosystem.PYTHON, "Python", (".python-version",), "requires-python"),
     RuntimePin(Ecosystem.JAVASCRIPT, "Node.js", (".nvmrc", ".node-version"), "engines.node"),
+    RuntimePin(Ecosystem.GO, "Go", (), "the go directive"),
+    RuntimePin(Ecosystem.RUST, "Rust", (), "rust-version"),
 )
 
 
@@ -26,10 +28,10 @@ def unpinned(project: Project, pin: RuntimePin) -> list[Finding]:
     manifest = project.root_manifest(pin.ecosystem)
     if manifest is None or manifest.pins_runtime or project.entries.intersection(pin.version_files):
         return []
-    message = (
-        f"the {pin.runtime} version is not pinned; set {pin.manifest_field} in {manifest.path} "
-        f"or add one of {', '.join(pin.version_files)}"
-    )
+    locations = f"set {pin.manifest_field} in {manifest.path}"
+    if pin.version_files:
+        locations = f"{locations} or add one of {', '.join(pin.version_files)}"
+    message = f"the {pin.runtime} version is not pinned; {locations}"
     return [Finding(project.shown(manifest.path), FIRST_LINE, RULE_ID, Severity.WARNING, message)]
 
 

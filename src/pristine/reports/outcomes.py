@@ -14,8 +14,13 @@ class Unchecked:
 
 
 @dataclass(frozen=True)
+class Unsupported:
+    reason: str
+
+
+@dataclass(frozen=True)
 class Skipped:
     reason: str
 
 
-type Outcome = Checked | Unchecked | Skipped
+type Outcome = Checked | Unchecked | Unsupported | Skipped

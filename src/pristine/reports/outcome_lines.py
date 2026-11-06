@@ -1,10 +1,20 @@
 import json
-from dataclasses import asdict
 
-from pristine.reports.findings import Finding, Severity
-from pristine.reports.outcomes import Checked, Outcome, Skipped, Unchecked
+from pristine.reports.findings import Finding, FindingKind, Severity, finding_record
+from pristine.reports.outcomes import Checked, Outcome, Skipped, Unchecked, Unsupported
 
-REASON_OUTCOMES: dict[str, type[Unchecked] | type[Skipped]] = {"unchecked": Unchecked, "skipped": Skipped}
+type ReasonOutcome = Unchecked | Unsupported | Skipped
+
+REASON_OUTCOMES: dict[str, type[ReasonOutcome]] = {
+    "unchecked": Unchecked,
+    "unsupported": Unsupported,
+    "skipped": Skipped,
+}
+OUTCOME_KINDS: dict[type[ReasonOutcome], str] = {
+    Unchecked: "unchecked",
+    Unsupported: "unsupported",
+    Skipped: "skipped",
+}
 FINDING_TEXT_FIELDS = ("path", "rule_id", "message")
 SEVERITIES = frozenset(Severity)
 
@@ -15,9 +25,12 @@ class MalformedOutcomeLine(ValueError):
 
 def encoded_outcome(path: str, outcome: Outcome) -> str:
     if isinstance(outcome, Checked):
-        body: dict[str, object] = {"kind": "checked", "findings": [asdict(finding) for finding in outcome.findings]}
+        body: dict[str, object] = {
+            "kind": "checked",
+            "findings": [finding_record(finding) for finding in outcome.findings],
+        }
     else:
-        body = {"kind": "unchecked" if isinstance(outcome, Unchecked) else "skipped", "reason": outcome.reason}
+        body = {"kind": OUTCOME_KINDS[type(outcome)], "reason": outcome.reason}
     return json.dumps({"path": path, **body}) + "\n"
 
 
@@ -26,11 +39,12 @@ def decoded_finding(entry: object) -> Finding:
         raise MalformedOutcomeLine("a finding is not an object")
     path, rule_id, message = (entry.get(field) for field in FINDING_TEXT_FIELDS)
     line, severity = entry.get("line"), entry.get("severity")
+    kind = entry.get("kind", FindingKind.CODE)
     has_texts = isinstance(path, str) and isinstance(rule_id, str) and isinstance(message, str)
     has_line = isinstance(line, int) and not isinstance(line, bool)
-    if not has_texts or not has_line or severity not in SEVERITIES:
-        raise MalformedOutcomeLine("a finding lacks a path, line, rule, severity, or message")
-    return Finding(path, line, rule_id, Severity(severity), message)
+    if not has_texts or not has_line or severity not in SEVERITIES or kind not in FindingKind:
+        raise MalformedOutcomeLine("a finding lacks a path, line, rule, severity, message, or kind")
+    return Finding(path, line, rule_id, Severity(severity), message, FindingKind(kind))
 
 
 def decoded_body(document: dict[str, object]) -> Outcome:

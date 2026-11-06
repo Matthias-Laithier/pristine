@@ -53,6 +53,12 @@ def test_docstrings_a_framework_decorator_publishes_are_allowed(run_pristine: Ru
     assert rule_findings(report, "CR-3") == [(8, "error"), (13, "error")]
 
 
+def test_only_the_first_string_in_a_scope_is_a_docstring(run_pristine: RunPristine) -> None:
+    source = 'def total():\n    """Sum the lines."""\n    value = "later"\n    "A later standalone string."\n'
+    _, report = run_pristine({"total.py": source})
+    assert rule_findings(report, "CR-3") == [(2, "error")]
+
+
 def test_module_docstring_the_module_reads_is_allowed(run_pristine: RunPristine) -> None:
     read = (
         '"""Generate the OpenAPI schema."""\nimport argparse\n\nparser = argparse.ArgumentParser(description=__doc__)\n'

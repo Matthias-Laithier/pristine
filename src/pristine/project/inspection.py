@@ -5,19 +5,6 @@ from pristine.project.repository.loading import load_project
 from pristine.reports.outcomes import Checked, Outcome, Unchecked
 from pristine.reports.report import Report, build_report
 
-PROJECT_RULE_SUMMARIES = {
-    "TL-1": "A root Makefile with dev, check, and check-all, a build target when the project ships artifacts, and no component Makefiles.",
-    "TL-2": "check-all runs check.",
-    "TL-3": (
-        "A formatter, a linter, and a type checker are configured and run by make check, the formatter in check mode "
-        "and the type checker in strict mode."
-    ),
-    "TL-4": (
-        "A deployable project commits its lockfile, Makefile installs never rewrite the lockfile, "
-        "and the Python and Node.js runtime versions are pinned."
-    ),
-}
-
 PROJECT_CHECKS = (
     *layout.CHECKS,
     *gates.CHECKS,

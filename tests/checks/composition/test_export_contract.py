@@ -18,7 +18,7 @@ EXPORT_LIST = (
 )
 STAR_EXPORT_LIST = 'from .delivery import *\n\n__all__ = ["send_invoice"]\n'
 INDEX = (
-    'export * from "./delivery";\nexport type * from "./types";\nexport * as rendering from "./rendering";\n'
+    'export * from "./delivery";\nexport * from "./types";\nexport * as rendering from "./rendering";\n'
     'export { sendInvoice } from "./sending";\nexport * from "@invoices/core";\n'
 )
 

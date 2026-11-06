@@ -2,7 +2,19 @@ import json
 
 from pristine.catalog.rule_documents import RuleDocument, guide_text, rule_documents
 from pristine.checks.registry import file_checks, path_checks
-from pristine.project.inspection import PROJECT_RULE_SUMMARIES
+
+PROJECT_RULE_SUMMARIES = {
+    "TL-1": "A root Makefile with dev, check, and check-all, a build target when the project ships artifacts, and no component Makefiles.",
+    "TL-2": "check-all runs check.",
+    "TL-3": (
+        "A formatter, a linter, and a type checker are configured and run by make check, the formatter in check mode "
+        "and the type checker in strict mode."
+    ),
+    "TL-4": (
+        "A deployable project commits its lockfile, Makefile installs never rewrite the lockfile, "
+        "and the Python and Node.js runtime versions are pinned."
+    ),
+}
 
 REVIEW = "review"
 RULES_NEXT_STEP = (

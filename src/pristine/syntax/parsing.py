@@ -1,5 +1,8 @@
+import io
+import tokenize
 from collections.abc import Iterator
 from dataclasses import dataclass
+from itertools import pairwise
 
 from tree_sitter import Node, Tree
 
@@ -16,6 +19,9 @@ from pristine.syntax.syntax_kinds import (
 MODULE_WRAPPER_FIELDS = {"export_statement": "declaration", "decorated_definition": "definition"}
 MODULE_EXPRESSION_KIND = "expression_statement"
 ASYNC_KEYWORD = "async"
+_LAZY_KEYWORD = "lazy"
+_LAZY_IMPORT_KEYWORDS = frozenset({("lazy", keyword) for keyword in ("import", "from")})
+_PYTHON = "python"
 
 
 @dataclass(frozen=True)
@@ -87,11 +93,37 @@ def is_async(node: Node) -> bool:
 
 def is_docstring(node: Node) -> bool:
     parent = node.parent
-    if parent is None or parent.type not in DOCSTRING_CONTAINERS or parent.named_children[0] != node:
+    if parent is None or parent.type not in DOCSTRING_CONTAINERS or parent.named_child(0) != node:
         return False
     if node.type == "string":
         return True
     return node.type == "expression_statement" and [child.type for child in node.named_children] == ["string"]
+
+
+def _lazy_keyword_positions(text: str) -> list[int]:
+    starts = [0, *(index + 1 for index, character in enumerate(text) if character == "\n")]
+    with io.StringIO(text) as source:
+        return [
+            starts[token.start[0] - 1] + token.start[1]
+            for token, following in pairwise(tokenize.generate_tokens(source.readline))
+            if token.type == following.type == tokenize.NAME
+            and (token.string, following.string) in _LAZY_IMPORT_KEYWORDS
+        ]
+
+
+def _parser_text(text: str, language: str) -> str:
+    if language != _PYTHON or _LAZY_KEYWORD not in text:
+        return text
+    try:
+        positions = _lazy_keyword_positions(text)
+    except tokenize.TokenError, IndentationError:
+        return text
+    if not positions:
+        return text
+    characters = list(text)
+    for position in positions:
+        characters[position : position + len(_LAZY_KEYWORD)] = " " * len(_LAZY_KEYWORD)
+    return "".join(characters)
 
 
 def comment_text(node: Node) -> CommentText:
@@ -101,7 +133,7 @@ def comment_text(node: Node) -> CommentText:
 
 
 def parse_file(path: str, text: str, language: str) -> ParsedFile:
-    tree = parser_for(language).parse(text.encode())
+    tree = parser_for(language).parse(_parser_text(text, language).encode())
     nodes = list(all_nodes(tree.root_node))
     functions = [
         FunctionSpan(function_name(node), line_of(node), node.end_point.row + 1)

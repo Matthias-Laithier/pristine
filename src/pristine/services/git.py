@@ -30,7 +30,7 @@ def git_output(directory: Path, *arguments: str) -> str | None:
             timeout=GIT_TIMEOUT_SECONDS,
             check=False,
         )
-    except (OSError, subprocess.SubprocessError):
+    except OSError, subprocess.SubprocessError:
         return None
     if result.returncode != 0:
         return None

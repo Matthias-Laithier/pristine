@@ -7,6 +7,11 @@ class Severity(StrEnum):
     WARNING = "warning"
 
 
+class FindingKind(StrEnum):
+    CODE = "code"
+    VERIFICATION = "verification"
+
+
 @dataclass(frozen=True)
 class Finding:
     path: str
@@ -14,6 +19,20 @@ class Finding:
     rule_id: str
     severity: Severity
     message: str
+    kind: FindingKind = FindingKind.CODE
+
+
+def finding_record(finding: Finding) -> dict[str, object]:
+    record: dict[str, object] = {
+        "path": finding.path,
+        "line": finding.line,
+        "rule_id": finding.rule_id,
+        "severity": finding.severity,
+        "message": finding.message,
+    }
+    if finding.kind is not FindingKind.CODE:
+        record["kind"] = finding.kind
+    return record
 
 
 @dataclass(frozen=True)

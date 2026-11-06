@@ -1,47 +1,16 @@
 import json
 import shutil
 import subprocess
+import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypedDict
 
 import pytest
 
 from pristine.cli.main import main
+from tests.report_types import JsonReport, ReportedFinding, ReportedPath, ReportSummary
 
-GIT_TIMEOUT_SECONDS = 30
-
-
-class ReportedFinding(TypedDict):
-    path: str
-    line: int
-    rule_id: str
-    severity: str
-    message: str
-
-
-class ReportedPath(TypedDict):
-    path: str
-    reason: str
-
-
-class ReportSummary(TypedDict):
-    errors: int
-    warnings: int
-    checked_files: int
-    unchecked_files: int
-    skipped_files: int
-    missing_paths: int
-    by_rule: dict[str, int]
-    omitted: int
-
-
-class JsonReport(TypedDict):
-    summary: ReportSummary
-    findings: list[ReportedFinding]
-    unchecked: list[ReportedPath]
-    skipped: list[ReportedPath]
-    missing: list[str]
+EXTERNAL_CALL_TIMEOUT_SECONDS = 30
 
 
 type RunPristine = Callable[..., tuple[int, JsonReport]]
@@ -50,7 +19,27 @@ type RunPristine = Callable[..., tuple[int, JsonReport]]
 def run_git(directory: Path, *arguments: str) -> None:
     git = shutil.which("git")
     assert git is not None
-    subprocess.run([git, "-C", str(directory), *arguments], check=True, timeout=GIT_TIMEOUT_SECONDS)
+    subprocess.run([git, "-C", str(directory), *arguments], check=True, timeout=EXTERNAL_CALL_TIMEOUT_SECONDS)
+
+
+def run_cli(*arguments: str) -> tuple[int, str, str]:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import sys; sys.modules['tree_sitter'] = None; sys.modules['tree_sitter_language_pack'] = None; "
+                "from pristine.cli.main import main; raise SystemExit(main())"
+            ),
+            *arguments,
+        ],
+        capture_output=True,
+        env={"PYTHONPATH": str(Path(__file__).parents[1] / "src")},
+        text=True,
+        timeout=EXTERNAL_CALL_TIMEOUT_SECONDS,
+        check=False,
+    )
+    return result.returncode, result.stdout, result.stderr
 
 
 def json_object(value: object) -> dict[str, object]:
@@ -75,13 +64,17 @@ def json_integer(value: object) -> int:
 
 def parsed_finding(value: object) -> ReportedFinding:
     entry = json_object(value)
-    return ReportedFinding(
+    finding = ReportedFinding(
         path=json_text(entry["path"]),
         line=json_integer(entry["line"]),
         rule_id=json_text(entry["rule_id"]),
         severity=json_text(entry["severity"]),
         message=json_text(entry["message"]),
     )
+    kind = entry.get("kind")
+    if kind is not None:
+        finding["kind"] = json_text(kind)
+    return finding
 
 
 def parsed_path(value: object) -> ReportedPath:
@@ -98,6 +91,8 @@ def parsed_summary(value: object) -> ReportSummary:
         unchecked_files=json_integer(entry["unchecked_files"]),
         skipped_files=json_integer(entry["skipped_files"]),
         missing_paths=json_integer(entry["missing_paths"]),
+        unsupported_files=json_integer(entry.get("unsupported_files", 0)),
+        verification_failures=json_integer(entry.get("verification_failures", 0)),
         by_rule={rule_id: json_integer(count) for rule_id, count in json_object(entry["by_rule"]).items()},
         omitted=json_integer(entry["omitted"]),
     )
@@ -111,6 +106,8 @@ def parsed_report(output: str) -> JsonReport:
         unchecked=[parsed_path(entry) for entry in json_list(document["unchecked"])],
         skipped=[parsed_path(entry) for entry in json_list(document["skipped"])],
         missing=[json_text(entry) for entry in json_list(document["missing"])],
+        verification_status=json_text(document.get("verification_status", "complete")),
+        unsupported=[json_text(entry) for entry in json_list(document.get("unsupported", []))],
     )
 
 

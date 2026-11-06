@@ -4,15 +4,19 @@ import tomllib
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 
+from pristine.project.repository.go_manifests import parse_go_mod
 from pristine.project.repository.tools import Ecosystem
 
 PYPROJECT = "pyproject.toml"
 PACKAGE_JSON = "package.json"
+GO_MOD = "go.mod"
+CARGO_TOML = "Cargo.toml"
 REQUIREMENT_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 PYTHON_NAME_SEPARATORS = re.compile(r"[-_.]+")
 JAVASCRIPT_RUNTIMES = frozenset({"node", "bun"})
 BUN_PACKAGE_MANAGER = "bun@"
 PACKAGE_DEPENDENCY_TABLES = ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies")
+CARGO_DEPENDENCY_TABLES = ("dependencies", "dev-dependencies", "build-dependencies")
 
 
 @dataclass(frozen=True)
@@ -22,6 +26,7 @@ class Manifest:
     settings: Mapping[str, object]
     scripts: Mapping[str, str]
     pins_runtime: bool
+    needs_lockfile: bool | None = True
 
 
 def table(document: object, key: str) -> dict[str, object]:
@@ -78,6 +83,31 @@ def pins_javascript_runtime(document: dict[str, object]) -> bool:
     return runs_on_bun or not table(document, "engines").keys().isdisjoint(JAVASCRIPT_RUNTIMES)
 
 
+def read_go_mod(path: str, text: str) -> Manifest:
+    dependencies, pins_runtime, needs_lockfile = parse_go_mod(text)
+    return Manifest(path, dependencies, {}, {}, pins_runtime, needs_lockfile)
+
+
+def cargo_dependencies(document: dict[str, object]) -> frozenset[str]:
+    workspace = table(document, "workspace")
+    dependency_tables = [table(document, name) for name in CARGO_DEPENDENCY_TABLES]
+    dependency_tables.extend(table(workspace, name) for name in CARGO_DEPENDENCY_TABLES)
+    target_tables = [
+        table(target, name) for target in table(document, "target").values() for name in CARGO_DEPENDENCY_TABLES
+    ]
+    return frozenset({name for dependencies in dependency_tables + target_tables for name in dependencies})
+
+
+def pins_rust_runtime(document: dict[str, object]) -> bool:
+    workspace = table(document, "workspace")
+    return "rust-version" in table(document, "package") or "rust-version" in table(workspace, "package")
+
+
+def read_cargo_toml(path: str, text: str) -> Manifest:
+    document = tomllib.loads(text)
+    return Manifest(path, cargo_dependencies(document), document, {}, pins_rust_runtime(document))
+
+
 def read_package_json(path: str, text: str) -> Manifest:
     document = json.loads(text)
     if not isinstance(document, dict):
@@ -90,4 +120,6 @@ def read_package_json(path: str, text: str) -> Manifest:
 MANIFEST_READERS: dict[Ecosystem, tuple[str, Callable[[str, str], Manifest]]] = {
     Ecosystem.PYTHON: (PYPROJECT, read_pyproject),
     Ecosystem.JAVASCRIPT: (PACKAGE_JSON, read_package_json),
+    Ecosystem.GO: (GO_MOD, read_go_mod),
+    Ecosystem.RUST: (CARGO_TOML, read_cargo_toml),
 }

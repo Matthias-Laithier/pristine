@@ -4,9 +4,6 @@ from collections.abc import Callable
 from importlib.metadata import version
 from pathlib import Path
 
-from pristine.catalog.rule_documents import UnknownRule, rule_documents, select_rules
-from pristine.catalog.rule_listing import render_guide, render_rules_json, render_rules_text
-from pristine.checks.registry import path_checks
 from pristine.cli.help import (
     CHECK_DESCRIPTION,
     DESCRIPTION,
@@ -15,17 +12,21 @@ from pristine.cli.help import (
     RULE_DESCRIPTION,
     RULES_DESCRIPTION,
 )
-from pristine.cli.rendering import render_json, render_text
-from pristine.engine.grammar_downloads import grammar_download_notices
-from pristine.files.discovery import discover_files, missing_paths
-from pristine.project.inspection import inspect_project
-from pristine.reports.findings import Severity
-from pristine.reports.report import Report, build_report
-from pristine.services.isolated_inspection import default_jobs, inspect_in_workers
+lazy from pristine.catalog.rule_documents import UnknownRule, rule_documents, select_rules
+lazy from pristine.catalog.rule_listing import render_guide, render_rules_json, render_rules_text
+lazy from pristine.checks.registry import path_checks
+lazy from pristine.cli.rendering import render_json, render_text
+lazy from pristine.engine.grammar_downloads import grammar_download_notices
+lazy from pristine.files.discovery import discover_files, missing_paths
+lazy from pristine.project.inspection import inspect_project
+lazy from pristine.reports.findings import Severity
+lazy from pristine.reports.report import Report, build_report
+lazy from pristine.services.isolated_inspection import default_jobs, inspect_in_workers
 
 EXIT_CLEAN = 0
 EXIT_ERRORS_FOUND = 1
 EXIT_USAGE = 2
+EXIT_INCOMPLETE_VERIFICATION = 3
 
 type CommandHandler = Callable[[argparse.Namespace], int]
 
@@ -47,7 +48,7 @@ def parser() -> argparse.ArgumentParser:
     check.add_argument(
         "--jobs",
         type=positive_count,
-        default=default_jobs(),
+        default=None,
         metavar="N",
         help="run at most N worker processes, at least 1; default: half the CPU cores, at least 1",
     )
@@ -79,7 +80,7 @@ def add_report_options(command: argparse.ArgumentParser) -> None:
     )
 
 
-def add_rule_commands(commands: "argparse._SubParsersAction[argparse.ArgumentParser]") -> None:
+def add_rule_commands(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     commands.add_parser("guide", help="print the rules hub to read before coding", description=GUIDE_DESCRIPTION)
     rule = commands.add_parser(
         "rule", help="print rules by ID, by chapter, or all of them", description=RULE_DESCRIPTION
@@ -96,15 +97,18 @@ def add_rule_commands(commands: "argparse._SubParsersAction[argparse.ArgumentPar
 
 def print_report(report: Report, arguments: argparse.Namespace) -> int:
     print(render_json(report, arguments.max) if arguments.json else render_text(report, arguments.max))
+    if report.verification_failed:
+        return EXIT_INCOMPLETE_VERIFICATION
     return EXIT_ERRORS_FOUND if report.count(Severity.ERROR) else EXIT_CLEAN
 
 
 def run_check(arguments: argparse.Namespace) -> int:
+    jobs = arguments.jobs if arguments.jobs is not None else default_jobs()
     files = discover_files(arguments.paths, arguments.exclude)
     path_findings = [finding for check in path_checks() for finding in check.run(files)]
     for notice in grammar_download_notices(files):
         print(notice, file=sys.stderr)
-    report = build_report(inspect_in_workers(files, arguments.jobs), path_findings, missing_paths(arguments.paths))
+    report = build_report(inspect_in_workers(files, jobs), path_findings, missing_paths(arguments.paths))
     return print_report(report, arguments)
 
 

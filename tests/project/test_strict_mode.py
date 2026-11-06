@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.project.conftest import RunProject, rule_findings
+from tests.project.conftest import RunProject
 
 PYPROJECT = '[project]\nname = "app"\nrequires-python = ">=3.13"\ndependencies = ["{checker}"]\n'
 PACKAGE = json.dumps({"engines": {"node": "22"}, "devDependencies": {"typescript": "5"}})
@@ -17,7 +17,11 @@ TSCONFIG_WITH_COMMENTS = """{
 
 def strict_findings(files: dict[str, str], run_project: RunProject) -> list[tuple[str, str]]:
     _, report = run_project(files)
-    return [(severity, message) for severity, message, _ in rule_findings(report, "TL-3") if "strict mode" in message]
+    return [
+        (finding["severity"], finding["message"])
+        for finding in report["findings"]
+        if finding["rule_id"] == "TL-3" and "strict mode" in finding["message"]
+    ]
 
 
 def strict_paths(files: dict[str, str], run_project: RunProject, root: Path) -> list[str]:
@@ -107,3 +111,15 @@ def test_unverifiable_typescript_config_is_a_warning(run_project: RunProject, ts
     [(severity, message)] = strict_findings({"package.json": PACKAGE, "tsconfig.json": tsconfig}, run_project)
     assert severity == "warning"
     assert message.startswith(f"cannot verify that TypeScript type-checks in strict mode: {reason}")
+
+
+def test_unverifiable_config_is_a_verification_finding(run_project: RunProject) -> None:
+    _, report = run_project({"package.json": PACKAGE, "tsconfig.json": '{"extends": "@tsconfig/strictest"}'})
+    finding = next(
+        finding
+        for finding in report["findings"]
+        if finding["rule_id"] == "TL-3" and "strict mode" in finding["message"]
+    )
+    assert finding["kind"] == "verification"
+    assert report["verification_status"] == "incomplete"
+    assert report["summary"]["verification_failures"] == 1

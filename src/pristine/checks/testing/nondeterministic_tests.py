@@ -32,15 +32,22 @@ FIXES = {
 }
 
 
-def is_module_use(name: str, root: Node) -> bool:
-    uses = (node for node in all_nodes(root) if node.type == "identifier" and node_text(node) == name)
-    return all(use.parent is not None and use.parent.child_by_field_name("object") == use for use in uses)
+def implicit_module_names(root: Node, heads: set[str]) -> frozenset[str]:
+    if not heads:
+        return frozenset[str]()
+    module_uses = dict.fromkeys(heads, True)
+    for node in all_nodes(root):
+        if node.type != "identifier":
+            continue
+        name = node_text(node)
+        if name in module_uses:
+            module_uses[name] &= node.parent is not None and node.parent.child_by_field_name("object") == node
+    return frozenset(head for head, is_module_use in module_uses.items() if is_module_use)
 
 
-def qualified_name(callee: str, bindings: dict[str, str], root: Node) -> str:
+def qualified_name(callee: str, bindings: dict[str, str], implicit_modules: frozenset[str]) -> str:
     head = callee.partition(".")[0]
-    implicit = head in IMPLICIT_MODULES and head not in bindings and is_module_use(head, root)
-    return callee if implicit else qualified_callee(callee, bindings) or ""
+    return callee if head in implicit_modules else qualified_callee(callee, bindings) or ""
 
 
 def enclosing_function(node: Node) -> Node | None:
@@ -86,10 +93,10 @@ def exempt_kinds(text: str) -> set[str]:
 
 def nondeterministic_calls(parsed: ParsedFile) -> list[tuple[Node, str, str]]:
     bindings = import_bindings(parsed.root)
-    calls = [
-        (node, callee, qualified_name(callee, bindings, parsed.root))
-        for node, callee, _ in calls_of(parsed.root, "call")
-    ]
+    calls = [(node, callee) for node, callee, _ in calls_of(parsed.root, "call")]
+    heads = {callee.partition(".")[0] for _, callee in calls}
+    implicit_modules = implicit_module_names(parsed.root, (heads & IMPLICIT_MODULES) - bindings.keys())
+    calls = [(node, callee, qualified_name(callee, bindings, implicit_modules)) for node, callee in calls]
     seeded = any(qualified in SEEDING_CALLS and has_seed(node) for node, _, qualified in calls)
     exempt = exempt_kinds(parsed.text)
     found = [(node, callee, kind_of(qualified, seeded)) for node, callee, qualified in calls]
