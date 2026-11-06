@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from tree_sitter import Node
 
 from pristine.syntax.calls import callee_of
@@ -23,23 +25,37 @@ ESCAPING_APIS = frozenset(
 )
 IDENTIFIER_PREPARER = "identifier_preparer"
 PREPARER_METHODS = frozenset({"quote", "quote_identifier", "quote_schema"})
+SCOPE_CACHE_SIZE = 256
 
 
 def assigned_values(scope: Node, name: str, before: Node) -> list[Node]:
-    earlier = [node for node in own_nodes(scope) if node.end_byte < before.start_byte]
-    assignments = (node for node in earlier if node.type in ASSIGNMENT_KINDS)
-    pairs = ((node.child_by_field_name("left"), node.child_by_field_name("right")) for node in assignments)
-    stored = [
-        value for target, value in pairs if value is not None and target is not None and stores_into(target, name)
-    ]
-    mutations = (node for node in earlier if node.type == "call" and mutated_name(node) == name)
-    added = [argument for call in mutations for argument in call_arguments(call)]
+    earlier = [node for node in scope_stores(scope).get(name, []) if node.end_byte < before.start_byte]
+    assignments = (node.child_by_field_name("right") for node in earlier if node.type in ASSIGNMENT_KINDS)
+    stored = [value for value in assignments if value is not None]
+    added = [argument for node in earlier if node.type == "call" for argument in call_arguments(node)]
     return stored + added if stored else []
 
 
-def stores_into(target: Node, name: str) -> bool:
-    holder = target.child_by_field_name("value") if target.type == "subscript" else target
-    return holder is not None and holder.type == "identifier" and node_text(holder) == name
+@lru_cache(maxsize=SCOPE_CACHE_SIZE)
+def scope_stores(scope: Node) -> dict[str, list[Node]]:
+    stores: dict[str, list[Node]] = {}
+    for node in own_nodes(scope):
+        name = stored_name(node) if node.type in ASSIGNMENT_KINDS else None
+        name = mutated_name(node) if node.type == "call" else name
+        if name is not None:
+            stores.setdefault(name, []).append(node)
+    return stores
+
+
+def stored_name(assignment: Node) -> str | None:
+    target = assignment.child_by_field_name("left")
+    holder = target.child_by_field_name("value") if target is not None and target.type == "subscript" else target
+    return node_text(holder) if holder is not None and holder.type == "identifier" else None
+
+
+@lru_cache(maxsize=SCOPE_CACHE_SIZE)
+def module_bindings(root: Node) -> dict[str, str]:
+    return import_bindings(root)
 
 
 def mutated_name(call: Node) -> str | None:
@@ -60,7 +76,7 @@ def is_escaping_api(call: Node) -> bool:
     callee = callee_of(call)
     if callee in BUILTIN_CONVERSIONS:
         return True
-    if qualified_callee(callee, import_bindings(module_root(call))) in ESCAPING_APIS:
+    if qualified_callee(callee, module_bindings(module_root(call))) in ESCAPING_APIS:
         return True
     function = call.child_by_field_name("function")
     receiver = None if function is None else function.child_by_field_name("object")

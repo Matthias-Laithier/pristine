@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from functools import lru_cache
 
 from tree_sitter import Node
 
@@ -6,6 +7,7 @@ from pristine.checks.boundaries.data_flow.injection.constructed import is_consta
 from pristine.checks.boundaries.data_flow.injection.scripts.escaping import is_escaping_api
 from pristine.registration import registering
 from pristine.syntax.parsing import module_statements, node_text
+from pristine.syntax.python_scopes import module_root
 
 LITERAL_KINDS = frozenset({"string", "number", "true", "false", "null", "undefined"})
 COMPOSITE_KINDS = frozenset(
@@ -18,6 +20,7 @@ JOIN_METHOD = "join"
 FILL_METHOD = "fill"
 MAP_METHOD = "map"
 TEXT_KINDS = frozenset({"string_fragment", "escape_sequence"})
+ROOT_CACHE_SIZE = 8
 
 _TRUST_RULES: dict[str, Callable[[Node], bool]] = {}
 
@@ -30,7 +33,7 @@ def is_trusted(node: Node) -> bool:
 @registering(_TRUST_RULES, "identifier", "member_expression")
 def is_constant_name(node: Node) -> bool:
     text = node_text(node) or ""
-    return is_constant_reference(text) or text in module_literal_names(node) or is_trusted_constant(node)
+    return is_constant_reference(text) or text in module_literal_names(module_root(node)) or is_trusted_constant(node)
 
 
 def is_trusted_constant(node: Node) -> bool:
@@ -71,10 +74,8 @@ def is_pure_literal(node: Node | None) -> bool:
     return all(child.type in TEXT_KINDS for child in node.named_children)
 
 
-def module_literal_names(node: Node) -> set[str]:
-    root = node
-    while root.parent is not None:
-        root = root.parent
+@lru_cache(maxsize=ROOT_CACHE_SIZE)
+def module_literal_names(root: Node) -> frozenset[str]:
     declarations = [
         statement
         for statement in module_statements(root)
@@ -82,7 +83,7 @@ def module_literal_names(node: Node) -> set[str]:
     ]
     declarators = [declarator for declaration in declarations for declarator in declaration.named_children]
     literals = [declarator for declarator in declarators if is_pure_literal(declarator.child_by_field_name("value"))]
-    return {node_text(declarator.child_by_field_name("name")) or "" for declarator in literals}
+    return frozenset(node_text(declarator.child_by_field_name("name")) or "" for declarator in literals)
 
 
 @registering(_TRUST_RULES, "call_expression")

@@ -1,8 +1,10 @@
 from collections.abc import Iterator
+from functools import lru_cache
 
 from tree_sitter import Node
 
 from pristine.syntax.parsing import all_nodes, module_statements, node_text
+from pristine.syntax.python_scopes import module_root
 
 DEFAULT = "default"
 NAMESPACE = "*"
@@ -22,6 +24,7 @@ ESCAPING_EXPORTS = frozenset(
     }
 )
 DEFAULT_OBJECT_PACKAGES = frozenset({"dompurify", "isomorphic-dompurify", "lodash", "he"})
+ROOT_CACHE_SIZE = 8
 
 
 def string_text(node: Node | None) -> str | None:
@@ -54,6 +57,7 @@ def required_imports(declarator: Node) -> Iterator[tuple[str, tuple[str, str]]]:
         yield node_text(local) or "", (source, node_text(child.child_by_field_name("key") or child) or "")
 
 
+@lru_cache(maxsize=ROOT_CACHE_SIZE)
 def script_imports(root: Node) -> dict[str, tuple[str, str]]:
     imports: dict[str, tuple[str, str]] = {}
     for statement in module_statements(root):
@@ -82,7 +86,4 @@ def is_escaping_api(call: Node) -> bool:
         return False
     if node_text(function) in NUMBER_CONVERSIONS:
         return True
-    root = call
-    while root.parent is not None:
-        root = root.parent
-    return imported_export(function, script_imports(root)) in ESCAPING_EXPORTS
+    return imported_export(function, script_imports(module_root(call))) in ESCAPING_EXPORTS
