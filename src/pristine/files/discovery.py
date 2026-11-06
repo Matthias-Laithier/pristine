@@ -2,7 +2,19 @@ import os
 from pathlib import Path, PurePath
 
 from pristine.files.path_roles import is_cache, is_vendored
-from pristine.services.git import listed_files
+from pristine.services.git import ls_files
+
+
+def _listed_repository_files(directory: Path) -> list[Path] | None:
+    names = ls_files(directory, "--cached", "--others", "--exclude-standard")
+    if names is None:
+        return None
+    files = (
+        file
+        for file in (directory / name for name in names)
+        if not is_vendored(PurePath(name)) and not is_cache(PurePath(name)) and file.is_file()
+    )
+    return list(files)
 
 
 def walked_files(directory: Path) -> list[Path]:
@@ -15,10 +27,8 @@ def expand(path: Path) -> list[Path]:
         return [path]
     if not path.is_dir():
         return []
-    listed = listed_files(path)
-    files = walked_files(path) if listed is None else listed
-    relative = ((file, file.relative_to(path)) for file in files)
-    return [file for file, inside in relative if not is_vendored(inside) and not is_cache(inside)]
+    listed = _listed_repository_files(path)
+    return walked_files(path) if listed is None else listed
 
 
 def cwd_relative(resolved: str) -> str:
@@ -40,5 +50,6 @@ def missing_paths(paths: list[Path]) -> tuple[str, ...]:
 
 
 def discover_files(paths: list[Path], excludes: list[str]) -> list[str]:
-    shown = {display_path(file) for path in paths for file in expand(path)}
+    expanded = [file for path in paths for file in expand(path)]
+    shown = {display_path(file) for file in expanded}
     return sorted(path for path in shown if not is_excluded(path, excludes))
