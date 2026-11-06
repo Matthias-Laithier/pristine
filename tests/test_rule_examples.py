@@ -27,7 +27,6 @@ UNASSERTED_BAD_EXAMPLES = {
     "BS-8-bad:file": "the example leaks a file handle, and BS-8 detects only dropped asyncio tasks and swallowed cancellation",
     "CO-14-bad": "an edited migration exists only in git history, and CO-14 compares files with the default branch",
     "CO-5-bad": "a method that ignores self may implement a protocol, so CO-5 checks only classes of static methods",
-    "CR-15-bad": "nine files form a small set, and CR-15 reports a crowded directory only from twelve code files on",
     "CR-18-bad": "delivery policy numbers need judgment, and CR-18 checks only model identifiers and sampling settings",
     "CR-22-bad:float money": "float money cannot be detected from syntax, and CR-22 checks only naive datetimes",
     "CR-5-bad": "each copy holds two statements under its own transport name, and CR-5 reports only exact bodies of six or more",
