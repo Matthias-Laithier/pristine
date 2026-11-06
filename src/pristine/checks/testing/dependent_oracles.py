@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -78,9 +78,9 @@ def enclosing_class(node: Node) -> Node | None:
 
 
 class RaisingContexts:
-    def __init__(self, root: Node) -> None:
-        self.bindings = import_bindings(root)
-        definitions = (node for node in all_nodes(root) if node.type == "class_definition")
+    def __init__(self, source: Node | ParsedFile) -> None:
+        self.bindings = import_bindings(source)
+        definitions = (node for node in all_nodes(source) if node.type == "class_definition")
         self.classes = {node_text(node.child_by_field_name("name")) or "": node for node in definitions}
 
     def opens(self, statement: Node) -> bool:
@@ -120,9 +120,9 @@ def dependent_assertion(node: Node, contexts: RaisingContexts) -> str | None:
     return SAME_SIDES.format(text=normalized(left))
 
 
-def dependent_assertions(root: Node) -> Iterator[tuple[Node, str]]:
-    contexts = RaisingContexts(root)
-    tests = [node for node in all_nodes(root) if node.type == "function_definition" and is_test_definition(node)]
+def dependent_assertions(source: Node | ParsedFile) -> Iterator[tuple[Node, str]]:
+    contexts = RaisingContexts(source)
+    tests = [node for node in all_nodes(source) if node.type == "function_definition" and is_test_definition(node)]
     for node in (node for test in tests for node in all_nodes(test)):
         problem = dependent_assertion(node, contexts)
         if problem is not None:
@@ -134,7 +134,7 @@ def check_dependent_oracles(parsed: ParsedFile) -> list[Finding]:
         return []
     return [
         Finding(parsed.path, line_of(node), RULE_ID, Severity.ERROR, f"{problem}, so it cannot fail; {FIX}")
-        for node, problem in dependent_assertions(parsed.root)
+        for node, problem in dependent_assertions(parsed)
     ]
 
 

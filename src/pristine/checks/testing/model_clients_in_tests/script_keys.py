@@ -1,10 +1,10 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.testing.model_clients_in_tests.live_clients import LiveClient, all_environment_reads, is_within
 from pristine.clients.libraries import SCRIPT_MODEL_CLIENTS
-from pristine.syntax.parsing import all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 
 API_KEY_PROPERTY = "apiKey"
 ENVIRONMENTS = ("process.env", "import.meta.env")
@@ -17,10 +17,10 @@ def is_model_import(statement: Node) -> bool:
     return statement.type == "import_statement" and not is_type_only and is_within(source, SCRIPT_MODEL_CLIENTS, "/")
 
 
-def model_bindings(root: Node) -> set[str]:
+def model_bindings(source: Node | ParsedFile) -> set[str]:
     clauses = (
         child
-        for statement in all_nodes(root)
+        for statement in all_nodes(source)
         if is_model_import(statement)
         for child in statement.named_children
         if child.type == "import_clause"
@@ -41,9 +41,9 @@ def imported_names(clause: Node) -> set[str]:
     return locals_ | {node_text(node) or "" for node in bare}
 
 
-def declared_values(root: Node) -> dict[str, list[Node]]:
+def declared_values(source: Node | ParsedFile) -> dict[str, list[Node]]:
     values: dict[str, list[Node]] = {}
-    for declarator in (node for node in all_nodes(root) if node.type == "variable_declarator"):
+    for declarator in (node for node in all_nodes(source) if node.type == "variable_declarator"):
         value = declarator.child_by_field_name("value")
         if value is not None:
             values.setdefault(node_text(declarator.child_by_field_name("name")) or "", []).append(value)
@@ -74,9 +74,9 @@ def api_key_value(call: Node) -> Node | None:
     return None
 
 
-def script_live_clients(root: Node) -> Iterator[LiveClient]:
-    clients, declared = model_bindings(root), declared_values(root)
-    calls = (node for node in all_nodes(root) if node.type in CONSTRUCTING_KINDS)
+def script_live_clients(source: Node | ParsedFile) -> Iterator[LiveClient]:
+    clients, declared = model_bindings(source), declared_values(source)
+    calls = (node for node in all_nodes(source) if node.type in CONSTRUCTING_KINDS)
     for call in calls:
         callee = node_text(call.child_by_field_name(CONSTRUCTING_KINDS[call.type])) or ""
         key = api_key_value(call) if callee.split(".")[0] in clients else None

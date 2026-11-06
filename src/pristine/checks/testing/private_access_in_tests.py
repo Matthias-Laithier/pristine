@@ -1,6 +1,6 @@
 import re
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -35,11 +35,11 @@ def is_private_access(node: Node) -> bool:
     return node.type == "attribute" and PRIVATE_NAME.fullmatch(name) is not None
 
 
-def own_members(root: Node) -> set[str]:
+def own_members(source: Node | ParsedFile) -> set[str]:
     members = {
-        node_text(node.child_by_field_name("name")) or "" for node in all_nodes(root) if node.type == METHOD_KIND
+        node_text(node.child_by_field_name("name")) or "" for node in all_nodes(source) if node.type == METHOD_KIND
     }
-    accesses = (node for node in all_nodes(root) if node.type == "attribute")
+    accesses = (node for node in all_nodes(source) if node.type == "attribute")
     receivers = ((node, node.child_by_field_name("object")) for node in accesses)
     own = (node for node, receiver in receivers if receiver is not None and node_text(receiver) in OWN_RECEIVERS)
     return members | {node_text(node.child_by_field_name("attribute")) or "" for node in own}
@@ -56,9 +56,9 @@ def is_exempt(access: Node, receiver: Node, exempt_names: frozenset[str]) -> boo
     return name in exempt_names or f"{node_text(receiver)}.{name}" in PUBLIC_MODULE_PRIVATES or is_patch_target(access)
 
 
-def private_accesses(root: Node) -> list[Node]:
-    exempt_names = EFFECTIVELY_PUBLIC | own_members(root)
-    accesses = [node for node in all_nodes(root) if is_private_access(node)]
+def private_accesses(source: Node | ParsedFile) -> list[Node]:
+    exempt_names = EFFECTIVELY_PUBLIC | own_members(source)
+    accesses = [node for node in all_nodes(source) if is_private_access(node)]
     return [
         node
         for node in accesses
@@ -78,7 +78,7 @@ def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
             f"test reaches into private attribute '{node_text(node)}'; "
             "assert on the public outcome instead: return values, persisted state, emitted events, or calls to fakes",
         )
-        for node in private_accesses(parsed.root)
+        for node in private_accesses(parsed)
     ]
 
 

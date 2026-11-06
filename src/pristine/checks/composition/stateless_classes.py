@@ -1,7 +1,7 @@
 import re
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.files.path_roles import is_test_path
@@ -23,8 +23,8 @@ TEST_CLASS_NAME = re.compile(r"Test\w*")
 MESSAGE = "class '{name}' only groups functions that need no instance; make them module-level functions"
 
 
-def base_names(root: Node) -> set[str]:
-    classes = [node for node in all_nodes(root) if node.type == "class_definition"]
+def base_names(source: Node | ParsedFile) -> set[str]:
+    classes = [node for node in all_nodes(source) if node.type == "class_definition"]
     bases = [node.child_by_field_name("superclasses") for node in classes]
     names = [node_text(base) or "" for holder in bases if holder is not None for base in holder.named_children]
     return {name.rsplit(".", 1)[-1] for name in names}
@@ -118,7 +118,7 @@ def is_exempt(name: str, extended: set[str], in_tests: bool) -> bool:
 def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    extended = base_names(parsed.root)
+    extended = base_names(parsed)
     in_tests = is_test_path(PurePath(parsed.path))
     findings = []
     for node in parsed.root.named_children:

@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.files.path_roles import is_test_path
