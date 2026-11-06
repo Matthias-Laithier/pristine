@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
+from pristine.catalog.rule_documents import rule_documents
 from pristine.checks.registry import file_checks, path_checks
-from pristine.cli import main
+from pristine.cli.main import main
 from pristine.project.inspection import PROJECT_RULE_SUMMARIES
-from pristine.rule_documents import rule_documents
 
 RULES_SOURCE = Path(__file__).parents[1] / "src" / "pristine" / "rules"
 

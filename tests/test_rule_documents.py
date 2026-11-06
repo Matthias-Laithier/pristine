@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pristine.match_groups import group_text
+from pristine.syntax.match_groups import group_text
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RULES_DIRECTORY = REPOSITORY / "src" / "pristine" / "rules"

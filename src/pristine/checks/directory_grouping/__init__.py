@@ -5,7 +5,7 @@ from pristine.checks.directory_grouping.crowded import crowded_directories
 from pristine.checks.directory_grouping.layout import RULE_ID, code_files_by_directory, holds_generated_code
 from pristine.checks.directory_grouping.single_file import single_file_folders
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding
+from pristine.reports.findings import Finding
 
 
 def check_directory_grouping(paths: list[str]) -> list[Finding]:

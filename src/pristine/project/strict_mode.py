@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 
-from pristine.findings import Finding, Severity
 from pristine.project.automation import (
     RULE_ID,
     FastGate,
@@ -10,12 +9,13 @@ from pristine.project.automation import (
     is_configured,
     is_typescript,
 )
-from pristine.project.loading import Project
-from pristine.project.python_strictness import PYTHON_PROBES
-from pristine.project.shell import program_calls
-from pristine.project.strictness import Arguments, UnverifiedConfigError
-from pristine.project.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role
-from pristine.project.typescript_strictness import TYPESCRIPT_PROBES
+from pristine.project.commands.shell import program_calls
+from pristine.project.repository.loading import Project
+from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role
+from pristine.project.strictness.python_strictness import PYTHON_PROBES
+from pristine.project.strictness.strictness import Arguments, UnverifiedConfigError
+from pristine.project.strictness.typescript_strictness import TYPESCRIPT_PROBES
+from pristine.reports.findings import Finding, Severity
 
 FIRST_LINE = 1
 PROBES = PYTHON_PROBES | TYPESCRIPT_PROBES

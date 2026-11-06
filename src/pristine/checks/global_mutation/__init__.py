@@ -3,9 +3,9 @@ from tree_sitter import Node
 from pristine.checks.global_mutation.module_globals import binds_locally, module_globals
 from pristine.checks.global_mutation.writes import Mutation, find_mutation
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
-from pristine.syntax_kinds import CALL_KINDS, FUNCTION_KINDS
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
+from pristine.syntax.syntax_kinds import CALL_KINDS, FUNCTION_KINDS
 
 RULE_ID = "CR-7"
 SCOPE_KINDS = FUNCTION_KINDS | {"generator_function"}

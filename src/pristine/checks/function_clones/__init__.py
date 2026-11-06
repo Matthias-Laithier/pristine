@@ -4,10 +4,10 @@ from pathlib import Path, PurePath
 from pristine.checks.function_clones.blocks import repeated_blocks, text_blocks
 from pristine.checks.function_clones.bodies import MINIMUM_STATEMENTS, FunctionBody, function_bodies
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding, Severity
+from pristine.files.classification import is_generated
+from pristine.files.path_roles import is_test_path, is_vendored
 from pristine.imports.repository import with_repository_files
-from pristine.inspection import is_generated
-from pristine.path_roles import is_test_path, is_vendored
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "CR-5"
 PYTHON_SUFFIX = ".py"

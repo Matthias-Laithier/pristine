@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pristine.cli import main
+from pristine.cli.main import main
 from tests.project.conftest import RunProject, rule_findings
 
 CONTRACT = "dev:\n\t./run\ncheck:\n\tpytest\ncheck-all: check\n"

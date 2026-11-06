@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from pristine.cli import main
+from pristine.cli.main import main
 from tests.conftest import parsed_report, run_git
 
 SETTLE = """def settle(order):

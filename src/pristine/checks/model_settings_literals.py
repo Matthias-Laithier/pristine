@@ -4,13 +4,13 @@ from pathlib import PurePath
 
 from tree_sitter import Node
 
-from pristine.calls import calls_of
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, line_of, module_statements, node_text
-from pristine.path_roles import is_test_path
-from pristine.python_calls import keyword_values
-from pristine.python_strings import is_constant_string
+from pristine.files.path_roles import is_test_path
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.calls import calls_of
+from pristine.syntax.parsing import ParsedFile, line_of, module_statements, node_text
+from pristine.syntax.python_calls import keyword_values
+from pristine.syntax.python_strings import is_constant_string
 
 RULE_ID = "CR-18"
 SHEBANG = "#!"

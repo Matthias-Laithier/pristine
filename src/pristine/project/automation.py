@@ -2,14 +2,14 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from fnmatch import fnmatchcase
 
-from pristine.findings import Finding, Severity
-from pristine.project.loading import Project
-from pristine.project.makefile import FAST_GATE, reach
-from pristine.project.makefile_syntax import Rule
-from pristine.project.manifests import Manifest
-from pristine.project.scripts import with_package_scripts
-from pristine.project.shell import program_calls
-from pristine.project.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role, Tool
+from pristine.project.commands.scripts import with_package_scripts
+from pristine.project.commands.shell import program_calls
+from pristine.project.repository.loading import Project
+from pristine.project.repository.makefile import FAST_GATE, reach
+from pristine.project.repository.makefile_syntax import Rule
+from pristine.project.repository.manifests import Manifest
+from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role, Tool
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TL-3"
 FIRST_LINE = 1

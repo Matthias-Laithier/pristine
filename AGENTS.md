@@ -25,8 +25,16 @@ Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README
 - The text and JSON renderers print the same report. `--max N` caps the printed findings. The summary and the per-rule counts still cover every finding.
 
 ### Packages
+Each package of `src/pristine/` owns one responsibility, and no directory holds more than 8 code files.
+- `cli/` parses the command line, prints its help, and renders a report as text or JSON. `cli/main.py` is the console script entry point.
+- `reports/` holds the findings, the per-file outcomes, their JSON-line encoding between processes, and the report built from them.
+- `files/` expands paths into the discovered files, tells test, vendored, and cache paths apart, and classifies file content as binary, lockfile, prose or data, generated, or minified.
+- `engine/` inspects one file with every file check, runs as the worker process (`python -m pristine.engine.worker`), and announces first-use grammar downloads.
+- `syntax/` parses with tree-sitter and holds the syntax helpers that several checks share: node kinds, calls, Python strings and tests, and regex groups.
+- `catalog/` reads the rule documents and builds the guide and the rule listing.
 - `services/` wraps every external dependency: git, gitleaks, the tree-sitter grammars, and the worker processes.
-- `project/` implements `pristine project`: it loads a repository root and checks it against the Tooling chapter, TL-1 to TL-4.
+- `project/` implements `pristine project`: it loads a repository root and checks it against the Tooling chapter, TL-1 to TL-4. Its root holds one module per check beside `inspection.py`. `repository/` loads the root, its Makefile, manifests, and the known tools, `commands/` parses shell commands and package scripts, and `strictness/` reads the strict settings of the type checkers.
+- `registration.py` and `package_modules.py` stay at the package root. They are the registration mechanism that the check, import-reader, and detector registries share, so they belong to none of those packages.
 - `imports/` reads import edges for the import-cycle check, CO-8. Each reader registers itself for the file suffixes it handles, through the same auto-discovery as the checks.
 - `rules/` holds the rule documents. They ship inside the package. `pristine guide` prints the hub followed by a rule index built from each rule's title and statement. `pristine rule` prints rules selected by ID, by chapter prefix, or with `all`. Both print links between rule files as their plain label.
 
@@ -54,7 +62,7 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 The per-file ignores of `pyproject.toml` hold only rules that flag intended code:
 - `S101` in `tests/**`. pytest asserts with `assert`.
 - `S603` in `services/git.py`, `services/gitleaks.py`, `services/isolated_inspection.py`, and `tests/conftest.py`. Each runs git, gitleaks, or the Python interpreter through an argument list without a shell. Ruff flags every such call whose arguments are not all literals.
-- `T20` in `cli.py`. It is the module that writes the user-facing output of the command-line program, as TL-3 allows.
+- `T20` in `cli/main.py`. It is the module that writes the user-facing output of the command-line program, as TL-3 allows.
 
 ## Commits
 - One-line conventional messages: `type(scope): summary`, such as `feat(checks): exempt interactive terminal processes from BS-3`.

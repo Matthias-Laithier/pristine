@@ -3,9 +3,9 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import callee_of
-from pristine.parsing import all_nodes, node_text
-from pristine.syntax_kinds import FUNCTION_KINDS
+from pristine.syntax.calls import callee_of
+from pristine.syntax.parsing import all_nodes, node_text
+from pristine.syntax.syntax_kinds import FUNCTION_KINDS
 
 TRANSPARENT_WRAPPERS = frozenset({"enumerate", "sorted", "reversed", "list", "tuple", "set"})
 LOOP_CLAUSE_KINDS = frozenset({"for_statement", "for_in_clause"})

@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Limit
-from pristine.parsing import ParsedFile, function_name, line_of, node_text
-from pristine.syntax_kinds import (
+from pristine.reports.findings import Finding, Limit
+from pristine.syntax.parsing import ParsedFile, function_name, line_of, node_text
+from pristine.syntax.syntax_kinds import (
     ANONYMOUS_FUNCTION_KINDS,
     ELSE_CONTAINERS,
     IF_KINDS,

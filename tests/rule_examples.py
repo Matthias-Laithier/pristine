@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-from pristine.match_groups import group_text
+from pristine.syntax.match_groups import group_text
 
 RULES_DIRECTORY = Path(__file__).parent.parent / "src" / "pristine" / "rules"
 RULE_DOCUMENT_PATTERN = "*-*.md"

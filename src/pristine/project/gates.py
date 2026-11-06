@@ -1,6 +1,6 @@
-from pristine.findings import Finding, Severity
-from pristine.project.loading import Project
-from pristine.project.makefile import COMPLETE_GATE, FAST_GATE, reach
+from pristine.project.repository.loading import Project
+from pristine.project.repository.makefile import COMPLETE_GATE, FAST_GATE, reach
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TL-2"
 

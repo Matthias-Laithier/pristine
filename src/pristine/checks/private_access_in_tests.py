@@ -2,11 +2,11 @@ import re
 
 from tree_sitter import Node
 
-from pristine.calls import callee_of
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
-from pristine.python_tests import is_python_test_module
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.calls import callee_of
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.python_tests import is_python_test_module
 
 RULE_ID = "TST-1"
 PRIVATE_NAME = re.compile(r"_[A-Za-z0-9]\w*(?<!_)")

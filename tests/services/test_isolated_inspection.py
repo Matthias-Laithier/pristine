@@ -2,15 +2,15 @@ import sys
 
 import pytest
 
-from pristine.findings import Finding, Severity
-from pristine.outcome_lines import MalformedOutcomeLine, decoded_outcome, encoded_outcome
-from pristine.outcomes import Checked, Outcome, Skipped, Unchecked
+from pristine.reports.findings import Finding, Severity
+from pristine.reports.outcome_lines import MalformedOutcomeLine, decoded_outcome, encoded_outcome
+from pristine.reports.outcomes import Checked, Outcome, Skipped, Unchecked
 from pristine.services.isolated_inspection import LOST_FILE_REASON, decoded_results, inspect_in_workers
 
 CRASHING_WORKER = (
     "import os, sys\n"
-    "from pristine.outcome_lines import encoded_outcome\n"
-    "from pristine.outcomes import Checked\n"
+    "from pristine.reports.outcome_lines import encoded_outcome\n"
+    "from pristine.reports.outcomes import Checked\n"
     "for path in sys.stdin.buffer.read().decode().split('\\0'):\n"
     "    if path == 'crash.py':\n"
     '        sys.stdout.write(\'{"path": "crash.py", "kind": "chec\')\n'

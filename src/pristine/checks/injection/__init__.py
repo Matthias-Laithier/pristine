@@ -6,9 +6,9 @@ from pristine.checks.injection.python_execution import scan_execution
 from pristine.checks.injection.python_sql import scan_sql
 from pristine.checks.injection.script_injection import scan_script
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, line_of
+from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.parsing import ParsedFile, line_of
 
 RULE_ID = "BS-10"
 

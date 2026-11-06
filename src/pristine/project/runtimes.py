@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from pristine.findings import Finding, Severity
-from pristine.project.loading import Project
-from pristine.project.tools import Ecosystem
+from pristine.project.repository.loading import Project
+from pristine.project.repository.tools import Ecosystem
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TL-4"
 FIRST_LINE = 1

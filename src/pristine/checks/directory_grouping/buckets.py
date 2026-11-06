@@ -2,7 +2,7 @@ from collections import defaultdict
 from pathlib import PurePosixPath
 
 from pristine.checks.directory_grouping.layout import directory_finding
-from pristine.findings import Finding
+from pristine.reports.findings import Finding
 
 VAGUE_BUCKET_NAMES = frozenset({"common", "misc", "helpers", "utils", "util"})
 PACKAGE_PATH_ROOTS = frozenset({"java", "kotlin"})

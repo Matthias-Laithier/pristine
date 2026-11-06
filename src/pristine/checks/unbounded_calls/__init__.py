@@ -2,9 +2,9 @@ from pristine.checks.registry import FileCheck, register_file_check
 from pristine.checks.unbounded_calls.go_calls import scan_go
 from pristine.checks.unbounded_calls.python_calls import scan_python
 from pristine.checks.unbounded_calls.script_calls import scan_script
-from pristine.findings import Finding
-from pristine.parsing import ParsedFile, line_of
+from pristine.reports.findings import Finding
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.parsing import ParsedFile, line_of
 
 RULE_ID = "BS-3"
 SCANNERS = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {"python": scan_python, "go": scan_go}

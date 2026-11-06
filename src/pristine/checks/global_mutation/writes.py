@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from tree_sitter import Node
 
 from pristine.checks.global_mutation.module_globals import PYTHON_COLLECTION, REBINDABLE, Globals
-from pristine.parsing import node_text
 from pristine.registration import registering
-from pristine.syntax_kinds import CALL_KINDS
+from pristine.syntax.parsing import node_text
+from pristine.syntax.syntax_kinds import CALL_KINDS
 
 PYTHON_METHODS = frozenset({"append", "extend", "insert", "add", "update", "setdefault", "pop", "popitem"})
 JS_ARRAY_METHODS = frozenset({"push", "pop", "shift", "unshift", "splice", "sort", "reverse", "fill", "copyWithin"})

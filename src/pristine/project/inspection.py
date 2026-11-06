@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from pristine.outcomes import Checked, Outcome, Unchecked
 from pristine.project import automation, gates, installs, layout, lockfiles, runtimes, strict_mode
-from pristine.project.loading import load_project
-from pristine.report import Report, build_report
+from pristine.project.repository.loading import load_project
+from pristine.reports.outcomes import Checked, Outcome, Unchecked
+from pristine.reports.report import Report, build_report
 
 PROJECT_RULE_SUMMARIES = {
     "TL-1": "A root Makefile with dev, check, and check-all, a build target when the project ships artifacts, and no component Makefiles.",

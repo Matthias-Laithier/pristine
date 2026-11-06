@@ -3,7 +3,7 @@ import re
 from collections.abc import Iterator
 
 from pristine.imports.registry import ImportEdge, SourceFile, reads_imports
-from pristine.match_groups import group_text
+from pristine.syntax.match_groups import group_text
 
 SCRIPT_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")
 INDEX_MODULE = "index"

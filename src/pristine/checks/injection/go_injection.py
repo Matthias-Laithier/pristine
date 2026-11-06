@@ -3,9 +3,9 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import calls_of
 from pristine.checks.injection.constructed import Injection, starts_with_sql
-from pristine.parsing import ParsedFile, node_text
+from pristine.syntax.calls import calls_of
+from pristine.syntax.parsing import ParsedFile, node_text
 
 SQL_METHODS = frozenset({"Query", "QueryRow", "Exec", "QueryContext", "QueryRowContext", "ExecContext"})
 STRING_KINDS = frozenset({"interpreted_string_literal", "raw_string_literal"})

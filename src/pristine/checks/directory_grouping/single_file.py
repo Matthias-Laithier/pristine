@@ -4,7 +4,7 @@ from pathlib import PurePosixPath
 
 from pristine.checks.directory_grouping.layout import directory_finding, is_code
 from pristine.checks.directory_grouping.name_groups import words
-from pristine.findings import Finding
+from pristine.reports.findings import Finding
 
 PACKAGE_MARKERS = frozenset({"__init__.py", "__main__.py"})
 INDEX_STEM = "index"

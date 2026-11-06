@@ -4,10 +4,10 @@ import sys
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 
-from pristine.outcome_lines import MalformedOutcomeLine, decoded_outcome
-from pristine.outcomes import Outcome, Unchecked
+from pristine.reports.outcome_lines import MalformedOutcomeLine, decoded_outcome
+from pristine.reports.outcomes import Outcome, Unchecked
 
-WORKER_COMMAND = (sys.executable, "-m", "pristine.worker")
+WORKER_COMMAND = (sys.executable, "-m", "pristine.engine.worker")
 WORKER_STARTUP_SECONDS = 60
 SECONDS_PER_FILE = 10
 LOST_FILE_REASON = "the parser crashed or timed out on this file"

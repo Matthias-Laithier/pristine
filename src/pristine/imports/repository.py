@@ -1,8 +1,8 @@
 from functools import cache
 from pathlib import Path, PurePath
 
-from pristine.discovery import cwd_relative
-from pristine.path_roles import is_cache, is_vendored
+from pristine.files.discovery import cwd_relative
+from pristine.files.path_roles import is_cache, is_vendored
 from pristine.services.git import listed_files
 
 GIT_ENTRY = ".git"

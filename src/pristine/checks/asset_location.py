@@ -2,8 +2,8 @@ import re
 from pathlib import PurePosixPath
 
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding, Severity
-from pristine.path_roles import VENDORED_DIRECTORIES, holds_test_material
+from pristine.files.path_roles import VENDORED_DIRECTORIES, holds_test_material
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "CR-9"
 ASSET_SUFFIXES = frozenset(

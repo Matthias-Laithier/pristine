@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from pristine import grammar_downloads
-from pristine.cli import main
+from pristine.cli.main import main
+from pristine.engine import grammar_downloads
 from tests.conftest import RunPristine
 
 LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))

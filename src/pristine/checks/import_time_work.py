@@ -6,11 +6,11 @@ from pathlib import PurePath
 from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, line_of, node_text
-from pristine.path_roles import is_test_path
+from pristine.files.path_roles import is_test_path
+from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
-from pristine.syntax_kinds import FUNCTION_KINDS
+from pristine.syntax.parsing import ParsedFile, line_of, node_text
+from pristine.syntax.syntax_kinds import FUNCTION_KINDS
 
 RULE_ID = "CO-13"
 PREVIEW_LENGTH = 60

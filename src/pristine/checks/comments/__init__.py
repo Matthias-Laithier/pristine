@@ -1,8 +1,8 @@
 from pristine.checks.comments.directives import is_machine_read
 from pristine.checks.comments.docstrings import machine_read_docstring_lines
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import CommentText, ParsedFile
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import CommentText, ParsedFile
 
 RULE_ID = "CR-3"
 PREVIEW_LENGTH = 60

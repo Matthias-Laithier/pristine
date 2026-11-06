@@ -2,12 +2,12 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import calls_of
 from pristine.checks.injection.constructed import Injection, starts_with_sql
 from pristine.checks.injection.python_values import is_trusted
-from pristine.parsing import node_text
-from pristine.python_calls import positional_arguments
-from pristine.python_strings import STRING_KINDS, built_string
+from pristine.syntax.calls import calls_of
+from pristine.syntax.parsing import node_text
+from pristine.syntax.python_calls import positional_arguments
+from pristine.syntax.python_strings import STRING_KINDS, built_string
 
 SQL_FUNCTIONS = frozenset(
     {"execute", "executemany", "executescript", "fetch", "fetchrow", "fetchval", "fetch_all", "fetch_one"}

@@ -3,10 +3,10 @@ import re
 from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
-from pristine.python_strings import built_string
-from pristine.syntax_kinds import COMMENT_KINDS
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.python_strings import built_string
+from pristine.syntax.syntax_kinds import COMMENT_KINDS
 
 RULE_ID = "BS-15"
 LOGGER = re.compile(r"(.+\.)?_?(logger|log|LOGGER|LOG)|logging")

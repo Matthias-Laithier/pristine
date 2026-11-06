@@ -7,7 +7,7 @@ from typing import TypedDict
 
 import pytest
 
-from pristine.cli import main
+from pristine.cli.main import main
 
 GIT_TIMEOUT_SECONDS = 30
 

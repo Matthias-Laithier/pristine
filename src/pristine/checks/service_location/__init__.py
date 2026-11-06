@@ -2,9 +2,9 @@ from pathlib import PurePath
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.checks.service_location.languages import client_table, library_names
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile
-from pristine.path_roles import is_test_path
+from pristine.files.path_roles import is_test_path
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile
 
 RULE_ID = "CR-8"
 SERVICES_DIRECTORY = "services"

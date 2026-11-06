@@ -3,8 +3,8 @@ from collections.abc import Callable
 from tree_sitter import Node
 
 from pristine.checks.injection.constructed import is_constant_reference, is_escaping_callee, is_placeholder_name
-from pristine.parsing import module_statements, node_text
 from pristine.registration import registering
+from pristine.syntax.parsing import module_statements, node_text
 
 LITERAL_KINDS = frozenset({"string", "number", "true", "false", "null", "undefined"})
 COMPOSITE_KINDS = frozenset(

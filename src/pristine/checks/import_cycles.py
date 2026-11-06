@@ -2,11 +2,11 @@ from collections import defaultdict
 from pathlib import Path, PurePath
 
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding, Severity
+from pristine.files.classification import is_generated
 from pristine.imports.cycles import ImportCycle, dependency_graph, import_cycles
 from pristine.imports.registry import ImportEdge, ImportReader, SourceFile, reader_for
 from pristine.imports.repository import with_repository_files
-from pristine.inspection import is_generated
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "CO-8"
 CYCLE_FIXES = (

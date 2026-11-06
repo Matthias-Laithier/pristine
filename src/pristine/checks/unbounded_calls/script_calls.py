@@ -3,10 +3,10 @@ from pathlib import PurePath
 
 from tree_sitter import Node
 
-from pristine.calls import BoundedCall, calls_of, has_unknown_argument
 from pristine.checks.unbounded_calls.calls import Violation
-from pristine.findings import Severity
-from pristine.parsing import ParsedFile, node_text
+from pristine.reports.findings import Severity
+from pristine.syntax.calls import BoundedCall, calls_of, has_unknown_argument
+from pristine.syntax.parsing import ParsedFile, node_text
 
 AXIOS = "axios"
 AXIOS_FIX = "set timeout in the config, or call an axios.create({ timeout }) instance"

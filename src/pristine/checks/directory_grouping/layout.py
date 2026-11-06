@@ -1,9 +1,9 @@
 from collections import defaultdict
 from pathlib import PurePosixPath
 
-from pristine.findings import Finding, Severity
-from pristine.inspection import is_generated
-from pristine.path_roles import is_test_path, is_vendored
+from pristine.files.classification import is_generated
+from pristine.files.path_roles import is_test_path, is_vendored
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "CR-15"
 HEADER_BYTES = 8192

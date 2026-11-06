@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pristine.cli import main
+from pristine.cli.main import main
 from tests.conftest import JsonReport, parsed_report, run_git
 
 type RunProject = Callable[[dict[str, str]], tuple[int, JsonReport]]

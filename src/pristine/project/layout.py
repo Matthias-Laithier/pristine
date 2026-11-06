@@ -1,7 +1,7 @@
-from pristine.findings import Finding, Severity
-from pristine.project.loading import MAKEFILE_NAMES, Project
-from pristine.project.makefile import COMPLETE_GATE, FAST_GATE
-from pristine.project.tools import Ecosystem
+from pristine.project.repository.loading import MAKEFILE_NAMES, Project
+from pristine.project.repository.makefile import COMPLETE_GATE, FAST_GATE
+from pristine.project.repository.tools import Ecosystem
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TL-1"
 ROOT = "."

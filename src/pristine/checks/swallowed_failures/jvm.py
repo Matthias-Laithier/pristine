@@ -3,8 +3,8 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.swallowed_failures import PROPAGATE_HINT, body_text, detects, is_expected, normalized, swallow
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile, all_nodes
 
 TYPED_CATCH_KINDS = frozenset({"catch_clause", "catch_block"})
 TYPED_CATCH_BODY_KINDS = frozenset({"block", "statements"})

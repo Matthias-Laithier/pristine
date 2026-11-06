@@ -1,6 +1,6 @@
 import re
 
-from pristine.parsing import CommentText
+from pristine.syntax.parsing import CommentText
 
 COMMENT_MARKERS = re.compile(r"^\s*(#+|//+!?|/\*+!?|--+|;+|%+)?\s*")
 DIRECTIVE_PATTERNS = tuple(

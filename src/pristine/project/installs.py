@@ -1,13 +1,13 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from pristine.findings import Finding, Severity
-from pristine.project.loading import Project
-from pristine.project.makefile import Makefile
-from pristine.project.makefile_syntax import Rule
-from pristine.project.scripts import with_package_scripts
-from pristine.project.shell import positionals, program_calls
-from pristine.project.tools import Ecosystem
+from pristine.project.commands.scripts import with_package_scripts
+from pristine.project.commands.shell import positionals, program_calls
+from pristine.project.repository.loading import Project
+from pristine.project.repository.makefile import Makefile
+from pristine.project.repository.makefile_syntax import Rule
+from pristine.project.repository.tools import Ecosystem
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TL-4"
 NPM_LOCKFILES = ("package-lock.json", "npm-shrinkwrap.json")

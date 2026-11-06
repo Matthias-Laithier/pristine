@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from pristine.checks.registry import file_checks, path_checks
-from pristine.cli import main
+from pristine.cli.main import main
 from tests.conftest import JsonReport, RunPristine, parsed_report, rule_findings
 from tests.rule_examples import ExampleKind, RuleExample, rule_examples
 

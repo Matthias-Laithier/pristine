@@ -2,11 +2,11 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import calls_of
 from pristine.checks.injection.constructed import Injection
 from pristine.checks.injection.python_values import is_trusted
-from pristine.parsing import node_text
-from pristine.python_calls import import_bindings, keyword_values, positional_arguments, qualified_callee
+from pristine.syntax.calls import calls_of
+from pristine.syntax.parsing import node_text
+from pristine.syntax.python_calls import import_bindings, keyword_values, positional_arguments, qualified_callee
 
 SHELL_FUNCTIONS = frozenset(
     {"os.system", "os.popen", "subprocess.getoutput", "subprocess.getstatusoutput"}

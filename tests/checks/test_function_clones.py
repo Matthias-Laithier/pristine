@@ -3,7 +3,7 @@ from textwrap import indent
 
 import pytest
 
-from pristine.cli import main
+from pristine.cli.main import main
 from tests.conftest import JsonReport, RunPristine, parsed_report, run_git
 
 RULE_ID = "CR-5"

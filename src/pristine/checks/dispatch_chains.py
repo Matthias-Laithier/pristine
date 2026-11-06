@@ -5,10 +5,10 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
-from pristine.syntax_kinds import COMMENT_KINDS, IF_KINDS
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.syntax_kinds import COMMENT_KINDS, IF_KINDS
 
 RULE_ID = "CR-14"
 DISPATCH_CASE_MINIMUM = 3

@@ -3,10 +3,10 @@ from collections.abc import Callable, Iterator
 from tree_sitter import Node
 
 from pristine.checks.injection.constructed import is_constant_reference, is_escaping_callee, is_placeholder_name
-from pristine.parsing import node_text
-from pristine.python_strings import interpolations
 from pristine.registration import registering
-from pristine.syntax_kinds import COMPREHENSION_KINDS
+from pristine.syntax.parsing import node_text
+from pristine.syntax.python_strings import interpolations
+from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS
 
 LITERAL_KINDS = frozenset({"integer", "float", "true", "false", "none"})
 COLLECTION_KINDS = frozenset({"list", "tuple", "set", "parenthesized_expression"})

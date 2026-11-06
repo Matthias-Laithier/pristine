@@ -4,9 +4,9 @@ from pathlib import PurePath
 from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
-from pristine.path_roles import is_test_path
+from pristine.files.path_roles import is_test_path
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
 
 RULE_ID = "CO-5"
 PLAIN_BASES = frozenset({"object"})

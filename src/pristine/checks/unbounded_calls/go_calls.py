@@ -2,10 +2,10 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import BoundedCall
 from pristine.checks.unbounded_calls.calls import Violation
-from pristine.findings import Severity
-from pristine.parsing import ParsedFile, all_nodes, node_text
+from pristine.reports.findings import Severity
+from pristine.syntax.calls import BoundedCall
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 HTTP_IMPORT = '"net/http"'
 CLIENT = "http.Client"

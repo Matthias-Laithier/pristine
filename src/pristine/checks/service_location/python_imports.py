@@ -3,7 +3,7 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.parsing import all_nodes, line_of, node_text
+from pristine.syntax.parsing import all_nodes, line_of, node_text
 
 TYPE_CHECKING_CONDITIONS = frozenset({"TYPE_CHECKING", "typing.TYPE_CHECKING"})
 PLAIN_IMPORT_KIND = "import_statement"

@@ -2,10 +2,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 
-from pristine.findings import Finding
 from pristine.package_modules import import_package_modules
-from pristine.parsing import ParsedFile
 from pristine.registration import registering
+from pristine.reports.findings import Finding
+from pristine.syntax.parsing import ParsedFile
 
 CHECKS_PACKAGE = "pristine.checks"
 

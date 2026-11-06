@@ -1,6 +1,6 @@
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Limit
-from pristine.parsing import ParsedFile
+from pristine.reports.findings import Finding, Limit
+from pristine.syntax.parsing import ParsedFile
 
 RULE_ID = "CR-1"
 FILE_LINE_LIMIT = Limit(target=150, hard=200)

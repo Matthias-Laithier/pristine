@@ -2,8 +2,8 @@ import os
 from pathlib import PurePosixPath
 
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding, Severity
-from pristine.path_roles import PYTEST_CONFTEST, is_test_file, is_test_folder
+from pristine.files.path_roles import PYTEST_CONFTEST, is_test_file, is_test_folder
+from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TST-4"
 SOURCE_FOLDER = "src"

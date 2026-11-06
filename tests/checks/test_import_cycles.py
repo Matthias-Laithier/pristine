@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pristine.cli import main
+from pristine.cli.main import main
 from tests.conftest import JsonReport, RunPristine, run_git
 
 DEEP_CHAIN_LENGTH = 1100

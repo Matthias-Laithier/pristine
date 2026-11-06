@@ -2,8 +2,8 @@ import re
 from pathlib import Path, PurePath
 
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding, Severity
-from pristine.path_roles import is_test_path, is_vendored
+from pristine.files.path_roles import is_test_path, is_vendored
+from pristine.reports.findings import Finding, Severity
 from pristine.services.git import edited_since_default_branch, repository_root
 
 RULE_ID = "CO-14"

@@ -4,9 +4,9 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.swallowed_failures import PROPAGATE_HINT, detects, normalized, statements_of, swallow
-from pristine.findings import Finding, Severity
-from pristine.match_groups import group_text
-from pristine.parsing import ParsedFile, all_nodes
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.match_groups import group_text
+from pristine.syntax.parsing import ParsedFile, all_nodes
 
 ERROR_NAME = re.compile(r"err(or)?(\d|[A-Z_]\w*)?|\w+Err(or)?\d*")
 ERROR_CHECK = re.compile(r"(?P<name>\w+) != nil")

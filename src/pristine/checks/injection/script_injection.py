@@ -5,7 +5,7 @@ from tree_sitter import Node
 from pristine.checks.injection.constructed import Injection
 from pristine.checks.injection.script_processes import scan_processes
 from pristine.checks.injection.script_values import is_trusted
-from pristine.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 MARKUP_PROPERTIES = frozenset({"innerHTML", "outerHTML"})
 ASSIGNMENT_KINDS = frozenset({"assignment_expression", "augmented_assignment_expression"})

@@ -2,7 +2,7 @@ from pathlib import PurePosixPath
 
 from pristine.checks.directory_grouping.layout import directory_finding
 from pristine.checks.directory_grouping.name_groups import prefix_groups
-from pristine.findings import Finding
+from pristine.reports.findings import Finding
 
 MIN_CODE_FILES = 12
 MIN_GROUP_SIZE = 3

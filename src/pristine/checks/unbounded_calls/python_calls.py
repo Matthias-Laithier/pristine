@@ -3,10 +3,10 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import calls_of
 from pristine.checks.unbounded_calls.calls import Violation
-from pristine.parsing import ParsedFile, node_text
-from pristine.python_calls import (
+from pristine.syntax.calls import calls_of
+from pristine.syntax.parsing import ParsedFile, node_text
+from pristine.syntax.python_calls import (
     EXTERNAL_CALLS,
     has_bound,
     import_bindings,

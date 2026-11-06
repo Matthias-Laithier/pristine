@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from tree_sitter import Node
 
-from pristine.calls import BoundedCall
+from pristine.syntax.calls import BoundedCall
 
 
 @dataclass(frozen=True)

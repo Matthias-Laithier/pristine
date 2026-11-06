@@ -3,9 +3,9 @@ from pathlib import PurePath
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.checks.service_location.languages import ClientImport, client_table, library_names
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile
-from pristine.path_roles import PYTEST_CONFTEST, is_test_file
+from pristine.files.path_roles import PYTEST_CONFTEST, is_test_file
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile
 
 RULE_ID = "TST-8"
 EVALS_DIRECTORY = "evals"

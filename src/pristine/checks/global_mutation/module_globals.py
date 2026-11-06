@@ -2,9 +2,9 @@ from collections.abc import Callable
 
 from tree_sitter import Node
 
-from pristine.parsing import all_nodes, module_statements, node_text
 from pristine.registration import registering
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.parsing import all_nodes, module_statements, node_text
 
 REBINDABLE = "rebindable"
 PYTHON_COLLECTION = "python_collection"

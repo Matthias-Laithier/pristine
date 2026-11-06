@@ -3,12 +3,12 @@ from collections.abc import Iterator
 
 from tree_sitter import Node
 
-from pristine.calls import callee_of
 from pristine.checks.registry import FileCheck, register_file_check
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, is_async, line_of, node_text
-from pristine.python_calls import import_bindings, qualified_callee
-from pristine.syntax_kinds import NESTED_SCOPE_KINDS
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.calls import callee_of
+from pristine.syntax.parsing import ParsedFile, all_nodes, is_async, line_of, node_text
+from pristine.syntax.python_calls import import_bindings, qualified_callee
+from pristine.syntax.syntax_kinds import NESTED_SCOPE_KINDS
 
 RULE_ID = "BS-8"
 TASK_FACTORIES = frozenset({"asyncio.create_task", "asyncio.ensure_future"})

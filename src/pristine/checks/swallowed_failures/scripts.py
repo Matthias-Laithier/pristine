@@ -3,9 +3,9 @@ from collections.abc import Iterator
 from tree_sitter import Node
 
 from pristine.checks.swallowed_failures import NARROW_HINT, body_text, detects, logged_default, swallow
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes
+from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.parsing import ParsedFile, all_nodes
 
 SCRIPT_EMPTY_BODIES = frozenset(
     {"", "return", "return null", "return undefined", "return []", "return {}", 'return ""', "return ''", "return ``"}

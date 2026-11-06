@@ -1,5 +1,5 @@
 from pristine.checks.registry import PathCheck, register_path_check
-from pristine.findings import Finding, Severity
+from pristine.reports.findings import Finding, Severity
 from pristine.services.gitleaks import Leak, SecretScanFailed, scan_paths
 
 RULE_ID = "BS-2"

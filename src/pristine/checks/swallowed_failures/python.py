@@ -12,8 +12,8 @@ from pristine.checks.swallowed_failures import (
     normalized,
     swallow,
 )
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.parsing import ParsedFile, all_nodes
 
 BARE_EXCEPT = ""
 BROAD_EXCEPTIONS = frozenset({BARE_EXCEPT, "Exception", "BaseException"})

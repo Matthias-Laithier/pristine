@@ -1,5 +1,5 @@
-from pristine.findings import Finding, Severity
-from pristine.project.loading import Project
+from pristine.project.repository.loading import Project
+from pristine.reports.findings import Finding, Severity
 from pristine.services.git import tracked_files
 
 RULE_ID = "TL-4"

@@ -1,6 +1,6 @@
 from tree_sitter import Node
 
-from pristine.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
 
 FRAMEWORK_DECORATOR_NAMES = frozenset(
     {

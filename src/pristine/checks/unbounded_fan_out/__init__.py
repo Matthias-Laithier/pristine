@@ -4,14 +4,14 @@ from pathlib import PurePath
 
 from tree_sitter import Node
 
-from pristine.calls import callee_of, calls_of
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.checks.unbounded_fan_out.fanned_collections import loop_variables, unbounded_collection
-from pristine.findings import Finding, Severity
-from pristine.parsing import ParsedFile, all_nodes, line_of, node_text
-from pristine.path_roles import is_test_path
-from pristine.python_calls import import_bindings, qualified_callee
-from pristine.syntax_kinds import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
+from pristine.files.path_roles import is_test_path
+from pristine.reports.findings import Finding, Severity
+from pristine.syntax.calls import callee_of, calls_of
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.python_calls import import_bindings, qualified_callee
+from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
 
 RULE_ID = "BS-14"
 GATHER = "asyncio.gather"

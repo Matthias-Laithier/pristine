@@ -12,9 +12,9 @@ from pristine.checks.service_location.clients import (
     SCRIPT_MODEL_CLIENTS,
 )
 from pristine.checks.service_location.python_imports import python_import_targets
-from pristine.parsing import all_nodes, line_of, node_text
 from pristine.registration import registering
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.parsing import all_nodes, line_of, node_text
 
 STRING_LITERAL_KINDS = frozenset({"string", "interpreted_string_literal", "raw_string_literal"})
 SCRIPT_LOADER_NAMES = frozenset({"require", "import"})

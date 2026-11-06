@@ -25,7 +25,7 @@ Repository = "https://github.com/Matthias-Laithier/pristine"
 Issues = "https://github.com/Matthias-Laithier/pristine/issues"
 
 [project.scripts]
-pristine = "pristine.cli:main"
+pristine = "pristine.cli.main:main"
 
 [build-system]
 requires = ["uv_build>=0.9,<0.13"]
@@ -47,7 +47,7 @@ extend-select = ["I", "B", "UP", "SIM", "PL", "ERA", "S", "ASYNC", "DTZ", "G", "
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004", "S101"]
 "tests/conftest.py" = ["S603"]
-"src/pristine/cli.py" = ["T20"]
+"src/pristine/cli/main.py" = ["T20"]
 "src/pristine/services/git.py" = ["S603"]
 "src/pristine/services/gitleaks.py" = ["S603"]
 "src/pristine/services/isolated_inspection.py" = ["S603"]
