@@ -25,7 +25,6 @@ EXPECTED_EXCEPTIONS = frozenset(
     | {"CancelledError", "ImportError", "ModuleNotFoundError", "NameError", "KeyboardInterrupt", "EOFError", "Empty"}
     | {"QueueEmpty", "CancellationException", "OperationCanceledException", "TaskCanceledException"}
 )
-EXPECTED_EXCEPTION_SUFFIXES = ("NotFound", "NotFoundError", "DoesNotExist")
 
 type Detector = Callable[[ParsedFile], Iterator[Finding]]
 
@@ -76,7 +75,7 @@ def logged_default(body: Node, defaults: frozenset[str]) -> str | None:
 
 
 def is_expected(name: str) -> bool:
-    return name in EXPECTED_EXCEPTIONS or name.endswith(EXPECTED_EXCEPTION_SUFFIXES)
+    return name in EXPECTED_EXCEPTIONS
 
 
 @cache
