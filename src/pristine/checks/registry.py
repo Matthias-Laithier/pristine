@@ -5,7 +5,7 @@ from functools import cache
 from pristine.package_modules import import_package_modules
 from pristine.registration import registering
 from pristine.reports.findings import Finding
-from pristine.syntax.parsing import ParsedFile
+lazy from pristine.syntax.parsing import ParsedFile
 
 CHECKS_PACKAGE = "pristine.checks"
 

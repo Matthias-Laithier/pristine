@@ -1,8 +1,8 @@
 from functools import cache
 from pathlib import Path
 
-from tree_sitter import Parser
-from tree_sitter_language_pack import Error, detect_language_from_path, downloaded_languages, get_parser
+lazy from tree_sitter import Parser
+lazy from tree_sitter_language_pack import Error, detect_language_from_path, downloaded_languages, get_parser
 
 SCRIPT_LANGUAGES = ("javascript", "typescript", "tsx")
 RUBY = "ruby"
@@ -15,7 +15,8 @@ LANGUAGE_BY_FILE_NAME = {
 } | dict.fromkeys(RUBY_FILE_NAMES, RUBY)
 LANGUAGE_BY_SUFFIX = dict.fromkeys((".gemspec", ".podspec", ".ru"), RUBY)
 
-GrammarError = Error
+class GrammarError(Exception):
+    pass
 
 
 def language_for(path: Path) -> str | None:
@@ -25,7 +26,10 @@ def language_for(path: Path) -> str | None:
 
 @cache
 def parser_for(language: str) -> Parser:
-    return get_parser(language)
+    try:
+        return get_parser(language)
+    except Error as error:
+        raise GrammarError(str(error)) from error
 
 
 def cached_languages() -> frozenset[str]:
