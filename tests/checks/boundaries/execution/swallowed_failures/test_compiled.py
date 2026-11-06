@@ -13,6 +13,13 @@ from tests.conftest import RunPristine, rule_findings
         ("Load.kt", "fun run() {\n  try { read() } catch (e: IOException) { }\n}\n", [(2, "warning")]),
         ("Load.kt", "fun run() {\n  try { read() } catch (e: IOException) { log(e) }\n}\n", []),
         ("Load.kt", "fun run() {\n  try { read() } catch (e: CancellationException) { }\n}\n", []),
+        ("LoadTest.java", "class LoadTest { void run() { try { read(); fail(); } catch (IOException e) { } } }\n", []),
+        (
+            "LoadTest.java",
+            "class LoadTest { void t() { try { read(); Assert.fail(); } catch (Error e) { } } }\n",
+            [(1, "warning")],
+        ),
+        ("LoadTest.kt", 'fun run() {\n  try { read(); fail("read") } catch (e: IOException) { }\n}\n', []),
     ],
 )
 def test_typed_catch_blocks(run_pristine: RunPristine, name: str, source: str, expected: list[tuple[int, str]]) -> None:

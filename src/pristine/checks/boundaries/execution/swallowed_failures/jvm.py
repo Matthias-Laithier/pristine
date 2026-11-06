@@ -4,6 +4,7 @@ from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import (
     PROPAGATE_HINT,
+    asserts_failure,
     body_text,
     detects,
     is_expected,
@@ -23,7 +24,7 @@ def is_silent_catch(clause: Node) -> bool:
     names = {normalized(node) for child in header for node in all_nodes(child) if node.type in TYPE_NAME_KINDS}
     body = clause.child_by_field_name("body")
     is_empty = body_text(body) == "" if body else len(header) == len(clause.named_children)
-    return is_empty and not any(is_expected(name) for name in names)
+    return is_empty and not any(is_expected(name) for name in names) and not asserts_failure(clause, frozenset(names))
 
 
 @detects("java", "csharp", "kotlin")

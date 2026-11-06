@@ -21,6 +21,11 @@ def python_except(caught: str, body: str, tail: str = "", head: str = "") -> str
         (python_except("except Exception", "log(path)\n        raise"), []),
         (python_except("except ValueError", "pass"), [(4, "warning")]),
         (python_except("except ValueError", "return None"), []),
+        (python_except("except ValueError", "pass").replace("read(path)", "read(path)\n        pytest.fail(path)"), []),
+        (
+            python_except("except", "pass").replace("read(path)", "read(path)\n        pytest.fail(path)"),
+            [(5, "error")],
+        ),
         (python_except("except (FileNotFoundError, os.error)", "pass"), [(4, "warning")]),
         (python_except("except (FileNotFoundError, DocumentNotFoundError)", "pass"), [(4, "warning")]),
         (python_except("except ValueError", "pass", "    else:\n        raise Rejected(path)\n"), []),

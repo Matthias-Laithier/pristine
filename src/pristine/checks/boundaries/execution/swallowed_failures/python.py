@@ -6,6 +6,7 @@ from pristine.checks.boundaries.execution.swallowed_failures import (
     NARROW_HINT,
     PROPAGATE_HINT,
     HandlerScope,
+    asserts_failure,
     body_text,
     detects,
     is_expected,
@@ -47,6 +48,8 @@ def falls_back(clause: Node) -> bool:
 
 
 def python_verdict(clause: Node, names: frozenset[str], body: str | None) -> tuple[Severity, str] | None:
+    if asserts_failure(clause, names):
+        return None
     is_broad = bool(names & BROAD_EXCEPTIONS)
     if body in SILENT_BODIES and is_broad:
         return Severity.ERROR, f"swallows every failure with '{body}'; catch only what this code can recover from"

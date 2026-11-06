@@ -23,6 +23,13 @@ EXPECTED_EXCEPTIONS = frozenset(
     | {"CancelledError", "ImportError", "ModuleNotFoundError", "NameError", "KeyboardInterrupt", "EOFError", "Empty"}
     | {"QueueEmpty", "CancellationException", "OperationCanceledException", "TaskCanceledException"}
 )
+FAILING_ASSERTIONS = frozenset(
+    {"fail", "Assert.fail", "Assertions.fail", "org.junit.Assert.fail", "org.junit.jupiter.api.Assertions.fail"}
+    | {"junit.framework.Assert.fail", "kotlin.test.fail", "pytest.fail"}
+)
+ASSERTION_CATCHERS = frozenset({"", "BaseException", "Throwable", "Error", "AssertionError", "AssertionFailedError"})
+ASSERTION_CALL_KINDS = frozenset({"call", "call_expression", "method_invocation"})
+ATTEMPT_BODY_KINDS = frozenset({"block", "statements"})
 
 type Detector = Callable[[ParsedFile], Iterator[Finding]]
 
@@ -89,6 +96,16 @@ def logged_default(body: Node, defaults: frozenset[str], scope: HandlerScope) ->
 
 def is_expected(name: str) -> bool:
     return name in EXPECTED_EXCEPTIONS
+
+
+def asserts_failure(clause: Node, names: frozenset[str]) -> bool:
+    attempt = clause.parent
+    bodies = [] if attempt is None else [child for child in attempt.named_children if child.type in ATTEMPT_BODY_KINDS]
+    statements = statements_of(bodies[0]) if bodies else []
+    last = statements[-1] if statements else None
+    call = last.named_children[0] if last is not None and last.type == EXPRESSION_STATEMENT else last
+    is_fail_call = call is not None and call.type in ASSERTION_CALL_KINDS
+    return is_fail_call and normalized(call).split("(", 1)[0] in FAILING_ASSERTIONS and not names & ASSERTION_CATCHERS
 
 
 @cache
