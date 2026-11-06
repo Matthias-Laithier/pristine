@@ -48,8 +48,12 @@ def inspect_in_one_worker(command: tuple[str, ...], paths: list[str]) -> dict[st
     return outcomes
 
 
-def inspect_in_workers(paths: list[str], command: tuple[str, ...] = WORKER_COMMAND) -> dict[str, Outcome]:
-    worker_count = max(1, min(os.cpu_count() or 1, len(paths)))
+def default_jobs() -> int:
+    return max(1, (os.cpu_count() or 1) // 2)
+
+
+def inspect_in_workers(paths: list[str], jobs: int, command: tuple[str, ...] = WORKER_COMMAND) -> dict[str, Outcome]:
+    worker_count = max(1, min(jobs, len(paths)))
     shares = [paths[index::worker_count] for index in range(worker_count)]
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
         results = executor.map(lambda share: inspect_in_one_worker(command, share), shares)

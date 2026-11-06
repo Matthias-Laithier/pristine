@@ -14,7 +14,7 @@ Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README
 - Checks share helpers through neutral modules. A check never imports the internals of another check.
 
 ### Worker isolation
-- File checks run in parallel worker processes. A worker reports each file as a JSON line once it finishes the file.
+- File checks run in parallel worker processes, at most `--jobs N` of them, half the CPU cores by default. A worker reports each file as a JSON line once it finishes the file.
 - A worker that crashes or exceeds its time budget loses only the file it was on. The report lists that file as unchecked, and a new worker continues with the rest.
 - Grammar downloads run inside the same budget. The main process announces each first-use download with one line on stderr.
 - Directory expansion leaves out vendored directories such as `node_modules` and `.venv`.

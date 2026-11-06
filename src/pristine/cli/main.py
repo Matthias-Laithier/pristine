@@ -21,7 +21,7 @@ from pristine.files.discovery import discover_files, missing_paths
 from pristine.project.inspection import inspect_project
 from pristine.reports.findings import Severity
 from pristine.reports.report import Report, build_report
-from pristine.services.isolated_inspection import inspect_in_workers
+from pristine.services.isolated_inspection import default_jobs, inspect_in_workers
 
 EXIT_CLEAN = 0
 EXIT_ERRORS_FOUND = 1
@@ -44,6 +44,13 @@ def parser() -> argparse.ArgumentParser:
         help="skip paths matching this glob, relative to the working directory; '**' crosses directories, and a "
         "directory pattern such as 'vendor' skips everything under it; repeat for several patterns",
     )
+    check.add_argument(
+        "--jobs",
+        type=positive_count,
+        default=default_jobs(),
+        metavar="N",
+        help="run at most N worker processes, at least 1; default: half the CPU cores, at least 1",
+    )
     add_report_options(check)
     project = commands.add_parser(
         "project", help="check the repository tooling contract (TL-1 to TL-4)", description=PROJECT_DESCRIPTION
@@ -54,18 +61,18 @@ def parser() -> argparse.ArgumentParser:
     return root
 
 
-def finding_limit(text: str) -> int:
-    limit = int(text)
-    if limit < 1:
-        raise argparse.ArgumentTypeError(f"must be at least 1, got {limit}")
-    return limit
+def positive_count(text: str) -> int:
+    count = int(text)
+    if count < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {count}")
+    return count
 
 
 def add_report_options(command: argparse.ArgumentParser) -> None:
     command.add_argument("--json", action="store_true", help="print a JSON report instead of text lines")
     command.add_argument(
         "--max",
-        type=finding_limit,
+        type=positive_count,
         metavar="N",
         help="print at most N findings, then a line counting the omitted ones; the summary still counts every "
         "finding, and --json truncates the findings list and reports the rest as summary.omitted; default: all",
@@ -97,7 +104,7 @@ def run_check(arguments: argparse.Namespace) -> int:
     path_findings = [finding for check in path_checks() for finding in check.run(files)]
     for notice in grammar_download_notices(files):
         print(notice, file=sys.stderr)
-    report = build_report(inspect_in_workers(files), path_findings, missing_paths(arguments.paths))
+    report = build_report(inspect_in_workers(files, arguments.jobs), path_findings, missing_paths(arguments.paths))
     return print_report(report, arguments)
 
 

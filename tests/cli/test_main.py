@@ -66,10 +66,16 @@ def test_max_prints_the_first_findings_and_counts_the_rest(
     assert lines[3].startswith("summary: 3 errors")
 
 
-def test_max_below_one_is_a_usage_error() -> None:
+@pytest.mark.parametrize("option", ["--max", "--jobs"])
+def test_counts_below_one_are_usage_errors(option: str) -> None:
     with pytest.raises(SystemExit) as exit_info:
-        main(["check", ".", "--max", "0"])
+        main(["check", ".", option, "0"])
     assert exit_info.value.code == 2
+
+
+def test_one_job_checks_every_file(run_pristine: RunPristine) -> None:
+    _, report = run_pristine({"values.py": LONG_FILE, "other.py": "value = 2\n"}, "--jobs", "1")
+    assert (report["summary"]["checked_files"], report["summary"]["errors"]) == (2, 1)
 
 
 def test_first_use_of_a_grammar_is_announced_once_on_stderr(

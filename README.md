@@ -59,6 +59,8 @@ next: fix every finding, or report it by rule ID as a deliberate break with its 
 
 The `by rule:` line counts the findings per rule ID. A path that does not exist is listed as `missing:` and counted in the summary. On a big repository, `--max N` prints only the first N findings. The summary and the per-rule counts still cover every finding.
 
+`pristine check` parses files in parallel worker processes, half the CPU cores by default, so an agent running it never saturates the machine. `--jobs N` sets the maximum number of workers, at least 1.
+
 The exit code is 0 without error findings, 1 with at least one error finding, and 2 on a usage problem. `--json` prints a structured report, and `--help` on each command documents the rest.
 
 ## Requirements

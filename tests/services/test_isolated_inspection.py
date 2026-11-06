@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -19,13 +20,32 @@ CRASHING_WORKER = (
     "    sys.stdout.write(encoded_outcome(path, Checked([])))\n"
     "    sys.stdout.flush()\n"
 )
+COUNTING_WORKER = (
+    "import sys\n"
+    "from pristine.reports.outcome_lines import encoded_outcome\n"
+    "from pristine.reports.outcomes import Checked\n"
+    "paths = sys.stdin.buffer.read().decode().split('\\0')\n"
+    "with open(sys.argv[1], 'a') as launches:\n"
+    "    launches.write('worker\\n')\n"
+    "for path in paths:\n"
+    "    sys.stdout.write(encoded_outcome(path, Checked([])))\n"
+)
 INVOICE_FINDING = Finding("invoices.py", 3, "CR-3", Severity.WARNING, "comment")
 
 
 def test_a_crashing_file_is_unchecked_and_the_others_still_run() -> None:
     paths = ["a.py", "crash.py", "b.py"]
-    outcomes = inspect_in_workers(paths, command=(sys.executable, "-c", CRASHING_WORKER))
+    outcomes = inspect_in_workers(paths, jobs=3, command=(sys.executable, "-c", CRASHING_WORKER))
     assert outcomes == {"a.py": Checked([]), "crash.py": Unchecked(LOST_FILE_REASON), "b.py": Checked([])}
+
+
+@pytest.mark.parametrize(("jobs", "workers"), [(1, 1), (2, 2), (5, 3)])
+def test_jobs_caps_the_worker_processes(tmp_path: Path, jobs: int, workers: int) -> None:
+    launches = tmp_path / "launches.txt"
+    command = (sys.executable, "-c", COUNTING_WORKER, str(launches))
+    outcomes = inspect_in_workers(["a.py", "b.py", "c.py"], jobs=jobs, command=command)
+    assert outcomes == {path: Checked([]) for path in ("a.py", "b.py", "c.py")}
+    assert launches.read_text().splitlines() == ["worker"] * workers
 
 
 @pytest.mark.parametrize(
