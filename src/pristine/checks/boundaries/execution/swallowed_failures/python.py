@@ -5,13 +5,16 @@ from tree_sitter import Node
 from pristine.checks.boundaries.execution.swallowed_failures import (
     NARROW_HINT,
     PROPAGATE_HINT,
+    HandlerScope,
     body_text,
     detects,
     is_expected,
     logged_default,
     normalized,
+    returned_values,
     swallow,
 )
+from pristine.checks.boundaries.execution.swallowed_failures.python_scope import python_scope
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes
 
@@ -55,8 +58,8 @@ def python_verdict(clause: Node, names: frozenset[str], body: str | None) -> tup
     return None
 
 
-def logged_verdict(names: frozenset[str], block: Node) -> tuple[Severity, str] | None:
-    result = logged_default(block, LOGGED_DEFAULTS) if names & BROAD_EXCEPTIONS else None
+def logged_verdict(names: frozenset[str], block: Node, scope: HandlerScope) -> tuple[Severity, str] | None:
+    result = logged_default(block, LOGGED_DEFAULTS, scope) if names & BROAD_EXCEPTIONS else None
     if result is None:
         return None
     return Severity.WARNING, f"only logs, then does '{result}', which hides the failure; {NARROW_HINT}"
@@ -64,10 +67,11 @@ def logged_verdict(names: frozenset[str], block: Node) -> tuple[Severity, str] |
 
 @detects("python")
 def python_swallows(parsed: ParsedFile) -> Iterator[Finding]:
+    scope = python_scope(parsed.root, returned_values(LOGGED_DEFAULTS))
     for clause in (node for node in all_nodes(parsed.root) if node.type == "except_clause"):
         caught = clause.child_by_field_name("value")
         names, block = caught_names(caught), clause.named_children[-1]
-        verdict = python_verdict(clause, names, body_text(block)) or logged_verdict(names, block)
+        verdict = python_verdict(clause, names, body_text(block)) or logged_verdict(names, block, scope)
         if verdict is not None:
             head = "except" if caught is None else f"except {normalized(caught)}"
             yield swallow(parsed, clause, verdict[0], f"'{head}' {verdict[1]}")

@@ -1,5 +1,5 @@
-import re
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from functools import cache
 
 from tree_sitter import Node
@@ -15,8 +15,6 @@ RULE_ID = "BS-4"
 DETECTORS_PACKAGE = "pristine.checks.boundaries.execution.swallowed_failures"
 PROPAGATE_HINT = "handle it, translate it while keeping the cause, or let it propagate"
 NARROW_HINT = "narrow the catch to the expected error, or let the failure propagate"
-LOGGING_FUNCTION = re.compile(r"([\w$.]*\.)?(\w*logger|logging|log|console)\.\w+|print", re.IGNORECASE)
-DEFAULT_NAME = re.compile(r"([\w$]+\.)*\w*default\w*", re.IGNORECASE)
 CALL_KINDS = frozenset({"call", "call_expression"})
 RETURN_KEYWORD = "return "
 EXPRESSION_STATEMENT = "expression_statement"
@@ -28,7 +26,14 @@ EXPECTED_EXCEPTIONS = frozenset(
 
 type Detector = Callable[[ParsedFile], Iterator[Finding]]
 
+
 _DETECTORS: dict[str, Detector] = {}
+
+
+@dataclass(frozen=True)
+class HandlerScope:
+    logging_callees: frozenset[str]
+    default_constants: frozenset[str]
 
 
 def detects(*languages: str) -> Callable[[Detector], Detector]:
@@ -54,24 +59,32 @@ def body_text(body: Node) -> str | None:
     return normalized(statements[0]) if statements else ""
 
 
-def is_logging_call(statement: Node) -> bool:
+def is_logging_call(statement: Node, scope: HandlerScope) -> bool:
     expressions = statement.named_children if statement.type == EXPRESSION_STATEMENT else [statement]
     calls = [expression for expression in expressions if expression.type in CALL_KINDS]
     function = calls[0].child_by_field_name("function") if len(expressions) == 1 and calls else None
-    return function is not None and LOGGING_FUNCTION.fullmatch(normalized(function)) is not None
+    return function is not None and callee_text(function) in scope.logging_callees
 
 
-def is_default_return(statement: str, defaults: frozenset[str]) -> bool:
+def callee_text(function: Node) -> str:
+    return "".join((node_text(function) or "").split())
+
+
+def returned_values(defaults: frozenset[str]) -> frozenset[str]:
+    return frozenset(default.removeprefix(RETURN_KEYWORD) for default in defaults if default.startswith(RETURN_KEYWORD))
+
+
+def is_default_return(statement: str, defaults: frozenset[str], scope: HandlerScope) -> bool:
     returned = statement.removeprefix(RETURN_KEYWORD)
-    return statement in defaults or (returned != statement and DEFAULT_NAME.fullmatch(returned) is not None)
+    return statement in defaults or (returned != statement and returned in scope.default_constants)
 
 
-def logged_default(body: Node, defaults: frozenset[str]) -> str | None:
+def logged_default(body: Node, defaults: frozenset[str], scope: HandlerScope) -> str | None:
     *logs, last = statements_of(body) or [body]
-    if not logs or not all(map(is_logging_call, logs)):
+    if not logs or not all(is_logging_call(log, scope) for log in logs):
         return None
     result = normalized(last)
-    return result if is_default_return(result, defaults) else None
+    return result if is_default_return(result, defaults, scope) else None
 
 
 def is_expected(name: str) -> bool:
