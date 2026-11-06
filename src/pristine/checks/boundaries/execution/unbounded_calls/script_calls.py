@@ -1,20 +1,21 @@
 from collections.abc import Iterator
-from pathlib import PurePath
 
 from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_calls.calls import Violation
 from pristine.reports.findings import Severity
 from pristine.syntax.calls import BoundedCall, calls_of, has_unknown_argument
-from pristine.syntax.parsing import ParsedFile, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 AXIOS = "axios"
 AXIOS_FIX = "set timeout in the config, or call an axios.create({ timeout }) instance"
 AXIOS_DEFAULT_TIMEOUT = "axios.defaults.timeout"
 AXIOS_CONFIG_POSITIONS = {"get": 1, "delete": 1, "head": 1, "options": 1, "post": 2, "put": 2, "patch": 2, "request": 0}
-FRONTEND_SEGMENTS = frozenset({"frontend", "web", "client", "components", "pages", "hooks"})
-FRONTEND_SUFFIXES = frozenset({".tsx", ".jsx"})
-APP_ROUTER_DIRECTORY = "src/app/"
+CLIENT_DIRECTIVE = "use client"
+BROWSER_FRAMEWORKS = ("react", "react-dom", "preact", "vue", "svelte", "solid-js", "@angular/core")
+JSX_KINDS = frozenset({"jsx_element", "jsx_self_closing_element", "jsx_fragment"})
+MODULE_LOADER = "require"
+COMMENT = "comment"
 QUOTES = "'\"`"
 SPREAD = "..."
 BROWSER_ONLY_KEYS = frozenset({"credentials", "keepalive", "mode"})
@@ -27,10 +28,32 @@ SCRIPT_CALLS = {
 }
 
 
-def is_frontend(path: str) -> bool:
-    file_path = PurePath(path)
-    in_app_router = APP_ROUTER_DIRECTORY in file_path.as_posix()
-    return in_app_router or file_path.suffix in FRONTEND_SUFFIXES or bool(FRONTEND_SEGMENTS & set(file_path.parts))
+def string_value(node: Node | None) -> str | None:
+    return None if node is None or node.type != "string" else (node_text(node) or "").strip(QUOTES)
+
+
+def imported_module(node: Node) -> str | None:
+    if node.type == "import_statement":
+        return string_value(node.child_by_field_name("source"))
+    arguments = node.child_by_field_name("arguments")
+    is_require = node.type == "call_expression" and node_text(node.child_by_field_name("function")) == MODULE_LOADER
+    return string_value(arguments.named_children[0]) if is_require and arguments and arguments.named_children else None
+
+
+def is_browser_node(node: Node) -> bool:
+    module = imported_module(node) or ""
+    is_framework = any(module == framework or module.startswith(f"{framework}/") for framework in BROWSER_FRAMEWORKS)
+    return is_framework or node.type in JSX_KINDS
+
+
+def has_client_directive(root: Node) -> bool:
+    first = next((child for child in root.named_children if child.type != COMMENT), None)
+    directive = None if first is None or first.type != "expression_statement" else first.named_children[0]
+    return string_value(directive) == CLIENT_DIRECTIVE
+
+
+def is_browser_code(root: Node) -> bool:
+    return has_client_directive(root) or any(map(is_browser_node, all_nodes(root)))
 
 
 def script_call(callee: str, arguments: list[Node]) -> BoundedCall | None:
@@ -62,7 +85,7 @@ def is_unknown_or_relative(arguments: list[Node]) -> bool:
 
 
 def scan_script(parsed: ParsedFile) -> Iterator[Violation]:
-    if is_frontend(parsed.path) or AXIOS_DEFAULT_TIMEOUT in parsed.text:
+    if is_browser_code(parsed.root) or AXIOS_DEFAULT_TIMEOUT in parsed.text:
         return
     for node, callee, arguments in calls_of(parsed.root, "call_expression"):
         call = None if is_unknown_or_relative(arguments) else script_call(callee, arguments)

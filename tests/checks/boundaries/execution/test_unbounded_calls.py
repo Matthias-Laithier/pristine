@@ -1,3 +1,5 @@
+import pytest
+
 from tests.conftest import RunPristine, rule_findings
 
 RULE_ID = "BS-3"
@@ -34,6 +36,12 @@ func fetchInvoices() {
 	http.DefaultClient.Do(request)
 }
 """
+BROWSER_MARKERS = [
+    '"use client";\n',
+    'import { useEffect } from "react";\n',
+    'import { ref } from "vue";\n',
+    "const orderBadge = <span>{order.number}</span>;\n",
+]
 
 
 def test_python_calls_without_timeout_are_errors(run_pristine: RunPristine) -> None:
@@ -46,9 +54,16 @@ def test_server_side_scripts_without_bound_are_warnings(run_pristine: RunPristin
     assert rule_findings(report, RULE_ID) == [(2, "warning"), (7, "warning"), (9, "warning")]
 
 
-def test_frontend_files_are_exempt(run_pristine: RunPristine) -> None:
-    _, report = run_pristine({"src/components/orders.ts": SCRIPT_SOURCE, "orders.tsx": SCRIPT_SOURCE})
+@pytest.mark.parametrize("marker", BROWSER_MARKERS)
+def test_browser_code_is_exempt(run_pristine: RunPristine, marker: str) -> None:
+    _, report = run_pristine({"orders.tsx": marker + SCRIPT_SOURCE})
     assert rule_findings(report, RULE_ID) == []
+
+
+@pytest.mark.parametrize("path", ["src/components/orders.ts", "src/app/api/orders/route.ts", "orders.tsx"])
+def test_server_code_is_reported_whatever_its_path(run_pristine: RunPristine, path: str) -> None:
+    _, report = run_pristine({path: SCRIPT_SOURCE})
+    assert rule_findings(report, RULE_ID) == [(2, "warning"), (7, "warning"), (9, "warning")]
 
 
 def test_go_http_without_timeout(run_pristine: RunPristine) -> None:
