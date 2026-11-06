@@ -1,11 +1,12 @@
 import os
+import re
 from collections import Counter
 from pathlib import PurePosixPath
 
 from pristine.checks.core.placement.directory_grouping.layout import directory_finding, is_code
-from pristine.checks.core.placement.directory_grouping.name_groups import words
 from pristine.reports.findings import Finding
 
+WORD_BOUNDARY = re.compile(r"[_.\-\s()\[\]]+|(?<=[a-z0-9])(?=[A-Z])")
 PACKAGE_MARKERS = frozenset({"__init__.py", "__main__.py"})
 INDEX_STEM = "index"
 PACKAGE_DIRECTORY_SUFFIXES = frozenset({".go", ".rs", ".java", ".kt", ".scala", ".cs", ".swift"})
@@ -17,6 +18,10 @@ CURRENT_DIRECTORY = PurePosixPath(".")
 TEST_SUPPORT_WORD = "test"
 
 type Directories = dict[PurePosixPath, list[PurePosixPath]]
+
+
+def words(name: str) -> list[str]:
+    return [word.lower() for word in WORD_BOUNDARY.split(name) if word]
 
 
 def is_package_marker(path: PurePosixPath) -> bool:

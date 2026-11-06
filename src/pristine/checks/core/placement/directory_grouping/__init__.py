@@ -1,10 +1,11 @@
 from pathlib import PurePosixPath
 
 from pristine.checks.core.placement.directory_grouping.buckets import vague_buckets
-from pristine.checks.core.placement.directory_grouping.crowded import crowded_directories
+from pristine.checks.core.placement.directory_grouping.file_count import crowded_directories
 from pristine.checks.core.placement.directory_grouping.layout import (
     RULE_ID,
     code_files_by_directory,
+    grouped_directories,
     holds_generated_code,
 )
 from pristine.checks.core.placement.directory_grouping.single_file import single_file_folders
@@ -14,7 +15,8 @@ from pristine.reports.findings import Finding
 
 def check_directory_grouping(paths: list[str]) -> list[Finding]:
     directories = code_files_by_directory(paths)
-    findings = [*crowded_directories(directories), *single_file_folders(directories), *vague_buckets(directories)]
+    grouped = grouped_directories(directories)
+    findings = [*crowded_directories(directories), *single_file_folders(grouped), *vague_buckets(grouped)]
     return [
         finding for finding in findings if not holds_generated_code(directories[PurePosixPath(finding.path).parent])
     ]
@@ -24,10 +26,9 @@ register_path_check(
     PathCheck(
         rule_id=RULE_ID,
         summary=(
-            "Crowded flat directories of 12+ code files that form several name-prefix groups, folders holding a "
-            "single code file, and vague bucket directories (common/, misc/, helpers/, utils/, util/). Package "
-            "markers, framework routes, package-per-directory languages, migrations, templates, generated, "
-            "vendored, and test paths are exempt."
+            "Directories holding more than 8 code files directly (error above 15), folders holding a single code "
+            "file, and vague bucket directories (common/, misc/, helpers/, utils/, util/). Empty __init__.py files, "
+            "Go packages, file-based routes, migrations, generated, vendored, and test paths are exempt."
         ),
         run=check_directory_grouping,
     )
