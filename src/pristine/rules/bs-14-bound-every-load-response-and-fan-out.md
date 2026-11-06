@@ -16,13 +16,14 @@ The exceptions:
 import asyncio
 
 
-async def summarize_documents(summarizer, documents):
+async def summarize_batch(document_store, summarizer, batch_id):
+    documents = await document_store.list_documents(batch_id, timeout=3.0)
     async with asyncio.TaskGroup() as task_group:
         tasks = [task_group.create_task(summarizer.summarize(document)) for document in documents]
     return [task.result() for task in tasks]
 ```
 
-Five thousand documents open five thousand concurrent model calls. The provider rate-limits the batch, and it fails as a whole.
+A batch of five thousand documents opens five thousand concurrent model calls. The provider rate-limits the batch, and it fails as a whole.
 
 ## Good
 
@@ -32,7 +33,8 @@ import asyncio
 MAX_CONCURRENT_SUMMARIES = 8
 
 
-async def summarize_documents(summarizer, documents):
+async def summarize_batch(document_store, summarizer, batch_id):
+    documents = await document_store.list_documents(batch_id, timeout=3.0)
     concurrency_limit = asyncio.Semaphore(MAX_CONCURRENT_SUMMARIES)
 
     async def summarize_within_limit(document):
