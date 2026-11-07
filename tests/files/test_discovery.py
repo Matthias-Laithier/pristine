@@ -32,11 +32,25 @@ def test_git_listed_files_keep_tracked_and_untracked_only(
     Path("tracked.py").write_text("tracked = 1\n")
     Path("untracked.py").write_text("untracked = 1\n")
     Path("ignored.py").write_text("ignored = 1\n")
-    Path("node_modules/vendored.py").mkdir(parents=True)
+    Path("node_modules/vendored.py").parent.mkdir(parents=True)
     Path("node_modules/vendored.py").write_text("vendored = 1\n")
     run_git(tmp_path, "add", "tracked.py")
     Path(".gitignore").write_text("ignored.py\n")
-    assert discover_files([Path(".")], []) == ["tracked.py", "untracked.py"]
+    assert discover_files([Path(".")], []) == [".gitignore", "tracked.py", "untracked.py"]
+
+
+def test_walked_files_leave_out_vendored_and_cache_directories_without_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    Path("app.py").write_text("value = 1\n")
+    Path("node_modules/vendored.py").parent.mkdir(parents=True)
+    Path("node_modules/vendored.py").write_text("vendored = 1\n")
+    Path("vendor/vendored.py").parent.mkdir(parents=True)
+    Path("vendor/vendored.py").write_text("vendored = 1\n")
+    Path("__pycache__/compiled.py").parent.mkdir(parents=True)
+    Path("__pycache__/compiled.py").write_text("compiled = 1\n")
+    assert discover_files([Path(".")], []) == ["app.py"]
 
 
 def test_explicit_duplicate_inputs_are_deduplicated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

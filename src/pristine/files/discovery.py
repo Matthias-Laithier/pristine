@@ -11,15 +11,23 @@ def _listed_repository_files(directory: Path) -> list[Path] | None:
         return None
     files = (
         file
-        for file in (directory / name for name in names)
-        if not is_vendored(PurePath(name)) and not is_cache(PurePath(name)) and file.is_file()
+        for name in names
+        if not is_vendored(PurePath(name))
+        and not is_cache(PurePath(name))
+        and (file := directory / name).is_file()
     )
     return list(files)
 
 
 def walked_files(directory: Path) -> list[Path]:
-    files = (path for path in directory.rglob("*") if path.is_file())
-    return [path for path in files if not any(part.startswith(".") for part in path.relative_to(directory).parts)]
+    return [
+        path
+        for path in directory.rglob("*")
+        if path.is_file()
+        and not is_vendored(relative := path.relative_to(directory))
+        and not is_cache(relative)
+        and not any(part.startswith(".") for part in relative.parts)
+    ]
 
 
 def expand(path: Path) -> list[Path]:
@@ -50,6 +58,5 @@ def missing_paths(paths: list[Path]) -> tuple[str, ...]:
 
 
 def discover_files(paths: list[Path], excludes: list[str]) -> list[str]:
-    expanded = [file for path in paths for file in expand(path)]
-    shown = {display_path(file) for file in expanded}
+    shown = {display_path(file) for path in paths for file in expand(path)}
     return sorted(path for path in shown if not is_excluded(path, excludes))
