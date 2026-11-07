@@ -27,6 +27,7 @@ uv tool install git+https://github.com/Matthias-Laithier/pristine
 ```sh
 pristine guide            # print the rules hub and the rule index
 pristine check src tests  # check files and directories against the rules
+pristine check --stream   # print NDJSON findings and outcomes as files complete
 pristine project          # check the repository root against the Tooling chapter
 ```
 
@@ -55,6 +56,8 @@ next: fix every finding, or report it by rule ID as a deliberate break with its 
 ```
 
 `pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `--json` prints a structured report.
+
+`pristine check --stream` prints compact NDJSON instead of text or JSON: a provisional `path_findings` event, one provisional `file_outcome` event as each file completes, then one `complete` event with the default JSON summary, missing paths, and verification status. It cannot be combined with `--json` or `--max`.
 
 Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
 

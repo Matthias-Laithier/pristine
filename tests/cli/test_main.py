@@ -4,8 +4,11 @@ from pathlib import Path
 
 import pytest
 
+from pristine.cli.rendering import render_text
 from pristine.cli.main import main
 from pristine.engine import grammar_downloads
+from pristine.reports.findings import Finding, Severity
+from pristine.reports.report import Report
 from tests.conftest import RunPristine
 
 LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))
@@ -64,6 +67,23 @@ def test_max_prints_the_first_findings_and_counts_the_rest(
     lines = capsys.readouterr().out.splitlines()
     assert lines[2] == "... 1 more finding omitted, raise --max or use --json to see them"
     assert lines[3].startswith("summary: 3 errors")
+
+
+def test_max_omission_line_names_the_omitted_rules() -> None:
+    report = Report(
+        findings=[
+            Finding("values.py", 1, "CR-1", Severity.ERROR, "file has 201 lines"),
+            Finding("values.py", 202, "CR-3", Severity.ERROR, "comment"),
+            Finding("values.py", 203, "CR-3", Severity.ERROR, "another comment"),
+        ],
+        unchecked={},
+        skipped={},
+        checked_files=1,
+        missing=(),
+    )
+    assert render_text(report, 1).splitlines()[1] == (
+        "... 2 more findings omitted (CR-3 2); raise --max or remove --max to see them all"
+    )
 
 
 @pytest.mark.parametrize("option", ["--max", "--jobs"])
