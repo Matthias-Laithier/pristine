@@ -28,15 +28,10 @@ def summary(report: Report) -> dict[str, int]:
 
 def render_json(report: Report, limit: int | None) -> str:
     shown = report.findings[:limit]
+    omitted = len(report.findings) - len(shown)
     document = {
         "verification_status": "incomplete" if report.verification_failed else "complete",
-        "summary": {
-            **summary(report),
-            "unsupported_files": len(report.unsupported),
-            "verification_failures": report.verification_failures,
-            "by_rule": report.by_rule(),
-            "omitted": len(report.findings) - len(shown),
-        },
+        "summary": json_summary(report, omitted),
         "findings": [finding_record(finding) for finding in shown],
         "unchecked": [{"path": path, "reason": reason} for path, reason in report.unchecked.items()],
         "skipped": [{"path": path, "reason": reason} for path, reason in report.skipped.items()],
@@ -46,15 +41,26 @@ def render_json(report: Report, limit: int | None) -> str:
     return json.dumps(document, indent=2)
 
 
+def json_summary(report: Report, omitted: int) -> dict[str, object]:
+    return {
+        **summary(report),
+        "unsupported_files": len(report.unsupported),
+        "verification_failures": report.verification_failures,
+        "by_rule": report.by_rule(),
+        "omitted": omitted,
+    }
+
+
 def render_text(report: Report, limit: int | None) -> str:
     shown = report.findings[:limit]
     lines = [
         f"{finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}" for finding in shown
     ]
-    if len(shown) < len(report.findings):
-        lines.append(
-            f"... {counted(len(report.findings) - len(shown), 'more finding')} omitted, raise --max or use --json to see them"
-        )
+    omitted = Counter(finding.rule_id for finding in report.findings[len(shown) :])
+    if omitted:
+        omitted_rules = ", ".join(f"{rule_id} {count}" for rule_id, count in omitted.items())
+        advice = "raise --max or remove --max to see them all"
+        lines.append(f"... {counted(sum(omitted.values()), 'more finding')} omitted ({omitted_rules}); {advice}")
     lines += [f"missing: {path}" for path in report.missing]
     lines += [f"unchecked: {path} ({reason})" for path, reason in report.unchecked.items()]
     skipped_reasons = Counter(report.skipped.values())

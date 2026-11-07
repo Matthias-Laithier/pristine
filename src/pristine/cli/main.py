@@ -16,12 +16,14 @@ lazy from pristine.catalog.rule_documents import UnknownRule, rule_documents, se
 lazy from pristine.catalog.rule_listing import render_guide, render_rules_json, render_rules_text
 lazy from pristine.checks.registry import path_checks
 lazy from pristine.cli.rendering import render_json, render_text
+lazy from pristine.cli.streaming import stream_complete, stream_file_outcome, stream_path_findings
 lazy from pristine.engine.grammar_downloads import grammar_download_notices
 lazy from pristine.files.discovery import discover_files, missing_paths
 lazy from pristine.project.inspection import inspect_project
-lazy from pristine.reports.findings import Severity
+lazy from pristine.reports.findings import Finding, Severity
+lazy from pristine.reports.outcomes import Outcome
 lazy from pristine.reports.report import Report, build_report
-lazy from pristine.services.isolated_inspection import default_jobs, inspect_in_workers
+lazy from pristine.services.isolated_inspection import default_jobs, worker_outcomes
 
 EXIT_CLEAN = 0
 EXIT_ERRORS_FOUND = 1
@@ -35,6 +37,17 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="pristine", description=DESCRIPTION)
     root.add_argument("--version", action="version", version=f"%(prog)s {version('pristine')}")
     commands = root.add_subparsers(dest="command", required=True)
+    add_check_command(commands)
+    project = commands.add_parser(
+        "project", help="check the repository tooling contract (TL-1 to TL-4)", description=PROJECT_DESCRIPTION
+    )
+    project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
+    add_report_options(project)
+    add_rule_commands(commands)
+    return root
+
+
+def add_check_command(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     check = commands.add_parser("check", help="check files and directories", description=CHECK_DESCRIPTION)
     check.add_argument("paths", nargs="+", type=Path, help="files or directories to check")
     check.add_argument(
@@ -52,14 +65,12 @@ def parser() -> argparse.ArgumentParser:
         metavar="N",
         help="run at most N worker processes, at least 1; default: half the CPU cores, at least 1",
     )
-    add_report_options(check)
-    project = commands.add_parser(
-        "project", help="check the repository tooling contract (TL-1 to TL-4)", description=PROJECT_DESCRIPTION
+    check.add_argument(
+        "--stream",
+        action="store_true",
+        help="print compact NDJSON events as files complete; cannot be combined with --json or --max",
     )
-    project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
-    add_report_options(project)
-    add_rule_commands(commands)
-    return root
+    add_report_options(check)
 
 
 def positive_count(text: str) -> int:
@@ -97,18 +108,45 @@ def add_rule_commands(commands: argparse._SubParsersAction[argparse.ArgumentPars
 
 def print_report(report: Report, arguments: argparse.Namespace) -> int:
     print(render_json(report, arguments.max) if arguments.json else render_text(report, arguments.max))
+    return report_exit_code(report)
+
+
+def report_exit_code(report: Report) -> int:
     if report.verification_failed:
         return EXIT_INCOMPLETE_VERIFICATION
     return EXIT_ERRORS_FOUND if report.count(Severity.ERROR) else EXIT_CLEAN
 
 
+def reject_stream_conflicts(arguments: argparse.Namespace) -> None:
+    if arguments.stream and (arguments.json or arguments.max is not None):
+        parser().error("--stream cannot be combined with --json or --max")
+
+
+def stream_report(files: list[str], jobs: int, path_findings: list[Finding], missing: tuple[str, ...]) -> int:
+    print(stream_path_findings(path_findings))
+    outcomes: dict[str, Outcome] = {}
+    with worker_outcomes(files, jobs) as completed:
+        for path, outcome in completed:
+            outcomes[path] = outcome
+            print(stream_file_outcome(path, outcome))
+    report = build_report(outcomes, path_findings, missing)
+    print(stream_complete(report))
+    return report_exit_code(report)
+
+
 def run_check(arguments: argparse.Namespace) -> int:
+    reject_stream_conflicts(arguments)
     jobs = arguments.jobs if arguments.jobs is not None else default_jobs()
     files = discover_files(arguments.paths, arguments.exclude)
     path_findings = [finding for check in path_checks() for finding in check.run(files)]
     for notice in grammar_download_notices(files):
         print(notice, file=sys.stderr)
-    report = build_report(inspect_in_workers(files, jobs), path_findings, missing_paths(arguments.paths))
+    missing = missing_paths(arguments.paths)
+    if arguments.stream:
+        return stream_report(files, jobs, path_findings, missing)
+    with worker_outcomes(files, jobs) as completed:
+        outcomes = dict(completed)
+    report = build_report(outcomes, path_findings, missing)
     return print_report(report, arguments)
 
 
