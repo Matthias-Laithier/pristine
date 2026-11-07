@@ -4,9 +4,10 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from itertools import pairwise
 
-lazy from tree_sitter import Node, Tree
+lazy from tree_sitter import Node
 
 from pristine.services.grammars import parser_for
+from pristine.syntax.node_types import SyntaxNode, SyntaxTree
 from pristine.syntax.syntax_kinds import (
     ASYNC_KINDS,
     COMMENT_KINDS,
@@ -43,8 +44,8 @@ class ParsedFile:
     path: str
     language: str
     text: str
-    tree: Tree
-    nodes: tuple[Node, ...]
+    tree: SyntaxTree
+    nodes: tuple[SyntaxNode, ...]
     functions: list[FunctionSpan]
     comments: list[CommentText]
 

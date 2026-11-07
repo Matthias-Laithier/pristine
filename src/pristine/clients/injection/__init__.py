@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
+from pristine.syntax.node_types import SyntaxNode
 from pristine.syntax.parsing import ParsedFile, node_text
 
 RECEIVER = "<receiver>"
@@ -14,7 +15,7 @@ type CalleePaths = Callable[[Node], set[tuple[str, ...]]]
 
 @dataclass(frozen=True)
 class InjectedClient:
-    scope: Node
+    scope: SyntaxNode
     path: tuple[str, ...]
     entry_point: str
     line: int

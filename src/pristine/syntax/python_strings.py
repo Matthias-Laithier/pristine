@@ -4,6 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.registration import registering
+from pristine.syntax.node_types import SyntaxNode
 from pristine.syntax.parsing import node_text
 
 STRING_KINDS = frozenset({"string", "concatenated_string"})
@@ -13,8 +14,8 @@ FORMAT_METHOD = "format"
 @dataclass(frozen=True)
 class BuiltString:
     method: str
-    template: Node
-    values: list[Node]
+    template: SyntaxNode
+    values: list[SyntaxNode]
 
 
 _READERS: dict[str, Callable[[Node], BuiltString | None]] = {}

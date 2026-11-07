@@ -6,6 +6,7 @@ lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Limit
+from pristine.syntax.node_types import SyntaxNode
 from pristine.syntax.parsing import ParsedFile, function_name, line_of, node_text
 from pristine.syntax.syntax_kinds import (
     ANONYMOUS_FUNCTION_KINDS,
@@ -26,9 +27,9 @@ TEST_FRAMEWORK_CALL = re.compile(
 
 @dataclass(frozen=True)
 class Block:
-    scope: Node
+    scope: SyntaxNode
     depth: int
-    node: Node
+    node: SyntaxNode
 
 
 def is_else_if(node: Node) -> bool:

@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 
-lazy from tree_sitter import Node
-
 from pristine.syntax.calls import BoundedCall
+from pristine.syntax.node_types import SyntaxNode
 
 
 @dataclass(frozen=True)
 class Violation:
-    node: Node
+    node: SyntaxNode
     callee: str
     call: BoundedCall

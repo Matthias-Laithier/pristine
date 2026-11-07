@@ -5,6 +5,7 @@ lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.module_globals import PYTHON_COLLECTION, REBINDABLE, Globals
 from pristine.registration import registering
+from pristine.syntax.node_types import SyntaxNode
 from pristine.syntax.parsing import node_text
 from pristine.syntax.syntax_kinds import CALL_KINDS
 
@@ -22,7 +23,7 @@ REBIND_ACTION = "reassigns"
 
 @dataclass(frozen=True)
 class Mutation:
-    node: Node
+    node: SyntaxNode
     name: str
     action: str
 
