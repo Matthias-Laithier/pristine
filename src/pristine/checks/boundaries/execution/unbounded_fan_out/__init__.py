@@ -14,9 +14,9 @@ from pristine.checks.registry import FileCheck, register_file_check
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of, calls_of
+from pristine.syntax.nodes import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
-from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
 
 RULE_ID = "BS-14"
 GATHER = "asyncio.gather"

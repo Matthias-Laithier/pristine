@@ -63,9 +63,9 @@ def resolved_loggers(resolver: LoggerResolver, source: Node | ParsedFile) -> set
         found = {target for target, value in pairs if resolver.is_logger(value)}
         changed = not found <= resolver.loggers
         resolver.loggers |= found
-    rebound = {
-        target for target, value in pairs if not resolver.is_logger(value)
-    } | set(all_parameter_names(root_of(source)))
+    rebound = {target for target, value in pairs if not resolver.is_logger(value)} | set(
+        all_parameter_names(root_of(source))
+    )
     return resolver.loggers - rebound
 
 

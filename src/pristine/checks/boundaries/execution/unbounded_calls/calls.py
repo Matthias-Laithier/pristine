@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from pristine.syntax.calls import BoundedCall
-from pristine.syntax.node_types import SyntaxNode
+from pristine.syntax.nodes import SyntaxNode
 
 
 @dataclass(frozen=True)

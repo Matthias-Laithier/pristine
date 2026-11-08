@@ -27,7 +27,6 @@ uv tool install git+https://github.com/Matthias-Laithier/pristine
 ```sh
 pristine guide            # print the rules hub and the rule index
 pristine check src tests  # check files and directories against the rules
-pristine check --stream   # print NDJSON findings and outcomes as files complete
 pristine project          # check the repository root against the Tooling chapter
 ```
 
@@ -55,9 +54,7 @@ by rule: BS-4 1, CR-13 1
 next: fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
 ```
 
-`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `--json` prints a structured report.
-
-`pristine check --stream` prints compact NDJSON instead of text or JSON: a provisional `path_findings` event, one provisional `file_outcome` event as each file completes, then one `complete` event with the default JSON summary, missing paths, and verification status. It cannot be combined with `--json` or `--max`.
+`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
 
 Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
 
@@ -107,16 +104,17 @@ Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with 
 
 ## Performance
 
-Wall time of `pristine check` 0.4.1 on open-source repositories, on an Apple silicon laptop with the default worker count (half the cores). Files and lines count the code files pristine checks.
+Paired `pristine check` runs compare exact baseline commit `01a20db` with the current build on Python 3.15.2. Both versions used cached grammars, a fresh shared bytecode cache, and the same immutable 721-file corpus set; each measured command had one warmup. The default worker count is 9 on an 18-core host. Medians use 10 samples for the 1-file, 50-file, and multi-language corpora, and 5 for the 176-file and real-code corpora. Findings count errors and warnings. Across all 10 corpus and worker-count groups, the full JSON reports matched on every repeat and between versions, as did exit codes and summary counts, with no unchecked files.
 
-| Repository | Language | Files | Lines | Time |
-| --- | --- | ---: | ---: | ---: |
-| [requests](https://github.com/psf/requests) | Python | 49 | 12,753 | 1.4 s |
-| [ky](https://github.com/sindresorhus/ky) | TypeScript | 98 | 36,231 | 1.3 s |
-| [cobra](https://github.com/spf13/cobra) | Go | 38 | 16,810 | 0.7 s |
-| [fd](https://github.com/sharkdp/fd) | Rust | 33 | 9,515 | 0.8 s |
-| [gson](https://github.com/google/gson) | Java | 274 | 58,233 | 1.3 s |
-| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | C# | 954 | 196,120 | 6.7 s |
+| Corpus | Files discovered / checked | Findings | 1 job previous | 1 job current | 1 job change | Default previous | Default current | Default change |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 Python file | 1 / 1 | 0 | 0.313 s | 0.299 s | -4.7% | 0.305 s | 0.297 s | -2.7% |
+| 50 Python files | 50 / 50 | 0 | 1.352 s | 0.992 s | -26.6% | 0.735 s | 0.597 s | -18.7% |
+| Pristine-derived 176-file fixture | 176 / 176 | 0 | 3.512 s | 2.421 s | -31.1% | 1.168 s | 0.933 s | -20.1% |
+| Multi-language corpus | 42 / 41 | 328 | 2.524 s | 1.870 s | -25.9% | 1.368 s | 1.003 s | -26.7% |
+| Real-code corpus | 452 / 451 | 2075 | 17.427 s | 11.533 s | -33.8% | 5.408 s | 3.274 s | -39.5% |
+
+Startup medians also moved from 140 to 130 ms for `pristine guide`, 142 to 129 ms for `pristine rules`, and 85 to 97 ms for `pristine rule CR-20`; this run did not improve every startup command. Parent RSS is the only memory measurement; worker aggregate memory was not measured. At the default worker count on the real-code corpus, parent RSS rose from 80.8 MB to 87.6 MB.
 
 ## Contributing
 

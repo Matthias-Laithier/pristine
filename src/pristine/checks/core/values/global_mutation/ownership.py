@@ -8,9 +8,9 @@ from pristine.checks.core.values.global_mutation.scopes import (
     scope_of,
 )
 from pristine.checks.core.values.global_mutation.writes import REBIND_ACTION, Mutation
+from pristine.syntax.nodes import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 from pristine.syntax.parsing import node_text
 from pristine.syntax.python_scopes import own_nodes
-from pristine.syntax.syntax_kinds import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 
 LOOKUP_METHODS = frozenset({"get", "has"})
 MEMBERSHIP_OPERATORS = frozenset({"in", "not in"})

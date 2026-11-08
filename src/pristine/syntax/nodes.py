@@ -1,3 +1,10 @@
+from dataclasses import dataclass
+
+lazy from tree_sitter import Node, Tree
+
+type SyntaxNode = Node
+type SyntaxTree = Tree
+
 IF_KINDS = frozenset({"if_statement", "if_expression", "if", "unless"})
 
 ELSE_CONTAINERS = frozenset({"else_clause", "else"})
@@ -96,3 +103,32 @@ NAME_BINDING_KINDS = frozenset(
         "short_var_declaration",
     }
 )
+
+
+@dataclass(frozen=True)
+class FunctionSpan:
+    name: str
+    start_line: int
+    end_line: int
+
+
+@dataclass(frozen=True)
+class CommentText:
+    line: int
+    text: str
+    is_documentation: bool
+
+
+@dataclass(frozen=True)
+class ParsedFile:
+    path: str
+    language: str
+    text: str
+    tree: SyntaxTree
+    nodes: tuple[SyntaxNode, ...]
+    functions: list[FunctionSpan]
+    comments: list[CommentText]
+
+    @property
+    def root(self) -> Node:
+        return self.tree.root_node

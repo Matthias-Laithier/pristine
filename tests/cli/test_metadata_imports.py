@@ -1,7 +1,6 @@
 import json
-import subprocess
-import sys
-from pathlib import Path
+
+from tests.conftest import run_python
 
 
 def test_rules_metadata_does_not_import_native_parsers() -> None:
@@ -23,14 +22,7 @@ from pristine.cli.main import main
 exit_code = main(["rules", "--json"])
 print(json.dumps({"exit_code": exit_code, "native_imports": native_imports}), file=sys.stderr)
 """
-    result = subprocess.run(
-        [sys.executable, "-c", observer],
-        capture_output=True,
-        env={"PYTHONPATH": str(Path(__file__).parents[2] / "src")},
-        text=True,
-        timeout=30,
-        check=False,
-    )
-    assert result.returncode == 0
-    assert result.stdout.startswith('[\n  {\n    "rule_id": "BS-1",')
-    assert json.loads(result.stderr) == {"exit_code": 0, "native_imports": []}
+    exit_code, stdout, stderr = run_python(observer)
+    assert exit_code == 0
+    assert stdout.startswith('[\n  {\n    "rule_id": "BS-1",')
+    assert json.loads(stderr) == {"exit_code": 0, "native_imports": []}

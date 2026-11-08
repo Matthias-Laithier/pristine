@@ -47,9 +47,7 @@ def qualified(module: str, name: str) -> str:
 
 def called_references(source: Node | ParsedFile) -> set[str]:
     calls = (
-        node
-        for node in all_nodes(source)
-        if node.type == "call" and node.parent and node.parent.type != RAISE_KIND
+        node for node in all_nodes(source) if node.type == "call" and node.parent and node.parent.type != RAISE_KIND
     )
     callees = ("".join((node_text(call.child_by_field_name("function")) or "").split()) for call in calls)
     segments = (callee.split("(", 1)[0].split(".") for callee in callees)

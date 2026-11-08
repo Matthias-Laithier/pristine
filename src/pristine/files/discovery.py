@@ -12,9 +12,7 @@ def _listed_repository_files(directory: Path) -> list[Path] | None:
     files = (
         file
         for name in names
-        if not is_vendored(PurePath(name))
-        and not is_cache(PurePath(name))
-        and (file := directory / name).is_file()
+        if not is_vendored(PurePath(name)) and not is_cache(PurePath(name)) and (file := directory / name).is_file()
     )
     return list(files)
 

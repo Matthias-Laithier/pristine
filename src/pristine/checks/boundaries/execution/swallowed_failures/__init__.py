@@ -8,8 +8,8 @@ from pristine.checks.registry import FileCheck, register_file_check
 from pristine.package_modules import import_package_modules
 from pristine.registration import registering
 from pristine.reports.findings import Finding, Severity
+from pristine.syntax.nodes import COMMENT_KINDS
 from pristine.syntax.parsing import ParsedFile, line_of, node_text
-from pristine.syntax.syntax_kinds import COMMENT_KINDS
 
 RULE_ID = "BS-4"
 DETECTORS_PACKAGE = "pristine.checks.boundaries.execution.swallowed_failures"

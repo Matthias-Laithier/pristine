@@ -48,7 +48,9 @@ def export_sequence(node: Node) -> list[Node]:
 
 
 def export_entries(source: Node | ParsedFile) -> list[tuple[Node, str]]:
-    return [(entry, node_text(entry.children[1]) or "") for node in all_nodes(source) for entry in export_sequence(node)]
+    return [
+        (entry, node_text(entry.children[1]) or "") for node in all_nodes(source) for entry in export_sequence(node)
+    ]
 
 
 def export_list_findings(parsed: ParsedFile) -> Iterator[Finding]:

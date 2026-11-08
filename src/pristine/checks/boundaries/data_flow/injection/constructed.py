@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-from pristine.syntax.node_types import SyntaxNode
+from pristine.syntax.nodes import SyntaxNode
 
 SQL_START = re.compile(r"\s*(SELECT|INSERT|UPDATE|DELETE|WITH|CREATE|DROP|ALTER)\b", re.IGNORECASE)
 CONSTANT_NAME = re.compile(r"_*[A-Z][A-Z0-9_]*")

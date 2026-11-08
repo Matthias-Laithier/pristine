@@ -2,8 +2,8 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
+from pristine.syntax.nodes import NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
-from pristine.syntax.syntax_kinds import NESTED_SCOPE_KINDS
 
 FUNCTION_KIND = "function_definition"
 CLASS_KIND = "class_definition"

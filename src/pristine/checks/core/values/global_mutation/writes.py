@@ -5,9 +5,8 @@ lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.module_globals import PYTHON_COLLECTION, REBINDABLE, Globals
 from pristine.registration import registering
-from pristine.syntax.node_types import SyntaxNode
+from pristine.syntax.nodes import CALL_KINDS, SyntaxNode
 from pristine.syntax.parsing import node_text
-from pristine.syntax.syntax_kinds import CALL_KINDS
 
 PYTHON_METHODS = frozenset({"append", "extend", "insert", "add", "update", "setdefault", "pop", "popitem"})
 JS_ARRAY_METHODS = frozenset({"push", "pop", "shift", "unshift", "splice", "sort", "reverse", "fill", "copyWithin"})

@@ -62,7 +62,7 @@ Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded o
 ## Lint exceptions
 The per-file ignores of `pyproject.toml` hold only rules that flag intended code:
 - `S101` in `tests/**`. pytest asserts with `assert`.
-- `S603` in `services/git.py`, `services/gitleaks.py`, `services/isolated_inspection.py`, and `tests/conftest.py`. Each runs git, gitleaks, or the Python interpreter through an argument list without a shell. Ruff flags every such call whose arguments are not all literals.
+- `S603` in `services/git.py`, `services/gitleaks.py`, `services/isolated_inspection.py`, `services/worker_pool.py`, and `tests/conftest.py`. Each runs git, gitleaks, or the Python interpreter through an argument list without a shell. Ruff flags every such call whose arguments are not all literals.
 - `T20` in `cli/main.py`. It is the module that writes the user-facing output of the command-line program, as TL-3 allows.
 
 ## Commits

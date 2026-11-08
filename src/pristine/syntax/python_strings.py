@@ -4,7 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.registration import registering
-from pristine.syntax.node_types import SyntaxNode
+from pristine.syntax.nodes import SyntaxNode
 from pristine.syntax.parsing import node_text
 
 STRING_KINDS = frozenset({"string", "concatenated_string"})

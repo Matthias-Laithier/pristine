@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
-from pristine.syntax.node_types import SyntaxNode
+from pristine.syntax.nodes import SyntaxNode
 from pristine.syntax.parsing import ParsedFile, node_text
 
 RECEIVER = "<receiver>"

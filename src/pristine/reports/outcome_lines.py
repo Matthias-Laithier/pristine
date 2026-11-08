@@ -24,14 +24,16 @@ class MalformedOutcomeLine(ValueError):
 
 
 def encoded_outcome(path: str, outcome: Outcome) -> str:
+    return json.dumps({"path": path, **outcome_record(outcome)}) + "\n"
+
+
+def outcome_record(outcome: Outcome) -> dict[str, object]:
     if isinstance(outcome, Checked):
-        body: dict[str, object] = {
+        return {
             "kind": "checked",
             "findings": [finding_record(finding) for finding in outcome.findings],
         }
-    else:
-        body = {"kind": OUTCOME_KINDS[type(outcome)], "reason": outcome.reason}
-    return json.dumps({"path": path, **body}) + "\n"
+    return {"kind": OUTCOME_KINDS[type(outcome)], "reason": outcome.reason}
 
 
 def decoded_finding(entry: object) -> Finding:
@@ -42,7 +44,8 @@ def decoded_finding(entry: object) -> Finding:
     kind = entry.get("kind", FindingKind.CODE)
     has_texts = isinstance(path, str) and isinstance(rule_id, str) and isinstance(message, str)
     has_line = isinstance(line, int) and not isinstance(line, bool)
-    if not has_texts or not has_line or severity not in SEVERITIES or kind not in FindingKind:
+    has_severity = isinstance(severity, str) and severity in SEVERITIES
+    if not has_texts or not has_line or not has_severity or kind not in FindingKind:
         raise MalformedOutcomeLine("a finding lacks a path, line, rule, severity, message, or kind")
     return Finding(path, line, rule_id, Severity(severity), message, FindingKind(kind))
 

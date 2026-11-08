@@ -11,10 +11,10 @@ from pristine.checks.boundaries.data_flow.injection.python.flows import (
     local_helper,
 )
 from pristine.registration import registering
+from pristine.syntax.nodes import COMPREHENSION_KINDS
 from pristine.syntax.parsing import node_text
 from pristine.syntax.python_scopes import parameters, returned_values
 from pristine.syntax.python_strings import interpolations
-from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS
 
 LITERAL_KINDS = frozenset({"integer", "float", "true", "false", "none"})
 COLLECTION_KINDS = frozenset({"list", "tuple", "set", "parenthesized_expression"})

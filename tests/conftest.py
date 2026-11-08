@@ -2,12 +2,13 @@ import json
 import shutil
 import subprocess
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
 
 from pristine.cli.main import main
+from pristine.services.worker_process import WorkerProcess
 from tests.report_types import JsonReport, ReportedFinding, ReportedPath, ReportSummary
 
 EXTERNAL_CALL_TIMEOUT_SECONDS = 30
@@ -22,15 +23,12 @@ def run_git(directory: Path, *arguments: str) -> None:
     subprocess.run([git, "-C", str(directory), *arguments], check=True, timeout=EXTERNAL_CALL_TIMEOUT_SECONDS)
 
 
-def run_cli(*arguments: str) -> tuple[int, str, str]:
+def run_python(program: str, *arguments: str) -> tuple[int, str, str]:
     result = subprocess.run(
         [
             sys.executable,
             "-c",
-            (
-                "import sys; sys.modules['tree_sitter'] = None; sys.modules['tree_sitter_language_pack'] = None; "
-                "from pristine.cli.main import main; raise SystemExit(main())"
-            ),
+            program,
             *arguments,
         ],
         capture_output=True,
@@ -40,6 +38,14 @@ def run_cli(*arguments: str) -> tuple[int, str, str]:
         check=False,
     )
     return result.returncode, result.stdout, result.stderr
+
+
+def run_cli(*arguments: str) -> tuple[int, str, str]:
+    program = (
+        "import sys; sys.modules['tree_sitter'] = None; sys.modules['tree_sitter_language_pack'] = None; "
+        "from pristine.cli.main import main; raise SystemExit(main())"
+    )
+    return run_python(program, *arguments)
 
 
 def json_object(value: object) -> dict[str, object]:
@@ -123,6 +129,21 @@ def run_pristine(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest
         return exit_code, parsed_report(capsys.readouterr().out)
 
     return run
+
+
+@pytest.fixture
+def worker_process() -> Iterator[WorkerProcess]:
+    process = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(10)"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    worker = WorkerProcess(process)
+    try:
+        yield worker
+    finally:
+        worker.close()
 
 
 def rule_findings(report: JsonReport, rule_id: str) -> list[tuple[int, str]]:

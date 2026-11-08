@@ -1,7 +1,7 @@
 lazy from tree_sitter import Node
 
+from pristine.syntax.nodes import FUNCTION_KINDS
 from pristine.syntax.parsing import all_nodes, node_text
-from pristine.syntax.syntax_kinds import FUNCTION_KINDS
 
 SCOPE_KINDS = FUNCTION_KINDS | {"generator_function"}
 COMPARISON_KINDS = frozenset({"comparison_operator", "binary_expression"})

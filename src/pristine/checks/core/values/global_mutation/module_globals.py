@@ -88,9 +88,7 @@ def is_named_binding(declarator: Node) -> bool:
 
 @registering(_COLLECTORS, *SCRIPT_LANGUAGES)
 def js_globals(parsed: ParsedFile) -> Globals:
-    declarations = [
-        statement for statement in module_statements(parsed.root) if statement.type in JS_DECLARATION_KINDS
-    ]
+    declarations = [statement for statement in module_statements(parsed.root) if statement.type in JS_DECLARATION_KINDS]
     declared = [
         declared_kinds(node_text(declaration.children[0]) or "", declarator)
         for declaration in declarations

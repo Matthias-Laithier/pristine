@@ -6,16 +6,16 @@ lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Limit
-from pristine.syntax.node_types import SyntaxNode
-from pristine.syntax.parsing import ParsedFile, function_name, line_of, node_text
-from pristine.syntax.syntax_kinds import (
+from pristine.syntax.nodes import (
     ANONYMOUS_FUNCTION_KINDS,
     ELSE_CONTAINERS,
     IF_KINDS,
     LEVEL_KINDS,
     NAME_BINDING_KINDS,
     NAMED_FUNCTION_KINDS,
+    SyntaxNode,
 )
+from pristine.syntax.parsing import ParsedFile, function_name, line_of, node_text
 
 RULE_ID = "CR-13"
 NESTING_LIMIT = Limit(target=2, hard=3)

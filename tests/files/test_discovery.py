@@ -24,9 +24,7 @@ def test_cache_directories_are_left_out(run_pristine: RunPristine) -> None:
     assert report["summary"]["checked_files"] == 1
 
 
-def test_git_listed_files_keep_tracked_and_untracked_only(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_git_listed_files_keep_tracked_and_untracked_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     run_git(tmp_path, "init", "--quiet")
     monkeypatch.chdir(tmp_path)
     Path("tracked.py").write_text("tracked = 1\n")

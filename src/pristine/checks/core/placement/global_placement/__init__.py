@@ -8,9 +8,9 @@ from pristine.checks.core.placement.global_placement.type_expressions import is_
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.nodes import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings
-from pristine.syntax.syntax_kinds import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 
 RULE_ID = "CR-6"
 PYTHON = "python"

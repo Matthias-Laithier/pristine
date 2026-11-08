@@ -15,6 +15,7 @@ LANGUAGE_BY_FILE_NAME = {
 } | dict.fromkeys(RUBY_FILE_NAMES, RUBY)
 LANGUAGE_BY_SUFFIX = dict.fromkeys((".gemspec", ".podspec", ".ru"), RUBY)
 
+
 class GrammarError(Exception):
     pass
 
