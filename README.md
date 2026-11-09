@@ -104,17 +104,16 @@ Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with 
 
 ## Performance
 
-Wall time of `pristine check` on Python 3.15.2 with cached grammars and warm bytecode caches. The default worker count is 9 on an 18-core host. Medians use 10 samples for the 1-file, 50-file, and multi-language corpora, and 5 for the 176-file and real-code corpora. Findings count errors and warnings. No files were unchecked.
+Wall time of `pristine check` on open-source repositories at the linked revisions, using Python 3.15.2 on an Apple silicon laptop with the default 9 workers (half the cores). Times are medians of 5 runs after a warmup, with cached grammars and bytecode. Files and lines count successfully analyzed code files. Time covers the full repository scan.
 
-| Corpus | Files discovered / checked | Findings | 1 job | Default jobs |
-| --- | ---: | ---: | ---: | ---: |
-| 1 Python file | 1 / 1 | 0 | 0.299 s | 0.297 s |
-| 50 Python files | 50 / 50 | 0 | 0.992 s | 0.597 s |
-| Pristine-derived 176-file fixture | 176 / 176 | 0 | 2.421 s | 0.933 s |
-| Multi-language corpus | 42 / 41 | 328 | 1.870 s | 1.003 s |
-| Real-code corpus | 452 / 451 | 2075 | 11.533 s | 3.274 s |
-
-Startup medians are 130 ms for `pristine guide`, 129 ms for `pristine rules`, and 97 ms for `pristine rule CR-20`. Parent RSS is 87.6 MB at the default worker count on the real-code corpus. Aggregate worker memory was not measured.
+| Repository | Language | Files | Lines | Time |
+| --- | --- | ---: | ---: | ---: |
+| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 48 | 12,490 | 1.2 s |
+| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 1.0 s |
+| [cobra](https://github.com/spf13/cobra/tree/adbc8813901bba65827259daa8e22ff94ec1f30e) | Go | 38 | 16,810 | 0.6 s |
+| [fd](https://github.com/sharkdp/fd/tree/24d90b28d25438af2a8f2e7f7e46d03d6828da94) | Rust | 33 | 9,598 | 0.5 s |
+| [gson](https://github.com/google/gson/tree/65df6e5a99747f73d386f3a61d887a0257255e0f) | Java | 270 | 58,076 | 1.1 s |
+| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json/tree/52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa) | C# | 884 | 144,617 | 3.7 s |
 
 ## Contributing
 
