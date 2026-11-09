@@ -1,3 +1,5 @@
+import pytest
+
 from tests.conftest import RunPristine, rule_findings
 
 RULE_ID = "CR-21"
@@ -40,3 +42,43 @@ def test_script_any_and_suppressions_are_errors_and_non_null_is_a_warning(run_pr
 def test_declaration_files_are_skipped(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing.d.ts": SCRIPT_SOURCE})
     assert rule_findings(report, RULE_ID) == []
+
+
+@pytest.mark.parametrize("suffix", ["ts", "tsx"])
+def test_double_assertions_through_unknown_are_warnings(run_pristine: RunPristine, suffix: str) -> None:
+    source = """const first = invoice as unknown as Record<string, number>;
+const second = ((invoice as unknown)) as Invoice;
+const third = (invoice as unknown) satisfies unknown;
+const fourth = invoice as unknown;
+const fifth = invoice as Invoice;
+const sixth = invoice as const;
+const seventh = invoice as unknown as unknown;
+const eighth = payload as {value: unknown};
+const ninth: unknown = invoice;
+if (typeof ninth === "number") { const total = ninth; }
+const tenth = invoice as unknown as (unknown);
+const eleventh = invoice as unknown as (unknown | Invoice);
+const twelfth = invoice as unknown as (unknown & unknown);
+"""
+    _, report = run_pristine({f"billing.{suffix}": source})
+    assert rule_findings(report, RULE_ID) == [(1, "warning"), (2, "warning")]
+
+
+def test_angle_bracket_double_assertions_through_unknown_are_warnings(run_pristine: RunPristine) -> None:
+    source = """const first = <Invoice><unknown>invoice;
+const second = <Invoice>(invoice as unknown);
+const third = (<unknown>invoice) as Invoice;
+const fourth = <unknown>invoice;
+const fifth = <Invoice>invoice;
+"""
+    _, report = run_pristine({"billing.ts": source})
+    assert rule_findings(report, RULE_ID) == [(1, "warning"), (2, "warning"), (3, "warning")]
+
+
+def test_deeply_parenthesized_unknown_types_do_not_fail_inspection(run_pristine: RunPristine) -> None:
+    source = "const total = value as unknown as " + "(\n" * 1100 + "unknown" + "\n)" * 1100 + ";\n"
+    _, report = run_pristine({"billing.ts": source})
+    assert rule_findings(report, RULE_ID) == []
+    assert report["unchecked"] == []
+    assert report["verification_status"] == "complete"
+    assert report["summary"]["checked_files"] == 1

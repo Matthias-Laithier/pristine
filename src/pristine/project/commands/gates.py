@@ -61,7 +61,7 @@ def quality_gate(project: Project, target: str) -> Gate | None:
     javascript = project.root_manifest(Ecosystem.JAVASCRIPT)
     reached = reach(makefile, target)
     commands = with_package_scripts(reached.commands, javascript.scripts if javascript else {})
-    ignored = any(makefile.rules[target].ignores_failures for target in reached.targets)
+    ignored = any(makefile.rules[target].ignored_error_commands for target in reached.targets)
     relayed = any(not verifiable_relay(command) for command in commands)
     return Gate(makefile.rules[target], tuple(commands), invocations(commands), ignored, relayed)
 

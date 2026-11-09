@@ -11,7 +11,7 @@ PYPROJECT = (
 PYTHON_MAKEFILE = (
     "RUN := uv run --project app\n"
     "dev:\n\t./run\n"
-    "check: format-check lint\n\t$(RUN) mypy --strict app\n"
+    "check: format-check lint\n\t$(RUN) mypy --strict .\n"
     "\t$(RUN) vulture .\ncheck-all: check\n"
     "format-check:\n\t@$(RUN) ruff format {format_mode} app\n"
     "lint:\n\tcd app && $(RUN) ruff check .\n"
@@ -30,8 +30,8 @@ def test_python_gate_followed_through_targets_and_variables(run_project: RunProj
 def test_wrapper_flags_precede_the_child_program(run_project: RunProject) -> None:
     files = {**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE}
     files["Makefile"] = files["Makefile"].replace(
-        "\t$(RUN) mypy --strict app",
-        "\tuv run --all-extras --project app mypy --strict app",
+        "\t$(RUN) mypy --strict .",
+        "\tuv run --all-extras --project app mypy --strict .",
     )
     files["Makefile"] = files["Makefile"].format(format_mode="--check")
     exit_code, report = run_project(files)

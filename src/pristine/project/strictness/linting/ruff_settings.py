@@ -1,14 +1,15 @@
 import posixpath
 import tomllib
+from collections.abc import Iterable
+from pathlib import PurePosixPath
 
 from pristine.project.repository.loading import Project
 from pristine.project.repository.manifests import array, table
-from pristine.project.repository.tools import TOOLS_BY_NAME
+from pristine.project.repository.tools import TOOLS_BY_NAME, Ecosystem
+from pristine.project.strictness.linting.ruff_fields import validate_consumed_settings
 from pristine.project.strictness.strictness import UnverifiedConfigError
 
 UNIVERSAL_PER_FILE_PATTERNS = ("*", "**", "**/*.py")
-LINT_SELECTORS = frozenset({"select", "extend-select", "ignore", "extend-ignore"})
-PER_FILE_MASKS = frozenset({"per-file-ignores", "extend-per-file-ignores"})
 
 
 def config_path(project: Project) -> str:
@@ -29,8 +30,6 @@ def lint_settings(project: Project, path: str, visited: frozenset[str]) -> dict[
     except tomllib.TOMLDecodeError as error:
         raise UnverifiedConfigError(path, f"{path} is not valid TOML ({error})") from error
     settings = unwrap_settings(path, document)
-    if "lint" in settings and not isinstance(settings["lint"], dict):
-        raise UnverifiedConfigError(path, f"the lint setting of {path} is not a table")
     validate_consumed_settings(path, settings)
     extended = settings.get("extend")
     if extended is not None and not isinstance(extended, str):
@@ -55,27 +54,6 @@ def unwrap_settings(path: str, document: dict[str, object]) -> dict[str, object]
     return dict[str, object](ruff)
 
 
-def validate_consumed_settings(path: str, settings: dict[str, object]) -> None:
-    if (LINT_SELECTORS | PER_FILE_MASKS) & settings.keys():
-        raise UnverifiedConfigError(path, "move deprecated top-level Ruff lint selectors and masks into the lint table")
-    for name in ("fix", "fix-only"):
-        if name in settings and not isinstance(settings[name], bool):
-            raise UnverifiedConfigError(path, f"Ruff {name} must be a boolean before command overrides")
-    lint = table(settings, "lint")
-    for name in sorted(LINT_SELECTORS):
-        if name in lint and not string_array(lint[name]):
-            raise UnverifiedConfigError(path, f"Ruff lint.{name} must be a list of rule selectors")
-    for name in sorted(PER_FILE_MASKS):
-        value = lint.get(name, {})
-        valid = isinstance(value, dict) and all(string_array(rules) for rules in value.values())
-        if not valid:
-            raise UnverifiedConfigError(path, f"Ruff lint.{name} must map file patterns to lists of rule selectors")
-
-
-def string_array(value: object) -> bool:
-    return isinstance(value, list) and all(isinstance(item, str) for item in value)
-
-
 def merged_settings(base: dict[str, object], settings: dict[str, object]) -> dict[str, object]:
     if "lint" not in settings:
         return {**base, **settings}
@@ -87,6 +65,7 @@ def merged_settings(base: dict[str, object], settings: dict[str, object]) -> dic
         else {key: value for key, value in parent.items() if key not in reset_by_child_select}
     )
     lint = {**inherited, **child}
+    lint["flake8-annotations"] = {**table(parent, "flake8-annotations"), **table(child, "flake8-annotations")}
     lint["extend-select"] = [*array(inherited, "extend-select"), *array(child, "extend-select")]
     lint["extend-ignore"] = [*array(inherited, "extend-ignore"), *array(child, "extend-ignore")]
     lint["extend-per-file-ignores"] = accumulated_per_file_ignores(
@@ -120,3 +99,18 @@ def universal_per_file_rules(lint: dict[str, object]) -> set[str]:
         for rule in rules
         if isinstance(rule, str)
     }
+
+
+def verify_source_configurations(project: Project, config: str, sources: Iterable[str]) -> None:
+    folders = {
+        parent.as_posix() for source in sources for parent in PurePosixPath(source).parents if parent.as_posix() != "."
+    }
+    dedicated = any(
+        project.reader.is_local_file(f"{folder}/{name}") for folder in folders for name in ("ruff.toml", ".ruff.toml")
+    )
+    embedded = any(
+        manifest.path.rpartition("/")[0] in folders and "ruff" in manifest.settings
+        for manifest in project.manifests[Ecosystem.PYTHON]
+    )
+    if dedicated or embedded:
+        raise UnverifiedConfigError(config, "nearer Ruff configurations require review of per-source settings")

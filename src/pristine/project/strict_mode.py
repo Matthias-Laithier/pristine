@@ -6,6 +6,7 @@ from pristine.project.commands.shell import program_calls
 from pristine.project.repository.configuration import declares, every_project, is_configured, is_typescript
 from pristine.project.repository.loading import Project
 from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role
+from pristine.project.strictness.annotations import python_annotations
 from pristine.project.strictness.dead_code import CHECKS as DEAD_CODE_CHECKS
 from pristine.project.strictness.linting import LINT_CHECKS
 from pristine.project.strictness.python_strictness import PYTHON_PROBES
@@ -76,4 +77,4 @@ def strict_type_checking(project: Project) -> list[Finding]:
     return list(dict.fromkeys(finding for finding in findings if finding))
 
 
-CHECKS = (strict_type_checking, *LINT_CHECKS, *DEAD_CODE_CHECKS)
+CHECKS = (strict_type_checking, *LINT_CHECKS, *DEAD_CODE_CHECKS, python_annotations)

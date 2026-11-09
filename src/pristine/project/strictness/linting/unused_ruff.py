@@ -6,8 +6,12 @@ from pristine.project.commands.shell import program_calls, root_working_director
 from pristine.project.commands.tool_arguments import option, option_values, ruff_checking
 from pristine.project.repository.loading import Project
 from pristine.project.repository.manifests import array, table
-from pristine.project.repository.tools import Ecosystem
-from pristine.project.strictness.linting.ruff_settings import config_path, lint_settings, universal_per_file_rules
+from pristine.project.strictness.linting.ruff_settings import (
+    config_path,
+    lint_settings,
+    universal_per_file_rules,
+    verify_source_configurations,
+)
 from pristine.project.strictness.source_selection import python_sources, source_target, verify_python_sources
 from pristine.project.strictness.strictness import Arguments, Shortfall, UnverifiedConfigError
 
@@ -98,7 +102,7 @@ def verify_ruff_scope(project: Project, config: str, arguments: list[str], setti
             config,
             "review Ruff source inclusion, exclusions, fixing, suppressions or stdin before certifying unused-code checking",
         )
-    verify_root_configuration(project, config)
+    verify_source_configurations(project, config, python_sources(project))
     verify_unused_masks(project, config, table(settings, "lint"))
     sources = source_arguments(arguments[1:], SOURCE_OPTIONS) or ["."]
     paths = [source_target(project, config, source) for source in sources]
@@ -117,31 +121,6 @@ def verify_unused_masks(project: Project, config: str, lint: dict[str, object]) 
                 config,
                 "review per-file unused-rule masks against application sources or keep required unused rules enabled",
             )
-
-
-def verify_root_configuration(project: Project, config: str) -> None:
-    sources = python_sources(project)
-    folders = {
-        parent.as_posix() for source in sources for parent in PurePosixPath(source).parents if parent.as_posix() != "."
-    }
-    dedicated = [
-        f"{folder}/{name}"
-        for folder in folders
-        for name in ("ruff.toml", ".ruff.toml")
-        if project.reader.is_local_file(f"{folder}/{name}")
-    ]
-    embedded = [
-        manifest.path
-        for manifest in project.manifests[Ecosystem.PYTHON]
-        if "/" in manifest.path and "ruff" in manifest.settings
-    ]
-    closer = any(
-        source.startswith(path.rpartition("/")[0] + "/") for path in [*dedicated, *embedded] for source in sources
-    )
-    if closer:
-        raise UnverifiedConfigError(
-            config, "nearer Ruff configurations require review of per-source unused-code settings"
-        )
 
 
 from pathlib import PurePosixPath

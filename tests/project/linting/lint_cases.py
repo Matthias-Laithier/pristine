@@ -22,6 +22,10 @@ JAVASCRIPT_MAKEFILE = "dev:\n\tnpm start\ncheck:\n\tnpm run check\ncheck-all: ch
 ANY_RULE = "@typescript-eslint/no-explicit-any"
 STRICT_PRESET = "plugin:@typescript-eslint/strict-type-checked"
 REACT_PRESETS = ["plugin:react-hooks/recommended", "plugin:jsx-a11y/recommended"]
+ANNOTATIONS = '[tool.ruff.lint]\nextend-select = ["S", "ASYNC", "DTZ", "G", "T20", "ANN"]\n'
+ANNOTATIONS_MAKEFILE = (
+    "dev:\n\t./run\ncheck:\n\truff check .\n\truff format --check .\n\tty check .\ncheck-all: check\n"
+)
 BASE_PRESET_RULES = (
     "@typescript-eslint/no-floating-promises",
     "@typescript-eslint/no-explicit-any",
@@ -31,6 +35,15 @@ BASE_PRESET_RULES = (
 def lint_messages(files: dict[str, str], run_project: RunProject) -> list[str]:
     _, report = run_project(files)
     return [message for _, message, _ in rule_findings(report, "TL-3")]
+
+
+def annotation_findings(files: dict[str, str], run_project: RunProject) -> list[tuple[str, str]]:
+    _, report = run_project(files)
+    return [
+        (finding["severity"], finding.get("kind", "rule"))
+        for finding in report["findings"]
+        if "explicit Python annotations" in finding["message"]
+    ]
 
 
 def eslint_config(extends: list[str], rules: Mapping[str, object] = {}) -> str:

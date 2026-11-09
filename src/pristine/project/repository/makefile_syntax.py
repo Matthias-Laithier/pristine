@@ -8,7 +8,6 @@ CONTINUATION = "\\"
 COMMENT = "#"
 ENDEF = "endef"
 CONDITIONAL_DIRECTIVES = frozenset({"ifeq", "ifneq", "ifdef", "ifndef", "else", "endif"})
-UNVERIFIED_RECIPE_DIRECTIVES = frozenset({".ONESHELL", ".IGNORE"})
 SPECIAL_TARGET_PREFIX = "."
 PATTERN_NAME_MARKERS = ("$", "%")
 ORDER_ONLY_SEPARATOR = "|"
@@ -42,7 +41,7 @@ class Rule:
     line: int
     prerequisites: list[str] = field(default_factory=list)
     recipe: list[str] = field(default_factory=list)
-    ignores_failures: bool = False
+    ignored_error_commands: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -54,7 +53,7 @@ class MakefileSyntax:
     current_rules: list[Rule] = field(default_factory=list)
     inside_define: bool = False
     has_conditionals: bool = False
-    unverified_recipes: bool = False
+    special_targets: set[str] = field(default_factory=set)
 
     def read(self, line_number: int, line: str) -> None:
         if self.inside_define:
@@ -80,7 +79,6 @@ class MakefileSyntax:
         elif assignment := ASSIGNMENT.match(statement):
             self.assign(*assignment.groups())
         elif rule := RULE.match(statement):
-            self.unverified_recipes |= bool(UNVERIFIED_RECIPE_DIRECTIVES.intersection(rule[1].split()))
             self.add_rule(line_number, rule[1].split(), rule[2])
 
     def assign(self, name: str, operator: str, value: str) -> None:
@@ -92,6 +90,7 @@ class MakefileSyntax:
             return
         prerequisites, _, inline_recipe = body.partition(INLINE_RECIPE_SEPARATOR)
         normal_prerequisites = prerequisites.split(ORDER_ONLY_SEPARATOR)[0].split()
+        self.special_targets.update(name for name in names if name.startswith(SPECIAL_TARGET_PREFIX))
         for name in filter(is_plain_target, names):
             rule = self.rules.setdefault(name, Rule(self.path, line_number))
             rule.prerequisites.extend(normal_prerequisites)
@@ -101,9 +100,11 @@ class MakefileSyntax:
 
     def add_recipe_line(self, line: str) -> None:
         command = line.lstrip(RECIPE_FLAGS)
+        ignores_errors = "-" in line[: len(line) - len(command)]
         for rule in self.current_rules:
             rule.recipe.append(command)
-            rule.ignores_failures |= line.lstrip("@+ \t").startswith("-")
+            if ignores_errors:
+                rule.ignored_error_commands.append(command)
 
 
 def is_plain_target(name: str) -> bool:

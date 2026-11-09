@@ -11,6 +11,7 @@ EXPANSION_DEPTH_LIMIT = 10
 FAST_GATE = "check"
 COMPLETE_GATE = "check-all"
 INCLUDE_PATTERN_MARKERS = ("$", "*", "?", "[")
+UNVERIFIED_RECIPE_DIRECTIVES = frozenset({".ONESHELL", ".IGNORE"})
 
 
 @dataclass(frozen=True)
@@ -19,7 +20,11 @@ class Makefile:
     rules: dict[str, Rule]
     variables: dict[str, str]
     has_conditionals: bool = False
-    unverified_recipes: bool = False
+    special_targets: frozenset[str] = frozenset()
+
+    @property
+    def unverified_recipes(self) -> bool:
+        return not self.special_targets.isdisjoint(UNVERIFIED_RECIPE_DIRECTIVES)
 
     def expand(self, text: str) -> str:
         for _ in range(EXPANSION_DEPTH_LIMIT):
@@ -59,7 +64,7 @@ def merge_rules(rules: dict[str, Rule], additions: dict[str, Rule]) -> None:
         if existing is not addition:
             existing.prerequisites.extend(addition.prerequisites)
             existing.recipe.extend(addition.recipe)
-            existing.ignores_failures |= addition.ignores_failures
+            existing.ignored_error_commands.extend(addition.ignored_error_commands)
 
 
 def is_followable_include(reader: SourceReader, name: str) -> bool:
@@ -71,7 +76,7 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
     variables = dict(DEFAULT_VARIABLES)
     pending, visited = [path], set()
     has_conditionals = False
-    unverified_recipes = False
+    special_targets: set[str] = set()
     while pending:
         current = pending.pop(0)
         text = None if current in visited else reader.text(current)
@@ -80,8 +85,12 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
             continue
         syntax = parse_makefile(text, current)
         has_conditionals |= syntax.has_conditionals
-        unverified_recipes |= syntax.unverified_recipes
         merge_rules(rules, syntax.rules)
         variables.update(syntax.variables)
+        special_targets.update(syntax.special_targets)
         pending.extend(name for name in syntax.includes if is_followable_include(reader, name))
-    return Makefile(path, rules, variables, has_conditionals, unverified_recipes) if path in reader.checked else None
+    return (
+        Makefile(path, rules, variables, has_conditionals, frozenset(special_targets))
+        if path in reader.checked
+        else None
+    )
