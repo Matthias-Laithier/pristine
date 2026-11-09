@@ -1,21 +1,25 @@
+import json
+
+import pytest
+
 from pristine.audit.models import SourceEvidence
 from pristine.audit.osv_json import parse_osv_json
 from tests.audit.conftest import native_output
 from tests.conftest import json_list, json_object
 
 
-def test_recorded_native_advisories_keep_ids_aliases_and_contextual_fixed_releases(vulnerable_output: str) -> None:
-    report = parse_osv_json(vulnerable_output)
-    assert not report.verification_failed
-    assert report.problems == ()
+@pytest.mark.parametrize("problems", [(), ("scanner timed out",)])
+def test_recorded_advisories_retain_identity_fixed_context_and_scanner_failures(
+    vulnerable_output: str, problems: tuple[str, ...]
+) -> None:
+    report = parse_osv_json(vulnerable_output, problems)
+    assert report.verification_failed == bool(problems)
+    assert report.problems == problems
     assert report.sources == (SourceEvidence("/fixtures/vulnerable/uv.lock", "lockfile", 2),)
-    assert report.counts == {"advisory_records": 4, "packages": 2, "sources": 1, "verification_failures": 0}
-    assert [(finding.package, finding.version, finding.ecosystem) for finding in report.findings] == [
-        ("protobuf", "4.25.5", "PyPI"),
-        ("protobuf", "4.25.5", "PyPI"),
-        ("protobuf", "4.25.5", "PyPI"),
-        ("protobuf", "4.25.5", "PyPI"),
-    ]
+    assert report.counts == {"advisory_records": 4, "packages": 2, "sources": 1, "verification_failures": len(problems)}
+    assert {(finding.package, finding.version, finding.ecosystem) for finding in report.findings} == {
+        ("protobuf", "4.25.5", "PyPI")
+    }
     assert [(finding.advisory_id, finding.aliases, finding.fixed_versions) for finding in report.findings] == [
         ("PYSEC-2026-1805", ("CVE-2026-0994", "GHSA-7gcm-g887-7qv7"), ("5.29.6", "6.33.5")),
         ("PYSEC-2026-1806", ("CVE-2025-4565", "GHSA-8qvm-5x2c-j2w7"), ("4.25.8", "5.29.5", "6.31.1")),
@@ -31,14 +35,6 @@ def test_recorded_clean_result_requires_native_package_evidence(clean_output: st
     assert report.problems == ()
     assert report.sources == (SourceEvidence("/fixtures/clean/uv.lock", "lockfile", 1),)
     assert report.counts == {"advisory_records": 0, "packages": 1, "sources": 1, "verification_failures": 0}
-
-
-def test_scanner_failure_retains_valid_native_advisories(vulnerable_output: str) -> None:
-    report = parse_osv_json(vulnerable_output, ("scanner timed out",))
-    assert report.verification_failed
-    assert report.problems == ("scanner timed out",)
-    assert report.counts == {"advisory_records": 4, "packages": 2, "sources": 1, "verification_failures": 1}
-    assert report.findings[0].advisory_id == "PYSEC-2026-1805"
 
 
 def test_aliases_from_native_groups_do_not_merge_advisory_records(native_package: dict[str, object]) -> None:
@@ -97,6 +93,3 @@ def test_fixed_releases_match_exact_native_package_and_ignore_git_commits(native
     report = parse_osv_json(native_output([native_package]))
     assert report.problems == ()
     assert report.findings[0].fixed_versions == ("4.25.8",)
-
-
-import json

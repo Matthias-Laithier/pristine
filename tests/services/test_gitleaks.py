@@ -15,21 +15,12 @@ def secret_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return ["settings.json"]
 
 
-@pytest.mark.parametrize("line", [True, -1])
-def test_invalid_native_line_is_not_a_verified_secret_scan(
-    secret_paths: list[str], monkeypatch: pytest.MonkeyPatch, line: object
+@pytest.mark.parametrize("field,value", [("StartLine", True), ("StartLine", -1), ("SymlinkFile", [])])
+def test_invalid_native_leak_identity_is_not_a_verified_secret_scan(
+    secret_paths: list[str], monkeypatch: pytest.MonkeyPatch, field: str, value: object
 ) -> None:
-    output = json.dumps([{"SymlinkFile": "settings.json", "StartLine": line, "RuleID": "test_token"}])
-    monkeypatch.setattr(gitleaks, "run_gitleaks", lambda _: output)
-    with pytest.raises(SecretScanFailed, match="known file, line, and rule"):
-        scan_paths(secret_paths)
-
-
-@pytest.mark.parametrize("reported_path", [[], {}])
-def test_invalid_native_path_is_an_owned_scan_failure(
-    secret_paths: list[str], monkeypatch: pytest.MonkeyPatch, reported_path: object
-) -> None:
-    output = json.dumps([{"SymlinkFile": reported_path, "StartLine": 1, "RuleID": "test_token"}])
+    leak = {"SymlinkFile": "settings.json", "StartLine": 1, "RuleID": "test_token", field: value}
+    output = json.dumps([leak])
     monkeypatch.setattr(gitleaks, "run_gitleaks", lambda _: output)
     with pytest.raises(SecretScanFailed, match="known file, line, and rule"):
         scan_paths(secret_paths)

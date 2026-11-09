@@ -1,19 +1,18 @@
 import json
-from pathlib import Path
 
 import pytest
 
-from tests.conftest import json_list, json_object
+from tests.conftest import audit_recording, json_list, json_object
 
 
 @pytest.fixture
 def vulnerable_output() -> str:
-    return (Path(__file__).parents[2] / "assets/audit/vulnerable.json").read_text(encoding="utf-8")
+    return audit_recording("vulnerable")
 
 
 @pytest.fixture
 def clean_output() -> str:
-    return (Path(__file__).parents[2] / "assets/audit/clean.json").read_text(encoding="utf-8")
+    return audit_recording("clean")
 
 
 @pytest.fixture

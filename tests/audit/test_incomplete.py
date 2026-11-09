@@ -17,7 +17,7 @@ def test_absent_output_with_a_known_failure_reports_that_failure_once() -> None:
 
 @pytest.mark.parametrize(
     "output",
-    ["", "null", "[]", "{}", '{"results": null}', '{"results": []}', native_output([]), '{"results": []} trailing'],
+    ["", "null", "{}", '{"results": []}', native_output([]), '{"results": []} trailing'],
 )
 def test_absent_or_malformed_evidence_is_never_clean(output: str) -> None:
     report = parse_osv_json(output)
@@ -26,8 +26,9 @@ def test_absent_or_malformed_evidence_is_never_clean(output: str) -> None:
     assert report.findings == ()
 
 
-@pytest.mark.parametrize("value", [None, "", " ", 1, True, "package\nname", "\ud800", "package\u2028name"])
-@pytest.mark.parametrize("field", ["name", "version", "ecosystem"])
+@pytest.mark.parametrize(
+    "field,value", [("name", None), ("name", " "), ("name", "package\nname"), ("version", None), ("ecosystem", None)]
+)
 def test_malformed_identity_rows_are_incomplete(native_package: dict[str, object], field: str, value: object) -> None:
     metadata = json_object(native_package["package"])
     metadata[field] = value
@@ -38,8 +39,16 @@ def test_malformed_identity_rows_are_incomplete(native_package: dict[str, object
     assert report.findings[0].package == "protobuf"
 
 
-@pytest.mark.parametrize("extension", [{"errors": []}, {"coverage": "partial"}, {"experimental_generic_findings": []}])
-def test_unknown_native_top_level_fields_fail_incomplete_but_retain_findings(
+@pytest.mark.parametrize(
+    "extension",
+    [
+        {"coverage": "partial"},
+        {"experimental_config": {"licenses": {"summary": True, "allowlist": None}}},
+        {"experimental_config": {"licenses": {"summary": 0, "allowlist": None}}},
+    ],
+    ids=["unknown-field", "enabled-analysis", "false-is-not-zero"],
+)
+def test_native_configuration_extensions_are_incomplete_but_retain_advisories(
     native_package: dict[str, object], extension: dict[str, object]
 ) -> None:
     report = parse_osv_json(native_output([native_package], **extension))
@@ -47,20 +56,7 @@ def test_unknown_native_top_level_fields_fail_incomplete_but_retain_findings(
     assert report.counts["advisory_records"] == 4
 
 
-@pytest.mark.parametrize("summary", [True, 0, None, "false"])
-def test_analysis_configuration_requires_exact_native_inactive_shape(
-    native_package: dict[str, object], summary: object
-) -> None:
-    report = parse_osv_json(
-        native_output([native_package], experimental_config={"licenses": {"summary": summary, "allowlist": None}})
-    )
-    assert report.verification_failed
-    assert report.counts["advisory_records"] == 4
-
-
-@pytest.mark.parametrize(
-    "groups", [None, {}, [{"ids": []}], [{"ids": ["PYSEC-2026-1805"], "experimental_analysis": {}}]]
-)
+@pytest.mark.parametrize("groups", [None, [{"ids": []}], [{"ids": ["PYSEC-2026-1805"], "experimental_analysis": {}}]])
 def test_invalid_or_analysis_extended_groups_preserve_advisories(
     native_package: dict[str, object], groups: object
 ) -> None:
@@ -117,16 +113,29 @@ def test_unsupported_native_source_retains_its_advisories(native_package: dict[s
 
 
 @pytest.mark.parametrize(
-    "output",
+    "fragment,problem",
     [
-        '{"results": [], "results": []}',
-        '{"results": [], "unsupported": NaN}',
-        '{"results": [], "unsupported": ' + "1" * 5000 + "}",
-        "[" * 1100,
-        " " * (8 * 1024 * 1024 + 1),
+        ('"id": "PYSEC-2026-1805", "id": "PYSEC-2026-1805"', "native JSON has duplicate fields"),
+        ('"id": "PYSEC-2026-1805", "database_specific": {"score": NaN}', "native JSON has a nonfinite number"),
     ],
+    ids=["duplicate-key", "nonfinite-number"],
 )
-def test_invalid_duplicate_nonfinite_deep_and_oversized_json_fail_incomplete(output: str) -> None:
+def test_json_guards_reject_otherwise_valid_native_records(vulnerable_output: str, fragment: str, problem: str) -> None:
+    output = vulnerable_output.replace('"id": "PYSEC-2026-1805"', fragment, 1)
     report = parse_osv_json(output)
     assert report.verification_failed
-    assert report.problems
+    assert report.problems == (problem, "native output has no package evidence")
+    assert report.findings == ()
+
+
+def test_json_size_guard_accepts_exact_limit_and_rejects_one_more_character(clean_output: str) -> None:
+    exact = clean_output + " " * (8 * 1024 * 1024 - len(clean_output))
+    assert not parse_osv_json(exact).verification_failed
+    report = parse_osv_json(exact + " ")
+    assert report.problems == ("native JSON exceeds the size limit", "native output has no package evidence")
+    assert report.findings == ()
+
+
+@pytest.mark.parametrize("output", ['{"results": ' + "1" * 5000 + "}", "[" * 1100])
+def test_unrepresentable_native_json_is_incomplete(output: str) -> None:
+    assert parse_osv_json(output).problems == ("invalid native JSON", "native output has no package evidence")

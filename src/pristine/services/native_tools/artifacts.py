@@ -1,29 +1,29 @@
 import gzip
 import hashlib
-import http.client
 import io
 import os
 import re
 import secrets
-import ssl
 import stat
+import sys
 import tarfile
-import urllib.error
-import urllib.request
 from collections.abc import Callable, Generator
 from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
-from time import monotonic
-from typing import IO, override
+
+from pristine.services.native_tools.downloader import (
+    ARTIFACT_LIMIT_IN_BYTES,
+    DOWNLOAD_FAILURE,
+    FAILURE_MESSAGES,
+    NativeToolUnavailable,
+)
+from pristine.services.native_tools.processes import run_process
 
 __all__ = ["NativeToolUnavailable", "ReleaseArtifact", "cached_executable", "download_artifact"]
 
 DOWNLOAD_TIMEOUT_IN_SECONDS = 60
 SOCKET_TIMEOUT_IN_SECONDS = 10
-ARTIFACT_LIMIT_IN_BYTES = 64 * 1024 * 1024
-READ_CHUNK_IN_BYTES = 65536
-TRUSTED_ORIGINS = ("https://github.com/", "https://release-assets.githubusercontent.com/")
 PRIVATE_MODE = 0o700
 
 
@@ -37,62 +37,20 @@ class ReleaseArtifact:
     archive_member: str | None = None
 
 
-class NativeToolUnavailable(Exception):
-    pass
-
-
-def _trusted_url(url: str) -> None:
-    if not url.startswith(TRUSTED_ORIGINS):
-        raise NativeToolUnavailable("native tool release URL is not trusted")
-
-
-class _TrustedRedirects(urllib.request.HTTPRedirectHandler):
-    max_redirections = 2
-    max_repeats = 1
-
-    @override
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: IO[bytes],
-        code: int,
-        msg: str,
-        headers: http.client.HTTPMessage,
-        newurl: str,
-    ) -> urllib.request.Request | None:
-        fp.close()
-        _trusted_url(newurl)
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
 def download_artifact(url: str) -> bytes:
-    _trusted_url(url)
-    deadline = monotonic() + DOWNLOAD_TIMEOUT_IN_SECONDS
-    opener = urllib.request.build_opener(
-        _TrustedRedirects(), urllib.request.HTTPSHandler(context=ssl.create_default_context())
+    helper = Path(__file__).with_name("downloader.py")
+    result = run_process(
+        [sys.executable, "-I", "-S", str(helper), url, str(SOCKET_TIMEOUT_IN_SECONDS)],
+        helper.parent,
+        timeout_in_seconds=DOWNLOAD_TIMEOUT_IN_SECONDS,
+        output_limit_in_bytes=ARTIFACT_LIMIT_IN_BYTES,
     )
-    try:
-        with opener.open(url, timeout=SOCKET_TIMEOUT_IN_SECONDS) as response:
-            return _download_body(response, deadline)
-    except (OSError, urllib.error.URLError, http.client.HTTPException, ValueError) as error:
-        if isinstance(error, urllib.error.HTTPError):
-            error.close()
-        raise NativeToolUnavailable("native tool download failed; check HTTPS connectivity and retry") from None
-
-
-def _download_body(response: object, deadline: float) -> bytes:
-    if not isinstance(response, http.client.HTTPResponse):
-        raise NativeToolUnavailable("native tool release response is not HTTPS")
-    payload = bytearray()
-    while True:
-        if monotonic() >= deadline:
-            raise NativeToolUnavailable("native tool download timed out; retry with a working connection")
-        chunk = response.read1(min(READ_CHUNK_IN_BYTES, ARTIFACT_LIMIT_IN_BYTES - len(payload) + 1))
-        if not chunk:
-            return bytes(payload)
-        payload.extend(chunk)
-        if len(payload) > ARTIFACT_LIMIT_IN_BYTES:
-            raise NativeToolUnavailable("native tool release exceeded the download size limit")
+    if result.problem is not None:
+        raise NativeToolUnavailable(result.problem)
+    if result.returncode != 0:
+        message = result.stderr.decode("utf-8", errors="replace")
+        raise NativeToolUnavailable(message if message in FAILURE_MESSAGES else DOWNLOAD_FAILURE)
+    return result.stdout
 
 
 def _executable_payload(artifact: ReleaseArtifact, payload: bytes) -> bytes:

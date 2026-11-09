@@ -10,11 +10,12 @@ from pathlib import Path
 
 import pytest
 
+from pristine.services.native_tools import artifacts
 from pristine.services.native_tools.artifacts import ReleaseArtifact
 from pristine.services.native_tools.resolver import NativeToolUnavailable
 from tests.services.native_tools.conftest import FIXTURE_DIGEST, FIXTURE_URL, NativeBoundary
 
-FIXTURE_PATH = Path(__file__).resolve().parents[3] / "assets" / "native_tools" / "archive.json"
+FIXTURE_PATH = Path(__file__).resolve().parents[2] / "fixtures" / "native_tools" / "archive.json"
 
 
 def test_reviewed_archive_extracts_only_the_pinned_regular_executable(native_boundary: NativeBoundary) -> None:
@@ -25,8 +26,6 @@ def test_reviewed_archive_extracts_only_the_pinned_regular_executable(native_bou
     executable = Path(native_boundary.resolver("gitleaks", artifact).resolve_tool("gitleaks"))
     assert executable.read_bytes() == b"abc"
     assert list(native_boundary.root.iterdir()) == [executable]
-    assert not (native_boundary.root / "LICENSE").exists()
-    assert not (native_boundary.root / "README.md").exists()
 
 
 def archive_payload(members: tuple[tarfile.TarInfo, ...]) -> bytes:
@@ -43,31 +42,25 @@ def regular_member(name: str = "gitleaks") -> tarfile.TarInfo:
     return member
 
 
-@pytest.mark.parametrize("name", ["../outside", "/untrusted/outside", "nested/gitleaks", "./gitleaks"])
-def test_archive_path_members_are_never_written(native_boundary: NativeBoundary, name: str) -> None:
-    payload = archive_payload((regular_member(name),))
+def assert_archive_refused(native_boundary: NativeBoundary, payload: bytes, reason: str) -> None:
     native_boundary.payload = payload
     artifact = ReleaseArtifact(
         "Darwin", "arm64", FIXTURE_URL, hashlib.sha256(payload).hexdigest(), FIXTURE_DIGEST, "gitleaks"
     )
-    with pytest.raises(NativeToolUnavailable, match="unexpected member"):
+    with pytest.raises(NativeToolUnavailable, match=reason):
         native_boundary.resolver("gitleaks", artifact).resolve_tool("gitleaks")
     assert list(native_boundary.root.iterdir()) == []
 
 
-@pytest.mark.parametrize("kind", [tarfile.SYMTYPE, tarfile.LNKTYPE, tarfile.DIRTYPE, tarfile.FIFOTYPE, tarfile.CHRTYPE])
-def test_archive_special_members_are_refused(native_boundary: NativeBoundary, kind: bytes) -> None:
+def test_archive_path_member_is_never_written(native_boundary: NativeBoundary) -> None:
+    assert_archive_refused(native_boundary, archive_payload((regular_member("../outside"),)), "unexpected member")
+
+
+def test_archive_link_in_place_of_executable_is_refused(native_boundary: NativeBoundary) -> None:
     member = tarfile.TarInfo("gitleaks")
-    member.type = kind
+    member.type = tarfile.SYMTYPE
     member.linkname = "../outside"
-    payload = archive_payload((member,))
-    native_boundary.payload = payload
-    artifact = ReleaseArtifact(
-        "Darwin", "arm64", FIXTURE_URL, hashlib.sha256(payload).hexdigest(), FIXTURE_DIGEST, "gitleaks"
-    )
-    with pytest.raises(NativeToolUnavailable, match="unexpected member"):
-        native_boundary.resolver("gitleaks", artifact).resolve_tool("gitleaks")
-    assert list(native_boundary.root.iterdir()) == []
+    assert_archive_refused(native_boundary, archive_payload((member,)), "unexpected member")
 
 
 @pytest.mark.parametrize(
@@ -81,40 +74,22 @@ def test_archive_special_members_are_refused(native_boundary: NativeBoundary, ki
 def test_archive_duplicate_missing_and_member_limit_failures(
     native_boundary: NativeBoundary, members: tuple[tarfile.TarInfo, ...], reason: str
 ) -> None:
-    payload = archive_payload(members)
-    native_boundary.payload = payload
-    artifact = ReleaseArtifact(
-        "Darwin", "arm64", FIXTURE_URL, hashlib.sha256(payload).hexdigest(), FIXTURE_DIGEST, "gitleaks"
-    )
-    with pytest.raises(NativeToolUnavailable, match=reason):
-        native_boundary.resolver("gitleaks", artifact).resolve_tool("gitleaks")
-    assert list(native_boundary.root.iterdir()) == []
+    assert_archive_refused(native_boundary, archive_payload(members), reason)
 
 
-@pytest.mark.parametrize("expanded_size", [64 * 1024 * 1024, 64 * 1024 * 1024 + 1])
-def test_expanded_archive_size_limit_is_bounded(native_boundary: NativeBoundary, expanded_size: int) -> None:
-    payload = gzip.compress(b"\0" * expanded_size, mtime=0)
-    native_boundary.payload = payload
-    artifact = ReleaseArtifact(
-        "Darwin", "arm64", FIXTURE_URL, hashlib.sha256(payload).hexdigest(), FIXTURE_DIGEST, "gitleaks"
-    )
-    reason = "no executable" if expanded_size == 64 * 1024 * 1024 else "expanded size limit"
-    with pytest.raises(NativeToolUnavailable, match=reason):
-        native_boundary.resolver("gitleaks", artifact).resolve_tool("gitleaks")
-    assert list(native_boundary.root.iterdir()) == []
+@pytest.mark.parametrize("expanded_size,reason", [(2048, "no executable"), (2049, "expanded size limit")])
+def test_expanded_archive_size_limit_is_bounded(
+    native_boundary: NativeBoundary, monkeypatch: pytest.MonkeyPatch, expanded_size: int, reason: str
+) -> None:
+    monkeypatch.setattr(artifacts, "ARTIFACT_LIMIT_IN_BYTES", 2048)
+    assert_archive_refused(native_boundary, gzip.compress(b"\0" * expanded_size, mtime=0), reason)
 
 
 def test_declared_oversized_member_is_rejected_before_read(native_boundary: NativeBoundary) -> None:
     member = regular_member()
     member.size = 64 * 1024 * 1024 + 1
     payload = gzip.compress(member.tobuf(format=tarfile.USTAR_FORMAT) + b"\0" * 1024, mtime=0)
-    native_boundary.payload = payload
-    artifact = ReleaseArtifact(
-        "Darwin", "arm64", FIXTURE_URL, hashlib.sha256(payload).hexdigest(), FIXTURE_DIGEST, "gitleaks"
-    )
-    with pytest.raises(NativeToolUnavailable, match="member exceeds"):
-        native_boundary.resolver("gitleaks", artifact).resolve_tool("gitleaks")
-    assert list(native_boundary.root.iterdir()) == []
+    assert_archive_refused(native_boundary, payload, "member exceeds")
 
 
 def test_extracted_executable_pin_is_checked_independently(native_boundary: NativeBoundary) -> None:

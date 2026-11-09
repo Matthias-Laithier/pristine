@@ -32,6 +32,14 @@ def scanner_program(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ScannerP
     return prepare
 
 
+def scanner_diagnostics(lockfile: Path, packages: int = 1) -> str:
+    return (
+        "Starting filesystem walk for root: /\n"
+        f"Scanned {lockfile.resolve()} file and found {packages} package{'s' if packages != 1 else ''}\n"
+        "End status: 0 dirs visited, 1 inodes visited, 1 Extract calls, 576.458µs elapsed, 577µs wall time\n"
+    )
+
+
 def replay_scanner(stdout: bytes, stderr: bytes = b"", returncode: int = 0) -> str:
     return (
         "import sys\n"

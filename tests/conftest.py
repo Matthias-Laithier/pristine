@@ -17,6 +17,10 @@ EXTERNAL_CALL_TIMEOUT_SECONDS = 30
 type RunPristine = Callable[..., tuple[int, JsonReport]]
 
 
+def audit_recording(name: str) -> str:
+    return (Path(__file__).parent / "fixtures" / "audit" / f"{name}.json").read_text(encoding="utf-8")
+
+
 def run_git(directory: Path, *arguments: str) -> None:
     git = shutil.which("git")
     assert git is not None

@@ -38,7 +38,6 @@ WALK_END_PATTERN = (
 @dataclass(frozen=True)
 class ScannerResult:
     stdout: str
-    stderr: str
     returncode: int | None
     problem: str | None
     target_path: str | None = None
@@ -89,7 +88,7 @@ def _scanner_result(result: ProcessResult, lockfile: Path) -> ScannerResult:
         stdout, stderr = (stream.decode("utf-8", errors="replace") for stream in (result.stdout, result.stderr))
         problem = problem or "osv-scanner output is not UTF-8"
     diagnostic_problem, package_count = _scan_evidence(result.returncode, stderr, lockfile)
-    return ScannerResult(stdout, stderr, result.returncode, problem or diagnostic_problem, str(lockfile), package_count)
+    return ScannerResult(stdout, result.returncode, problem or diagnostic_problem, str(lockfile), package_count)
 
 
 def scan_lockfile(path: Path) -> ScannerResult:
@@ -110,6 +109,6 @@ def scan_lockfile(path: Path) -> ScannerResult:
             )
             return _scanner_result(result, lockfile)
     except (_ScanStopped, NativeToolUnavailable) as error:
-        return ScannerResult("", "", None, str(error))
+        return ScannerResult("", None, str(error))
     except OSError, ValueError:
-        return ScannerResult("", "", None, "the scanner could not read uv.lock or prepare its input")
+        return ScannerResult("", None, "the scanner could not read uv.lock or prepare its input")

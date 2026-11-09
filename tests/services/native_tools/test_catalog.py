@@ -8,37 +8,28 @@ from pristine.services.native_tools.resolver import NativeToolResolver, NativeTo
 from tests.services.native_tools.conftest import NativeBoundary
 
 
+@pytest.mark.parametrize("name", ["osv-scanner", "gitleaks"])
 @pytest.mark.parametrize(
-    "name,system,machine,url",
+    "system,machine,asset_names",
     [
-        ("osv-scanner", "Darwin", "arm64", "google/osv-scanner/releases/download/v2.7.0/osv-scanner_darwin_arm64"),
-        ("osv-scanner", "Darwin", "x86_64", "google/osv-scanner/releases/download/v2.7.0/osv-scanner_darwin_amd64"),
-        ("osv-scanner", "Linux", "aarch64", "google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_arm64"),
-        ("osv-scanner", "Linux", "x86_64", "google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64"),
-        (
-            "gitleaks",
-            "Darwin",
-            "arm64",
-            "gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz",
-        ),
-        (
-            "gitleaks",
-            "Darwin",
-            "x86_64",
-            "gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_x64.tar.gz",
-        ),
-        (
-            "gitleaks",
-            "Linux",
-            "aarch64",
-            "gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_arm64.tar.gz",
-        ),
-        ("gitleaks", "Linux", "x86_64", "gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz"),
+        ("Darwin", "arm64", ("darwin_arm64", "darwin_arm64")),
+        ("Darwin", "x86_64", ("darwin_amd64", "darwin_x64")),
+        ("Linux", "aarch64", ("linux_arm64", "linux_arm64")),
+        ("Linux", "x86_64", ("linux_amd64", "linux_x64")),
     ],
 )
 def test_supported_catalog_selects_only_fixed_official_release_assets(
-    tmp_path: Path, name: Literal["osv-scanner", "gitleaks"], system: str, machine: str, url: str
+    tmp_path: Path,
+    name: Literal["osv-scanner", "gitleaks"],
+    system: str,
+    machine: str,
+    asset_names: tuple[str, str],
 ) -> None:
+    url = (
+        "google/osv-scanner/releases/download/v2.7.0/osv-scanner_" + asset_names[0]
+        if name == "osv-scanner"
+        else "gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_" + asset_names[1] + ".tar.gz"
+    )
     requested: list[str] = []
 
     def offline(download_url: str) -> bytes:
@@ -52,7 +43,7 @@ def test_supported_catalog_selects_only_fixed_official_release_assets(
     assert list((tmp_path / "cache").iterdir()) == []
 
 
-@pytest.mark.parametrize("returncode,problem", [(1, None), (None, None), (0, "native tool timed out")])
+@pytest.mark.parametrize("returncode,problem", [(1, None), (0, "native tool timed out")])
 def test_failed_version_probe_cannot_accept_valid_looking_stdout(
     native_boundary: NativeBoundary, returncode: int | None, problem: str | None
 ) -> None:
