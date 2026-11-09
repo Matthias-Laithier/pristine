@@ -1,6 +1,6 @@
 [project]
 name = "pristine"
-version = "0.6.0"
+version = "0.7.0"
 description = "Opinionated coding rules for AI coding agents, with a CLI that serves them and checks their mechanical part."
 readme = "README.md"
 authors = [{name = "Matthias Laithier", email = "matthias.laithier@gmail.com"}]
