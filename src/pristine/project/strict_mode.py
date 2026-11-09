@@ -12,6 +12,7 @@ from pristine.project.automation import (
 from pristine.project.commands.shell import program_calls
 from pristine.project.repository.loading import Project
 from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role
+from pristine.project.strictness.annotations import python_annotations
 from pristine.project.strictness.linting import LINT_CHECKS
 from pristine.project.strictness.python_strictness import PYTHON_PROBES
 from pristine.project.strictness.strictness import Arguments, UnverifiedConfigError
@@ -81,4 +82,4 @@ def strict_type_checking(project: Project) -> list[Finding]:
     return list(dict.fromkeys(finding for finding in findings if finding))
 
 
-CHECKS = (strict_type_checking, *LINT_CHECKS)
+CHECKS = (strict_type_checking, *LINT_CHECKS, python_annotations)

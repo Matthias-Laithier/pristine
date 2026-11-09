@@ -16,6 +16,10 @@ CAST_NAMES = frozenset(f"{module}.cast" for module in TYPING_MODULES)
 ANNOTATION_KIND = "type"
 REFERENCE_KINDS = frozenset({"identifier", "attribute"})
 SCRIPT_ANY = "any"
+SCRIPT_UNKNOWN = "unknown"
+ASSERTION_KINDS = frozenset({"as_expression", "type_assertion"})
+ASSERTION_PART_COUNT = 2
+UNKNOWN_COMPOSITES = frozenset({"parenthesized_type", "union_type", "intersection_type"})
 DECLARATION_SUFFIXES = (".d.ts", ".d.mts", ".d.cts")
 SCRIPT_SUPPRESSION = re.compile(r"(?:^|//|/\*)\s*(?P<directive>@ts-(?:ignore|nocheck))\b")
 SUPPRESSIONS = {
@@ -69,6 +73,37 @@ def script_escapes(parsed: ParsedFile) -> Iterator[Escape]:
         if node.type == "non_null_expression":
             message = f"non-null assertion '{node_text(node)}'; {ASSERTION_FIX}"
             yield Escape(line_of(node), Severity.WARNING, message)
+        if double_assertion_through_unknown(node):
+            message = f"double assertion through 'unknown' asserts a type the checker cannot verify; {CAST_FIX}"
+            yield Escape(line_of(node), Severity.WARNING, message)
+
+
+def assertion_parts(node: Node) -> tuple[Node, Node]:
+    expression, target = node.named_children[0], node.named_children[-1]
+    if node.type == "type_assertion":
+        target, expression = expression.named_children[0], target
+    while expression.type == "parenthesized_expression":
+        expression = expression.named_children[0]
+    return expression, target
+
+
+def double_assertion_through_unknown(node: Node) -> bool:
+    if node.type not in ASSERTION_KINDS or len(node.named_children) < ASSERTION_PART_COUNT:
+        return False
+    expression, target = assertion_parts(node)
+    if expression.type not in ASSERTION_KINDS or len(expression.named_children) < ASSERTION_PART_COUNT:
+        return False
+    _, intermediate = assertion_parts(expression)
+    return remains_unknown(intermediate) and not remains_unknown(target)
+
+
+def remains_unknown(node: Node) -> bool:
+    results: dict[int, bool] = {}
+    for current in reversed(list(all_nodes(node))):
+        values = [results[child.id] for child in current.named_children] if current.type in UNKNOWN_COMPOSITES else []
+        combined = any(values) if current.type == "union_type" else bool(values) and all(values)
+        results[current.id] = combined or current.type == "predefined_type" and node_text(current) == SCRIPT_UNKNOWN
+    return results[node.id]
 
 
 def suppressions(parsed: ParsedFile) -> Iterator[Escape]:
@@ -100,7 +135,7 @@ register_file_check(
         summary=(
             "Type checker escape hatches: Python Any in annotations and bare type: ignore or pyright: ignore "
             "(error), typing.cast (warning); TypeScript any, @ts-ignore, and @ts-nocheck (error), and non-null "
-            "assertions (warning). Declaration files are skipped."
+            "assertions and double assertions through unknown (warning). Declaration files are skipped."
         ),
         run=check_type_escapes,
     )
