@@ -104,17 +104,17 @@ Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with 
 
 ## Performance
 
-Paired `pristine check` runs compare exact baseline commit `01a20db` with the current build on Python 3.15.2. Both versions used cached grammars, a fresh shared bytecode cache, and the same immutable 721-file corpus set; each measured command had one warmup. The default worker count is 9 on an 18-core host. Medians use 10 samples for the 1-file, 50-file, and multi-language corpora, and 5 for the 176-file and real-code corpora. Findings count errors and warnings. Across all 10 corpus and worker-count groups, the full JSON reports matched on every repeat and between versions, as did exit codes and summary counts, with no unchecked files.
+Wall time of `pristine check` on Python 3.15.2 with cached grammars and warm bytecode caches. The default worker count is 9 on an 18-core host. Medians use 10 samples for the 1-file, 50-file, and multi-language corpora, and 5 for the 176-file and real-code corpora. Findings count errors and warnings. No files were unchecked.
 
-| Corpus | Files discovered / checked | Findings | 1 job previous | 1 job current | 1 job change | Default previous | Default current | Default change |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 Python file | 1 / 1 | 0 | 0.313 s | 0.299 s | -4.7% | 0.305 s | 0.297 s | -2.7% |
-| 50 Python files | 50 / 50 | 0 | 1.352 s | 0.992 s | -26.6% | 0.735 s | 0.597 s | -18.7% |
-| Pristine-derived 176-file fixture | 176 / 176 | 0 | 3.512 s | 2.421 s | -31.1% | 1.168 s | 0.933 s | -20.1% |
-| Multi-language corpus | 42 / 41 | 328 | 2.524 s | 1.870 s | -25.9% | 1.368 s | 1.003 s | -26.7% |
-| Real-code corpus | 452 / 451 | 2075 | 17.427 s | 11.533 s | -33.8% | 5.408 s | 3.274 s | -39.5% |
+| Corpus | Files discovered / checked | Findings | 1 job | Default jobs |
+| --- | ---: | ---: | ---: | ---: |
+| 1 Python file | 1 / 1 | 0 | 0.299 s | 0.297 s |
+| 50 Python files | 50 / 50 | 0 | 0.992 s | 0.597 s |
+| Pristine-derived 176-file fixture | 176 / 176 | 0 | 2.421 s | 0.933 s |
+| Multi-language corpus | 42 / 41 | 328 | 1.870 s | 1.003 s |
+| Real-code corpus | 452 / 451 | 2075 | 11.533 s | 3.274 s |
 
-Startup medians also moved from 140 to 130 ms for `pristine guide`, 142 to 129 ms for `pristine rules`, and 85 to 97 ms for `pristine rule CR-20`; this run did not improve every startup command. Parent RSS is the only memory measurement; worker aggregate memory was not measured. At the default worker count on the real-code corpus, parent RSS rose from 80.8 MB to 87.6 MB.
+Startup medians are 130 ms for `pristine guide`, 129 ms for `pristine rules`, and 97 ms for `pristine rule CR-20`. Parent RSS is 87.6 MB at the default worker count on the real-code corpus. Aggregate worker memory was not measured.
 
 ## Contributing
 
