@@ -43,7 +43,7 @@ def test_text_output_names_rule_and_location(run_pristine: RunPristine, capsys: 
     run_pristine({"values.py": LONG_FILE})
     main(["check", "values.py"])
     output = capsys.readouterr().out
-    assert "values.py:1: CR-1 error: file has 201 lines" in output
+    assert "values.py\n  1 error; fix CR-1\n  - file: CR-1 error: file has 201 lines" in output
     assert "\nMechanical checks\nsummary: 1 error, 0 warnings\n" in output
     assert "\nfiles: 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n" in output
 

@@ -50,10 +50,10 @@ def send_overdue_reminders(invoices, mailer):
 ```
 Findings (ranked by distinct code rules, then path)
 
-[ ] reminders.py: 2 rules, 2 findings
-  fix: BS-4, CR-13
-  reminders.py:6: CR-13 error: function 'send_overdue_reminders' nests 5 levels deep (target 2, hard limit 3); use guard clauses or extract the deepest block into a named helper
-  reminders.py:8: BS-4 error: 'except Exception' swallows every failure with 'pass'; catch only what this code can recover from
+reminders.py
+  2 errors; fix BS-4, CR-13
+  - line 6: CR-13 error: function 'send_overdue_reminders' nests 5 levels deep (target 2, hard limit 3); use guard clauses or extract the deepest block into a named helper
+  - line 8: BS-4 error: 'except Exception' swallows every failure with 'pass'; catch only what this code can recover from
 
 Mechanical checks
 summary: 2 errors, 0 warnings
@@ -71,7 +71,7 @@ Required agent review
 
 `pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. Both formats include the reading and review obligation, through `next_step` in JSON. `verification_status` describes mechanical verification only. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
 
-Text groups findings into spaced file sections, ranked by the number of distinct code rules, then by path alphabetically. Each file has a checklist with separate `fix` and `verify` lines. Verification failures do not count as violated code rules. Mechanical totals and the mandatory agent review checklist follow. With `--max`, text shows details from the highest-ranked files first, but keeps every file's checklist and full counts. JSON keeps findings in path/line/rule order and adds a ranked `triage` array: each entry has `path`, `distinct_rules`, the total `findings` count, and `fix` and `verify` maps of rule IDs to counts. Those maps cover the full report, not just printed findings.
+Text groups findings into spaced file sections, ranked by the number of distinct code rules, then by path alphabetically. Each full path appears once as a heading, followed by nonzero error and warning totals and `fix`/`verify` rule IDs. Finding bullets use `line N` under that heading, or `file` for file-wide findings and findings without a source line. Verification bullets also say `verify`; they do not count as violated code rules. Mechanical totals and the mandatory agent review checklist follow. With `--max`, text caps finding bullets but keeps every file's overview and full counts. JSON keeps the original full paths and lines, in path/line/rule order, and adds a ranked `triage` array: each entry has `path`, `distinct_rules`, the total `findings` count, and `fix` and `verify` maps of rule IDs to counts. Those maps cover the full report, not just printed findings.
 
 Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
 

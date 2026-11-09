@@ -1,10 +1,12 @@
 import json
 from collections import Counter
 
-from pristine.reports.findings import FindingKind, Severity, finding_record
+from pristine.reports.findings import Finding, FindingKind, Severity, finding_record
 from pristine.reports.report import Report
 from pristine.reports.triage import FileTriage, ranked_files
 
+_FILE_LEVEL_RULES = frozenset({"CR-1", "CR-9", "CR-15", "CO-14", "TL-1"})
+_FILE_LEVEL_FIRST_LINE_RULES = frozenset({"TL-3", "TL-4"})
 NEXT_STEP = (
     "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
     "against every rule, including checked rules. Automated checks cover only mechanical parts. "
@@ -103,14 +105,30 @@ def _triage_record(file: FileTriage) -> dict[str, object]:
     }
 
 
-def _file_checklist(file: FileTriage) -> str:
-    actions = []
+def _file_overview(file: FileTriage) -> str:
+    severity_counts = Counter(finding.severity for finding in file.findings)
+    overview = [
+        ", ".join(counted(severity_counts[severity], severity) for severity in Severity if severity_counts[severity])
+    ]
     if rules := file.by_rule(FindingKind.CODE):
-        actions.append("  fix: " + ", ".join(rules))
+        overview.append("fix " + ", ".join(rules))
     if rules := file.by_rule(FindingKind.VERIFICATION):
-        actions.append("  verify: " + ", ".join(rules))
-    counts = f"{counted(file.distinct_rules, 'rule')}, {counted(len(file.findings), 'finding')}"
-    return "\n".join([f"[ ] {file.path}: {counts}", *actions])
+        overview.append("verify " + ", ".join(rules))
+    return f"{file.path}\n  " + "; ".join(overview)
+
+
+def _render_finding(finding: Finding) -> str:
+    file_level = (
+        finding.line <= 0
+        or finding.rule_id in _FILE_LEVEL_RULES
+        or (
+            finding.line == 1
+            and (finding.kind is FindingKind.VERIFICATION or finding.rule_id in _FILE_LEVEL_FIRST_LINE_RULES)
+        )
+    )
+    location = "file" if file_level else f"line {finding.line}"
+    action = "verify " if finding.kind is FindingKind.VERIFICATION else ""
+    return f"  - {location}: {action}{finding.rule_id} {finding.severity}: {finding.message}"
 
 
 def _render_triage(report: Report, limit: int | None) -> list[str]:
@@ -122,11 +140,8 @@ def _render_triage(report: Report, limit: int | None) -> list[str]:
     for file in ranked_files(report.findings):
         shown = file.findings[:remaining]
         remaining -= len(shown)
-        lines += ["", _file_checklist(file)]
-        lines.extend(
-            f"  {finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}"
-            for finding in shown
-        )
+        lines += ["", _file_overview(file)]
+        lines.extend(_render_finding(finding) for finding in shown)
         omitted.update(finding.rule_id for finding in file.findings[len(shown) :])
     if omitted:
         omitted_rules = ", ".join(f"{rule_id} {count}" for rule_id, count in sorted(omitted.items()))
