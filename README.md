@@ -47,14 +47,19 @@ def send_overdue_reminders(invoices, mailer):
 `pristine check reminders.py` prints:
 
 ```
+fix checklist (all findings; ranked by distinct code rules, then path):
+[ ] reminders.py: 2 rules, 2 findings; fix BS-4, CR-13
 reminders.py:6: CR-13 error: function 'send_overdue_reminders' nests 5 levels deep (target 2, hard limit 3); use guard clauses or extract the deepest block into a named helper
 reminders.py:8: BS-4 error: 'except Exception' swallows every failure with 'pass'; catch only what this code can recover from
 summary: 2 errors, 0 warnings, 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths
 by rule: BS-4 1, CR-13 1
-next: fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
+verification: complete, 0 failures
+next: read each implicated rule with 'pristine rule <ID>', fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
 ```
 
 `pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
+
+Text groups findings by file, ranked by the number of distinct code rules, then by path alphabetically. Each file has one fix checklist; verification failures say `verify` rather than `fix` and do not count as violated code rules. With `--max`, text shows details from the highest-ranked files first, but keeps every file's checklist and full counts. JSON keeps findings in path/line/rule order and adds a ranked `triage` array: each entry has `path`, `distinct_rules`, the total `findings` count, and `fix` and `verify` maps of rule IDs to counts. Those maps cover the full report, not just printed findings.
 
 Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
 

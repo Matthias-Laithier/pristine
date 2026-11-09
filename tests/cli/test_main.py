@@ -65,8 +65,8 @@ def test_max_prints_the_first_findings_and_counts_the_rest(
     assert (report["summary"]["omitted"], report["summary"]["errors"]) == (2, 3)
     main(["check", "values.py", "--max", "2"])
     lines = capsys.readouterr().out.splitlines()
-    assert lines[2] == "... 1 more finding omitted (CR-3 1); raise --max or remove --max to see them all"
-    assert lines[3].startswith("summary: 3 errors")
+    assert "... 1 more finding omitted (CR-3 1); raise --max or remove --max to see them all" in lines
+    assert any(line.startswith("summary: 3 errors") for line in lines)
 
 
 def test_max_omission_line_names_the_omitted_rules() -> None:
@@ -81,9 +81,9 @@ def test_max_omission_line_names_the_omitted_rules() -> None:
         checked_files=1,
         missing=(),
     )
-    assert render_text(report, 1).splitlines()[1] == (
-        "... 2 more findings omitted (CR-3 2); raise --max or remove --max to see them all"
-    )
+    assert ("... 2 more findings omitted (CR-3 2); raise --max or remove --max to see them all") in render_text(
+        report, 1
+    ).splitlines()
 
 
 @pytest.mark.parametrize("option", ["--max", "--jobs"])

@@ -41,6 +41,10 @@ EXPECTED_JSON_REPORT = {
             "message": "receipt file has a comment",
         },
     ],
+    "triage": [
+        {"path": "invoice.py", "distinct_rules": 1, "findings": 1, "fix": {"CR-1": 1}, "verify": {}},
+        {"path": "receipt.py", "distinct_rules": 1, "findings": 1, "fix": {"CR-3": 1}, "verify": {}},
+    ],
     "unchecked": [],
     "skipped": [],
     "unsupported": [],
