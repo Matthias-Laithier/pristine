@@ -1,11 +1,13 @@
 import json
 from collections import Counter
 
-from pristine.reports.findings import Severity, finding_record
+from pristine.reports.findings import FindingKind, Severity, finding_record
 from pristine.reports.report import Report
+from pristine.reports.triage import FileTriage, ranked_files
 
 NEXT_STEP = (
-    "next: fix every finding, or report it by rule ID as a deliberate break with its reason. "
+    "next: read each implicated rule with 'pristine rule <ID>', fix every finding, or report it by rule ID "
+    "as a deliberate break with its reason. "
     "This check favors precision over recall: a clean result proves nothing about the rules it cannot "
     "decide, so review your change against every relevant rule yourself."
 )
@@ -33,6 +35,7 @@ def render_json(report: Report, limit: int | None) -> str:
         "verification_status": "incomplete" if report.verification_failed else "complete",
         "summary": json_summary(report, omitted),
         "findings": [finding_record(finding) for finding in shown],
+        "triage": [_triage_record(file) for file in ranked_files(report.findings)],
         "unchecked": [{"path": path, "reason": reason} for path, reason in report.unchecked.items()],
         "skipped": [{"path": path, "reason": reason} for path, reason in report.skipped.items()],
         "unsupported": list(report.unsupported),
@@ -52,15 +55,7 @@ def json_summary(report: Report, omitted: int) -> dict[str, object]:
 
 
 def render_text(report: Report, limit: int | None) -> str:
-    shown = report.findings[:limit]
-    lines = [
-        f"{finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}" for finding in shown
-    ]
-    omitted = Counter(finding.rule_id for finding in report.findings[len(shown) :])
-    if omitted:
-        omitted_rules = ", ".join(f"{rule_id} {count}" for rule_id, count in omitted.items())
-        advice = "raise --max or remove --max to see them all"
-        lines.append(f"... {counted(sum(omitted.values()), 'more finding')} omitted ({omitted_rules}); {advice}")
+    lines = _render_triage(report, limit)
     lines += [f"missing: {path}" for path in report.missing]
     lines += [f"unchecked: {path} ({reason})" for path, reason in report.unchecked.items()]
     skipped_reasons = Counter(report.skipped.values())
@@ -78,3 +73,45 @@ def render_text(report: Report, limit: int | None) -> str:
     )
     lines.append(NEXT_STEP)
     return "\n".join(lines)
+
+
+def _triage_record(file: FileTriage) -> dict[str, object]:
+    return {
+        "path": file.path,
+        "distinct_rules": file.distinct_rules,
+        "findings": len(file.findings),
+        "fix": file.by_rule(FindingKind.CODE),
+        "verify": file.by_rule(FindingKind.VERIFICATION),
+    }
+
+
+def _file_checklist(file: FileTriage) -> str:
+    actions = []
+    if rules := file.by_rule(FindingKind.CODE):
+        actions.append("fix " + ", ".join(rules))
+    if rules := file.by_rule(FindingKind.VERIFICATION):
+        actions.append("verify " + ", ".join(rules))
+    counts = f"{counted(file.distinct_rules, 'rule')}, {counted(len(file.findings), 'finding')}"
+    return f"[ ] {file.path}: {counts}; " + "; ".join(actions)
+
+
+def _render_triage(report: Report, limit: int | None) -> list[str]:
+    if not report.findings:
+        return []
+    lines = ["fix checklist (all findings; ranked by distinct code rules, then path):"]
+    remaining = len(report.findings) if limit is None else limit
+    omitted: Counter[str] = Counter()
+    for file in ranked_files(report.findings):
+        shown = file.findings[:remaining]
+        remaining -= len(shown)
+        lines.append(_file_checklist(file))
+        lines.extend(
+            f"{finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}"
+            for finding in shown
+        )
+        omitted.update(finding.rule_id for finding in file.findings[len(shown) :])
+    if omitted:
+        omitted_rules = ", ".join(f"{rule_id} {count}" for rule_id, count in sorted(omitted.items()))
+        advice = "raise --max or remove --max to see them all"
+        lines.append(f"... {counted(sum(omitted.values()), 'more finding')} omitted ({omitted_rules}); {advice}")
+    return lines
