@@ -21,7 +21,7 @@ Linters such as ruff and eslint cover syntax, formatting, and known bug patterns
 ## Quick start
 
 ```sh
-uv tool install git+https://github.com/Matthias-Laithier/pristine
+uv tool install --python 3.15 git+https://github.com/Matthias-Laithier/pristine
 ```
 
 ```sh
