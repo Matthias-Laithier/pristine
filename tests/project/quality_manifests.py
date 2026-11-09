@@ -1,5 +1,7 @@
 import json
 
+PYTHON_SOURCE = {"src/invoices.py": "sum([1, 2])\n"}
+
 PACKAGE = {
     "engines": {"node": ">=22"},
     "devDependencies": {"eslint": "9", "prettier": "3", "typescript": "5"},

@@ -1,12 +1,12 @@
-from pristine.project.commands.gates import fast_gate
+from pristine.project.commands.gates import fast_gate, verifiable_context
 from pristine.project.commands.scripts import with_package_scripts
-from pristine.project.commands.shell import program_calls, verifiable_command
-from pristine.project.commands.tool_arguments import option, option_values
+from pristine.project.commands.shell import program_calls, root_working_directory, verifiable_command
+from pristine.project.gates.audit_network import AuditNetwork, network_audit
 from pristine.project.gates.contract import declared_checks, package_scripts
 from pristine.project.repository.loading import Project
 from pristine.project.repository.makefile import COMPLETE_GATE, reach
 from pristine.project.repository.tools import TOOLS_BY_NAME, Ecosystem, Role
-from pristine.reports.findings import Finding, Severity
+from pristine.reports.findings import Finding, FindingKind, Severity
 
 FIRST_LINE = 1
 AUDIT_NAMES = frozenset(name for name, tool in TOOLS_BY_NAME.items() if Role.VULNERABILITY_AUDIT in tool.checks)
@@ -34,58 +34,47 @@ def recognizable_audits(project: Project) -> list[Finding]:
     return findings
 
 
-def network_audit(project: Project, name: str, arguments: list[str]) -> bool:
-    if option("--offline", "--no-fetch", "--no-update-index", "-db", "--db", "--cache-dir")(arguments):
-        return False
-    if name == "cargo" and project.reader.is_local_file(".cargo/audit.toml"):
-        return False
-    return name != "govulncheck" or not option("-mode", "-json", "-format")(arguments)
+def fast_audit_finding(project: Project, name: str, command: str, arguments: list[str]) -> Finding | None:
+    gate = fast_gate(project)
+    if gate is None:
+        return None
+    network = (
+        network_audit(project, name, arguments)
+        if verifiable_context(project, gate, command)
+        else AuditNetwork.UNVERIFIED
+    )
+    if network is AuditNetwork.LOCAL:
+        return None
+    if network is AuditNetwork.NETWORK:
+        message = f"make check runs the network-dependent {name} vulnerability audit; move it to make check-all or an identifiable regular audit target outside the fast gate"
+        return Finding(project.shown(gate.rule.path), gate.rule.line, "TL-2", Severity.ERROR, message)
+    message = f"cannot verify {name} audit is offline and fail-closed in make check; review database, dependency resolution and command context or move the audit outside the fast gate"
+    return Finding(
+        project.shown(gate.rule.path), gate.rule.line, "TL-2", Severity.WARNING, message, FindingKind.VERIFICATION
+    )
 
 
 def network_audits_in_fast_gate(project: Project) -> list[Finding]:
     gate = fast_gate(project)
-    if gate is None or (project.makefile and project.makefile.has_conditionals):
+    if gate is None:
         return []
-    calls = (
-        (name, arguments)
+    findings = [
+        fast_audit_finding(project, name, command, arguments)
         for command in gate.commands
-        if verifiable_command(command)
         for name, arguments in program_calls(command, AUDIT_NAMES)
-    )
-    names = sorted(
-        {
-            name
-            for name, arguments in calls
-            if TOOLS_BY_NAME[name].checks[Role.VULNERABILITY_AUDIT](arguments)
-            and network_audit(project, name, arguments)
-        }
-    )
-    return [
-        Finding(
-            project.shown(gate.rule.path),
-            gate.rule.line,
-            "TL-2",
-            Severity.ERROR,
-            f"make check runs the network-dependent {name} vulnerability audit; "
-            "move it to make check-all or an identifiable regular audit target outside the fast gate",
-        )
-        for name in names
+        if TOOLS_BY_NAME[name].checks[Role.VULNERABILITY_AUDIT](arguments)
     ]
-
-
-def deterministic_audit(project: Project, name: str, arguments: list[str]) -> bool:
-    paths = option_values(arguments, "--file", "-f")
-    return (
-        name == "cargo"
-        and {"--no-fetch", "--no-update-index"}.issubset(arguments)
-        and len(paths) == 1
-        and project.reader.is_local_file(paths[0])
-    )
+    return list(dict.fromkeys(finding for finding in findings if finding))
 
 
 def missing_deterministic_audits(project: Project) -> list[str]:
     makefile = project.makefile
-    if makefile is None or makefile.has_conditionals or COMPLETE_GATE not in makefile.rules:
+    if (
+        makefile is None
+        or makefile.has_conditionals
+        or makefile.unverified_recipes
+        or COMPLETE_GATE not in makefile.rules
+    ):
         return []
     scripts = package_scripts(project)
     complete = with_package_scripts(reach(makefile, COMPLETE_GATE).commands, scripts)
@@ -99,10 +88,10 @@ def missing_deterministic_audits(project: Project) -> list[str]:
         {
             name
             for command in declared
-            if verifiable_command(command)
+            if verifiable_command(command) and root_working_directory(command)
             for name, arguments in program_calls(command, AUDIT_NAMES)
             if TOOLS_BY_NAME[name].checks[Role.VULNERABILITY_AUDIT](arguments)
-            and deterministic_audit(project, name, arguments)
+            and network_audit(project, name, arguments) is AuditNetwork.LOCAL
             and (name, tuple(arguments)) not in reached
         }
     )
@@ -126,4 +115,8 @@ def omitted_deterministic_audits(project: Project) -> list[Finding]:
     ]
 
 
-CHECKS = (recognizable_audits, network_audits_in_fast_gate, omitted_deterministic_audits)
+CHECKS = (
+    recognizable_audits,
+    network_audits_in_fast_gate,
+    omitted_deterministic_audits,
+)

@@ -10,10 +10,12 @@ from pristine.project.commands.tool_arguments import (
     audit_command,
     checking,
     denies_warnings,
+    govulncheck_audit,
     knip_dead_code,
     non_writing,
     option,
     pylint_dead_code,
+    ruff_checking,
     rust_dead_code,
     subcommand,
     without,
@@ -60,8 +62,8 @@ def javascript_tool(name: str, checks: Mapping[Role, ArgumentsTest], *config_fil
 TOOLS = (
     python_tool(
         "ruff",
-        {Role.FORMATTER: all_of(subcommand("format"), option("--check")), Role.LINTER: subcommand("check")},
-        ("ruff.toml", ".ruff.toml"),
+        {Role.FORMATTER: all_of(subcommand("format"), option("--check")), Role.LINTER: ruff_checking},
+        (".ruff.toml", "ruff.toml"),
     ),
     python_tool("black", {Role.FORMATTER: option("--check")}),
     python_tool("flake8", {Role.LINTER: any_arguments}, (".flake8",)),
@@ -126,7 +128,7 @@ TOOLS = (
     ),
     native_tool("golangci-lint", Ecosystem.GO, {Role.LINTER: any_arguments}, ".golangci.yml", ".golangci.yaml"),
     native_tool("staticcheck", Ecosystem.GO, {Role.LINTER: any_arguments}, "staticcheck.conf"),
-    native_tool("govulncheck", Ecosystem.GO, {Role.VULNERABILITY_AUDIT: all_of(checking, without("-mode", "--mode"))}),
+    native_tool("govulncheck", Ecosystem.GO, {Role.VULNERABILITY_AUDIT: govulncheck_audit}),
     native_tool(
         "cargo",
         Ecosystem.RUST,

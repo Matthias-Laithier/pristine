@@ -1,5 +1,12 @@
-from pristine.project.commands.gates import FastGate, fast_gate
-from pristine.project.commands.shell import program_calls, program_name, verifiable_command, words_of
+from pristine.project.commands.gates import Gate, fast_gate
+from pristine.project.commands.scripts import SCRIPT_RUNNERS
+from pristine.project.commands.shell import (
+    program_calls,
+    program_name,
+    root_working_directory,
+    verifiable_command,
+    words_of,
+)
 from pristine.project.repository.configuration import REQUIREMENTS, Requirement, is_configured
 from pristine.project.repository.loading import Project
 from pristine.project.repository.tools import TOOLS, Ecosystem, Role, Tool
@@ -18,22 +25,27 @@ RUN_DESCRIPTIONS = {
 }
 
 
-def uncertain_gate(project: Project, candidates: list[Tool], gate: FastGate) -> bool:
+def uncertain_gate(project: Project, candidates: list[Tool], gate: Gate) -> bool:
     names = {tool.name for tool in candidates}
     names |= {"npm", "pnpm", "yarn", "bun", "make", "gmake"}
     if any(tool.ecosystem is Ecosystem.JAVASCRIPT for tool in candidates):
         names |= set(TYPESCRIPT_PROBES)
     return (
         gate.ignores_failures
-        or bool(project.makefile and project.makefile.has_conditionals)
+        or gate.unverified_relays
+        or bool(project.makefile and (project.makefile.has_conditionals or project.makefile.unverified_recipes))
         or any(
-            not verifiable_command(command) and names & {program_name(word) for word in words_of(command)}
+            (not verifiable_command(command) and names & {program_name(word) for word in words_of(command)})
+            or (
+                not root_working_directory(command)
+                and bool(list(program_calls(command, SCRIPT_RUNNERS | {"make", "gmake"})))
+            )
             for command in gate.commands
         )
     )
 
 
-def uncertain_dead_code(project: Project, requirement: Requirement, gate: FastGate | None) -> Finding | None:
+def uncertain_dead_code(project: Project, requirement: Requirement, gate: Gate | None) -> Finding | None:
     if requirement.role is not Role.DEAD_CODE or gate is None:
         return None
     candidates = [tool for tool in TOOLS if tool.ecosystem is requirement.ecosystem and requirement.role in tool.checks]
@@ -45,7 +57,7 @@ def uncertain_dead_code(project: Project, requirement: Requirement, gate: FastGa
     )
 
 
-def native_dead_code(project: Project, gate: FastGate, ecosystem: Ecosystem) -> list[Finding]:
+def native_dead_code(project: Project, gate: Gate, ecosystem: Ecosystem) -> list[Finding]:
     names = frozenset({"ruff"}) if ecosystem is Ecosystem.PYTHON else frozenset(TYPESCRIPT_PROBES)
     check = unused_ruff_shortfall if ecosystem is Ecosystem.PYTHON else unused_typescript_shortfall
     calls = [arguments for command in gate.commands for _, arguments in program_calls(command, names)]
@@ -75,7 +87,7 @@ def native_dead_code(project: Project, gate: FastGate, ecosystem: Ecosystem) -> 
     ]
 
 
-def unmet(project: Project, requirement: Requirement, gate: FastGate | None) -> list[Finding]:
+def unmet(project: Project, requirement: Requirement, gate: Gate | None) -> list[Finding]:
     manifest = project.root_manifest(requirement.ecosystem)
     manifests = project.manifests[requirement.ecosystem]
     if (
@@ -108,7 +120,7 @@ def unmet(project: Project, requirement: Requirement, gate: FastGate | None) -> 
 
 
 def missing_tool(
-    project: Project, requirement: Requirement, candidates: list[Tool], gate: FastGate | None
+    project: Project, requirement: Requirement, candidates: list[Tool], gate: Gate | None
 ) -> list[Finding]:
     manifest = project.root_manifest(requirement.ecosystem)
     if manifest is None:

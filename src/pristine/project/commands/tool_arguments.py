@@ -56,6 +56,24 @@ def checking(arguments: list[str]) -> bool:
     return without("--help", "-help", "-h", "--version", "-V", "--fix", "--write", "--exit-zero")(arguments)
 
 
+def ruff_checking(arguments: list[str]) -> bool:
+    return (
+        checking(arguments)
+        and subcommand("check")(arguments)
+        and without(
+            "--show-files",
+            "--show-settings",
+            "--fix-only",
+            "--diff",
+            "--add-noqa",
+            "--add-ignore",
+            "-e",
+            "--watch",
+            "-w",
+        )(arguments)
+    )
+
+
 def knip_dead_code(arguments: list[str]) -> bool:
     return (
         checking(arguments)
@@ -111,12 +129,13 @@ def rust_dead_code(arguments: list[str]) -> bool:
     )
 
 
-def source_arguments(arguments: list[str], value_options: frozenset[str]) -> list[str]:
-    targets = []
-    pending = iter(arguments)
-    for argument in pending:
-        if argument in value_options:
-            next(pending, None)
-        elif not argument.startswith("-"):
-            targets.append(argument)
-    return targets
+def govulncheck_audit(arguments: list[str]) -> bool:
+    modes = option_values(arguments, "-mode", "--mode")
+    return checking(arguments) and without("-version")(arguments) and (not modes or modes[-1] in {"source", "binary"})
+
+
+def govulncheck_report_only(arguments: list[str]) -> bool:
+    flags = [argument for argument in arguments if argument.partition("=")[0] in {"-json", "--json"}]
+    formats = option_values(arguments, "-format", "--format")
+    json = bool(flags) and flags[-1].partition("=")[2] != "false"
+    return json or bool(formats and formats[-1] in {"json", "sarif", "openvex"})

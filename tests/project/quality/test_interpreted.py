@@ -1,7 +1,7 @@
 import json
 
 from tests.project.conftest import RunProject, rule_findings
-from tests.project.quality_manifests import ESLINT_CONFIG, PACKAGE
+from tests.project.quality_manifests import ESLINT_CONFIG, PACKAGE, PYTHON_SOURCE
 
 PYPROJECT = (
     '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\n'
@@ -22,13 +22,13 @@ JAVASCRIPT_MAKEFILE = "dev:\n\tnpm start\ncheck:\n\tnpm run verify\n\tpnpm typec
 
 def test_python_gate_followed_through_targets_and_variables(run_project: RunProject) -> None:
     exit_code, report = run_project(
-        {"pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE.format(format_mode="--check")}
+        {**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE.format(format_mode="--check")}
     )
     assert (exit_code, report["findings"]) == (0, [])
 
 
 def test_wrapper_flags_precede_the_child_program(run_project: RunProject) -> None:
-    files = {"pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE}
+    files = {**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE}
     files["Makefile"] = files["Makefile"].replace(
         "\t$(RUN) mypy --strict app",
         "\tuv run --all-extras --project app mypy --strict app",
@@ -39,7 +39,9 @@ def test_wrapper_flags_precede_the_child_program(run_project: RunProject) -> Non
 
 
 def test_formatter_must_run_in_check_mode(run_project: RunProject) -> None:
-    _, report = run_project({"pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE.format(format_mode="")})
+    _, report = run_project(
+        {**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE.format(format_mode="")}
+    )
     assert rule_findings(report, "TL-3") == [
         (
             "error",

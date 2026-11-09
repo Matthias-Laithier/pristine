@@ -63,6 +63,8 @@ def knip_shortfall(project: Project, calls: Arguments) -> Shortfall | None:
         )
     if config.get("project") == []:
         return Shortfall(path, "configure non-empty Knip project source patterns")
+    if "project" in config or "workspaces" in config or config.get("ignore") or config.get("ignoreFiles"):
+        raise UnverifiedConfigError(path, "review Knip project, workspace and ignored-file source scopes")
     if config.get("preprocessor"):
         raise UnverifiedConfigError(path, "a Knip preprocessor can change dead-code findings; review it manually")
     return None
@@ -98,7 +100,7 @@ def probe_finding(project: Project, name: str, arguments: Arguments) -> Finding 
 
 def configured_dead_code(project: Project) -> list[Finding]:
     gate = fast_gate(project)
-    if gate is None:
+    if gate is None or (project.makefile and project.makefile.unverified_recipes):
         return []
     calls = [
         (name, arguments) for command in gate.commands for name, arguments in program_calls(command, frozenset(PROBES))

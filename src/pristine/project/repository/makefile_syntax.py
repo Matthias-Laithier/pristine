@@ -8,6 +8,7 @@ CONTINUATION = "\\"
 COMMENT = "#"
 ENDEF = "endef"
 CONDITIONAL_DIRECTIVES = frozenset({"ifeq", "ifneq", "ifdef", "ifndef", "else", "endif"})
+UNVERIFIED_RECIPE_DIRECTIVES = frozenset({".ONESHELL", ".IGNORE"})
 SPECIAL_TARGET_PREFIX = "."
 PATTERN_NAME_MARKERS = ("$", "%")
 ORDER_ONLY_SEPARATOR = "|"
@@ -53,6 +54,7 @@ class MakefileSyntax:
     current_rules: list[Rule] = field(default_factory=list)
     inside_define: bool = False
     has_conditionals: bool = False
+    unverified_recipes: bool = False
 
     def read(self, line_number: int, line: str) -> None:
         if self.inside_define:
@@ -78,6 +80,7 @@ class MakefileSyntax:
         elif assignment := ASSIGNMENT.match(statement):
             self.assign(*assignment.groups())
         elif rule := RULE.match(statement):
+            self.unverified_recipes |= bool(UNVERIFIED_RECIPE_DIRECTIVES.intersection(rule[1].split()))
             self.add_rule(line_number, rule[1].split(), rule[2])
 
     def assign(self, name: str, operator: str, value: str) -> None:

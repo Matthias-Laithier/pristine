@@ -5,6 +5,7 @@ import pytest
 from tests.project.conftest import RunProject, rule_findings
 from tests.project.quality.test_interpreted import PYPROJECT, PYTHON_MAKEFILE
 from tests.project.quality.test_native import CARGO_TOML, RUST_MAKEFILE
+from tests.project.quality_manifests import PYTHON_SOURCE
 
 
 @pytest.mark.parametrize("placement", ["check-all: check audit", "check-all: check"])
@@ -14,7 +15,7 @@ def test_network_audit_can_run_in_complete_gate_or_independently(
 ) -> None:
     makefile = PYTHON_MAKEFILE.format(format_mode="--check").replace("check-all: check", placement)
     makefile = makefile.replace("uv run pip-audit", f"uv run {command}")
-    exit_code, report = run_project({"pyproject.toml": PYPROJECT, "Makefile": makefile})
+    exit_code, report = run_project({**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": makefile})
     assert (exit_code, report["findings"]) == (0, [])
 
 
@@ -22,7 +23,7 @@ def test_network_audit_in_fast_gate_is_an_error(run_project: RunProject) -> None
     makefile = PYTHON_MAKEFILE.format(format_mode="--check").replace(
         "check: format-check lint", "check: format-check lint audit"
     )
-    exit_code, report = run_project({"pyproject.toml": PYPROJECT, "Makefile": makefile})
+    exit_code, report = run_project({**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": makefile})
     assert exit_code == 1
     assert rule_findings(report, "TL-2") == [
         (
@@ -39,7 +40,7 @@ def test_unverified_audit_mechanism_is_a_warning_not_a_vulnerability_claim(
     run_project: RunProject, recipe: str
 ) -> None:
     makefile = PYTHON_MAKEFILE.format(format_mode="--check").replace("uv run pip-audit", recipe)
-    exit_code, report = run_project({"pyproject.toml": PYPROJECT, "Makefile": makefile})
+    exit_code, report = run_project({**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": makefile})
     assert exit_code == 0
     assert rule_findings(report, "TL-4") == [
         (
@@ -60,7 +61,7 @@ def test_native_javascript_audits_are_recognized_in_package_scripts(run_project:
 
 @pytest.mark.parametrize("reachable", [False, True])
 def test_local_offline_audit_belongs_in_complete_gate(run_project: RunProject, reachable: bool) -> None:
-    makefile = RUST_MAKEFILE.replace("cargo audit", "cargo audit --no-fetch --no-update-index --file Cargo.lock")
+    makefile = RUST_MAKEFILE.replace("cargo audit", "cargo audit --no-fetch --no-yanked --file Cargo.lock")
     if reachable:
         makefile = makefile.replace("check-all: check", "check-all: check audit")
     exit_code, report = run_project({"Cargo.toml": CARGO_TOML, "Cargo.lock": "", "Makefile": makefile})
@@ -79,8 +80,15 @@ def test_local_offline_audit_belongs_in_complete_gate(run_project: RunProject, r
 
 
 def test_audit_with_local_database_configuration_is_not_asserted_network_dependent(run_project: RunProject) -> None:
-    makefile = RUST_MAKEFILE.replace("check:\n", "check: audit\n")
+    makefile = RUST_MAKEFILE.replace("check:\n", "check: audit\n").replace(
+        "cargo audit", "cargo audit --file Cargo.lock"
+    )
     _, report = run_project(
-        {"Cargo.toml": CARGO_TOML, "Makefile": makefile, ".cargo/audit.toml": "[database]\nfetch = false\n"}
+        {
+            "Cargo.toml": CARGO_TOML,
+            "Cargo.lock": "version = 3\n",
+            "Makefile": makefile,
+            ".cargo/audit.toml": "[database]\nfetch = false\n[yanked]\nupdate_index = false\n",
+        }
     )
     assert rule_findings(report, "TL-2") == []

@@ -82,27 +82,34 @@ def unused_typescript_shortfall(project: Project, calls: Arguments) -> Shortfall
     for arguments in calls:
         if not checking(arguments):
             continue
-        if option("--project", "-p", "--build", "-b")(arguments):
-            raise UnverifiedConfigError(
-                TYPESCRIPT_CONFIG, "review the TypeScript unused-code checks for the explicit project or build graph"
-            )
-        paths = checked_configs(project) if TYPESCRIPT_CONFIG in project.entries else []
-        if paths and paths != [TYPESCRIPT_CONFIG]:
-            raise UnverifiedConfigError(
-                TYPESCRIPT_CONFIG, "a TypeScript solution requires review of the invoked build graph"
-            )
-        supplies_sources = any(
-            argument.endswith((".ts", ".tsx", ".mts", ".cts", ".js", ".jsx")) for argument in arguments
-        )
-        if supplies_sources:
-            paths = []
+        paths, supplies_sources = unused_source_scope(project, arguments)
         enabled = [unused_option_enabled(project, paths, arguments, name) for name in required]
-        if all(enabled):
+        complete = all(enabled)
+        if complete and supplies_sources:
+            raise UnverifiedConfigError(
+                TYPESCRIPT_CONFIG,
+                "explicit TypeScript source arguments require review of the complete project source scope",
+            )
+        if complete:
             return None
     return Shortfall(
         TYPESCRIPT_CONFIG,
         "enable noUnusedLocals and noUnusedParameters in the invoked TypeScript configuration or command; these are limited native unused-code checks",
     )
+
+
+def unused_source_scope(project: Project, arguments: list[str]) -> tuple[list[str], bool]:
+    if option("--project", "-p", "--build", "-b")(arguments):
+        raise UnverifiedConfigError(
+            TYPESCRIPT_CONFIG, "review the TypeScript unused-code checks for the explicit project or build graph"
+        )
+    paths = checked_configs(project) if TYPESCRIPT_CONFIG in project.entries else []
+    if paths and paths != [TYPESCRIPT_CONFIG]:
+        raise UnverifiedConfigError(
+            TYPESCRIPT_CONFIG, "a TypeScript solution requires review of the invoked build graph"
+        )
+    supplies_sources = any(argument.endswith((".ts", ".tsx", ".mts", ".cts", ".js", ".jsx")) for argument in arguments)
+    return ([] if supplies_sources else paths), supplies_sources
 
 
 def unused_option_enabled(project: Project, paths: list[str], arguments: list[str], name: str) -> bool:

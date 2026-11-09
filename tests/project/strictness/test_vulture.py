@@ -2,6 +2,7 @@ import pytest
 
 from tests.project.conftest import RunProject, rule_findings
 from tests.project.quality.test_interpreted import PYPROJECT, PYTHON_MAKEFILE
+from tests.project.quality_manifests import PYTHON_SOURCE
 
 
 @pytest.mark.parametrize(
@@ -15,7 +16,12 @@ from tests.project.quality.test_interpreted import PYPROJECT, PYTHON_MAKEFILE
 def test_vulture_configuration_and_exclusion_precedence(run_project: RunProject, command: str, exit_code: int) -> None:
     makefile = PYTHON_MAKEFILE.format(format_mode="--check").replace("$(RUN) vulture .", command)
     result, report = run_project(
-        {"pyproject.toml": PYPROJECT, "Makefile": makefile, "tooling.toml": '[tool.vulture]\nexclude = ["*"]\n'}
+        {
+            **PYTHON_SOURCE,
+            "pyproject.toml": PYPROJECT,
+            "Makefile": makefile,
+            "tooling.toml": '[tool.vulture]\nexclude = ["*"]\n',
+        }
     )
     assert result == exit_code
     assert rule_findings(report, "TL-3") == (

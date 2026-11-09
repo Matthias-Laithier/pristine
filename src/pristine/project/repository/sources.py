@@ -27,6 +27,6 @@ class SourceReader:
         candidate = (self.root / relative).resolve()
         return candidate.is_relative_to(self.root.resolve()) and candidate.is_file()
 
-    def is_local_path(self, relative: str) -> bool:
+    def local_path(self, relative: str) -> Path | None:
         candidate = (self.root / relative).resolve()
-        return candidate.is_relative_to(self.root.resolve()) and candidate.exists()
+        return candidate if candidate.is_relative_to(self.root.resolve()) and candidate.exists() else None

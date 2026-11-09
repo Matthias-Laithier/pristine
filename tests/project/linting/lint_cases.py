@@ -2,6 +2,7 @@ import json
 from collections.abc import Mapping
 
 from tests.project.conftest import RunProject, rule_findings
+from tests.project.quality_manifests import PYTHON_SOURCE
 
 PYTHON_PROJECT = (
     '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\ndev = ["ruff>=0.6", "mypy>=1.0"]\n'
@@ -37,7 +38,7 @@ def eslint_config(extends: list[str], rules: Mapping[str, object] = {}) -> str:
 
 
 def with_python_lint_config(config: str, extra: dict[str, str] | None = None) -> dict[str, str]:
-    return {"pyproject.toml": PYTHON_PROJECT + config, "Makefile": PYTHON_MAKEFILE, **(extra or {})}
+    return {**PYTHON_SOURCE, "pyproject.toml": PYTHON_PROJECT + config, "Makefile": PYTHON_MAKEFILE, **(extra or {})}
 
 
 def with_typescript_config(config: str) -> dict[str, str]:

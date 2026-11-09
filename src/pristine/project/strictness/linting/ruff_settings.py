@@ -7,6 +7,8 @@ from pristine.project.repository.tools import TOOLS_BY_NAME
 from pristine.project.strictness.strictness import UnverifiedConfigError
 
 UNIVERSAL_PER_FILE_PATTERNS = ("*", "**", "**/*.py")
+LINT_SELECTORS = frozenset({"select", "extend-select", "ignore", "extend-ignore"})
+PER_FILE_MASKS = frozenset({"per-file-ignores", "extend-per-file-ignores"})
 
 
 def config_path(project: Project) -> str:
@@ -26,7 +28,10 @@ def lint_settings(project: Project, path: str, visited: frozenset[str]) -> dict[
         document = tomllib.loads(text)
     except tomllib.TOMLDecodeError as error:
         raise UnverifiedConfigError(path, f"{path} is not valid TOML ({error})") from error
-    settings = table(table(document, "tool"), "ruff") if path == "pyproject.toml" else dict[str, object](document)
+    settings = unwrap_settings(path, document)
+    if "lint" in settings and not isinstance(settings["lint"], dict):
+        raise UnverifiedConfigError(path, f"the lint setting of {path} is not a table")
+    validate_consumed_settings(path, settings)
     extended = settings.get("extend")
     if extended is not None and not isinstance(extended, str):
         raise UnverifiedConfigError(path, f"the extend setting of {path} is not a path")
@@ -38,9 +43,42 @@ def lint_settings(project: Project, path: str, visited: frozenset[str]) -> dict[
     return merged_settings(lint_settings(project, target, visited | {path}), settings)
 
 
+def unwrap_settings(path: str, document: dict[str, object]) -> dict[str, object]:
+    if posixpath.basename(path) != "pyproject.toml":
+        return document
+    tools = document.get("tool", {})
+    if not isinstance(tools, dict):
+        raise UnverifiedConfigError(path, "the pyproject tool setting must be a table")
+    ruff = tools.get("ruff", {})
+    if not isinstance(ruff, dict):
+        raise UnverifiedConfigError(path, "the pyproject tool.ruff setting must be a table")
+    return dict[str, object](ruff)
+
+
+def validate_consumed_settings(path: str, settings: dict[str, object]) -> None:
+    if (LINT_SELECTORS | PER_FILE_MASKS) & settings.keys():
+        raise UnverifiedConfigError(path, "move deprecated top-level Ruff lint selectors and masks into the lint table")
+    for name in ("fix", "fix-only"):
+        if name in settings and not isinstance(settings[name], bool):
+            raise UnverifiedConfigError(path, f"Ruff {name} must be a boolean before command overrides")
+    lint = table(settings, "lint")
+    for name in sorted(LINT_SELECTORS):
+        if name in lint and not string_array(lint[name]):
+            raise UnverifiedConfigError(path, f"Ruff lint.{name} must be a list of rule selectors")
+    for name in sorted(PER_FILE_MASKS):
+        value = lint.get(name, {})
+        valid = isinstance(value, dict) and all(string_array(rules) for rules in value.values())
+        if not valid:
+            raise UnverifiedConfigError(path, f"Ruff lint.{name} must map file patterns to lists of rule selectors")
+
+
+def string_array(value: object) -> bool:
+    return isinstance(value, list) and all(isinstance(item, str) for item in value)
+
+
 def merged_settings(base: dict[str, object], settings: dict[str, object]) -> dict[str, object]:
     if "lint" not in settings:
-        return base
+        return {**base, **settings}
     child, parent = table(settings, "lint"), table(base, "lint")
     reset_by_child_select = ("ignore", "extend-select", "extend-ignore")
     inherited = (

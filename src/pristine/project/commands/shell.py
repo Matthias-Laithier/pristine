@@ -16,6 +16,7 @@ GUARD_WORD_COUNT = len(GUARD_PREFIX_ARGUMENTS) + 1
 GUARDED_COMMAND = re.compile(r"^\"?\$\$\((.+)\)\"?$")
 PYTHON_INTERPRETERS = frozenset({"python", "python3"})
 MODULE_PROGRAMS = {"pip_audit": "pip-audit"}
+DIRECTORY_OPTIONS = {"uv": frozenset({"--directory"}), "poetry": frozenset({"--directory", "-C"})}
 
 
 def words_of(command: str) -> list[str]:
@@ -65,7 +66,31 @@ def program_calls(command: str, programs: frozenset[str]) -> Iterator[tuple[str,
 
 def verifiable_command(command: str) -> bool:
     words = words_of(command)
-    return not any(word in {"||", "|", "if", "then", "else", "fi", "for", "while"} or "$" in word for word in words)
+    return not any(
+        (is_operator(word) and word not in {"&&", "(", ")"})
+        or word in {"if", "then", "else", "fi", "for", "while"}
+        or "$" in word
+        for word in words
+    )
+
+
+def changes_directory(name: str, arguments: list[str]) -> bool:
+    if name == "cd":
+        return arguments not in [["."], ["./"]]
+    options = DIRECTORY_OPTIONS.get(name, frozenset())
+    return any(
+        option in options
+        and (value if separator else next(iter(arguments[index + 1 : index + 2]), "")) not in {".", "./"}
+        for index, argument in enumerate(arguments)
+        for option, separator, value in [argument.partition("=")]
+    )
+
+
+def root_working_directory(command: str) -> bool:
+    return not any(
+        changes_directory(name, arguments)
+        for name, arguments in program_calls(command, frozenset({"cd", *DIRECTORY_OPTIONS}))
+    )
 
 
 def guarded_program_calls(command: str, programs: frozenset[str]) -> Iterator[tuple[str, list[str]]]:
@@ -83,6 +108,8 @@ def positionals(arguments: list[str]) -> list[str]:
 
 
 def invoked_make_targets(command: str) -> list[str]:
+    if not root_working_directory(command):
+        return []
     return [
         argument
         for _, arguments in program_calls(command, MAKE_PROGRAMS)
@@ -90,3 +117,25 @@ def invoked_make_targets(command: str) -> list[str]:
         for argument in positionals(arguments)
         if VARIABLE_ASSIGNMENT not in argument
     ]
+
+
+def source_arguments(arguments: list[str], value_options: frozenset[str]) -> list[str]:
+    targets = []
+    pending = iter(arguments)
+    for argument in pending:
+        if argument in value_options:
+            next(pending, None)
+        elif not argument.startswith("-"):
+            targets.append(argument)
+    return targets
+
+
+def valid_options(arguments: list[str], flags: frozenset[str], values: frozenset[str]) -> bool:
+    pending = iter(arguments)
+    for argument in pending:
+        name, separator, _ = argument.partition("=")
+        if name in flags and not separator:
+            continue
+        if name not in values or (not separator and next(pending, None) is None):
+            return False
+    return True

@@ -4,7 +4,7 @@ import pytest
 
 from tests.project.conftest import RunProject, rule_findings
 from tests.project.quality.test_interpreted import PYPROJECT, PYTHON_MAKEFILE
-from tests.project.quality_manifests import ESLINT_CONFIG, PACKAGE
+from tests.project.quality_manifests import ESLINT_CONFIG, PACKAGE, PYTHON_SOURCE
 
 WITHOUT_NATIVE_UNUSED_RULES = '\nselect = ["E4", "E7", "E9"]\n'
 MISSING_NATIVE_CHECK = "make check does not enforce dead-code checking; enable Ruff F401 and F841 in the invoked command and configuration, or run another dead-code checker; these are limited native unused-import and unused-local checks"
@@ -74,7 +74,7 @@ def test_knip_issue_filters_and_configuration_failures(
 @pytest.mark.parametrize("command", ["vulture . || true", "-vulture ."])
 def test_conditional_dead_code_check_is_not_certified(run_project: RunProject, command: str) -> None:
     makefile = PYTHON_MAKEFILE.format(format_mode="--check").replace("$(RUN) vulture .", command)
-    exit_code, report = run_project({"pyproject.toml": PYPROJECT, "Makefile": makefile})
+    exit_code, report = run_project({**PYTHON_SOURCE, "pyproject.toml": PYPROJECT, "Makefile": makefile})
     assert exit_code == 3
     assert report["summary"]["verification_failures"] == 1
     assert rule_findings(report, "TL-3") == [

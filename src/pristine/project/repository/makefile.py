@@ -19,6 +19,7 @@ class Makefile:
     rules: dict[str, Rule]
     variables: dict[str, str]
     has_conditionals: bool = False
+    unverified_recipes: bool = False
 
     def expand(self, text: str) -> str:
         for _ in range(EXPANSION_DEPTH_LIMIT):
@@ -70,6 +71,7 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
     variables = dict(DEFAULT_VARIABLES)
     pending, visited = [path], set()
     has_conditionals = False
+    unverified_recipes = False
     while pending:
         current = pending.pop(0)
         text = None if current in visited else reader.text(current)
@@ -78,7 +80,8 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
             continue
         syntax = parse_makefile(text, current)
         has_conditionals |= syntax.has_conditionals
+        unverified_recipes |= syntax.unverified_recipes
         merge_rules(rules, syntax.rules)
         variables.update(syntax.variables)
         pending.extend(name for name in syntax.includes if is_followable_include(reader, name))
-    return Makefile(path, rules, variables, has_conditionals) if path in reader.checked else None
+    return Makefile(path, rules, variables, has_conditionals, unverified_recipes) if path in reader.checked else None

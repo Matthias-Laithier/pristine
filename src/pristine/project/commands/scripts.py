@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping
 
-from pristine.project.commands.shell import positionals, program_calls
+from pristine.project.commands.shell import positionals, program_calls, root_working_directory
 
 SCRIPT_RUNNERS = frozenset({"npm", "pnpm", "yarn", "bun"})
 RUN_COMMANDS = frozenset({"run", "run-script"})
@@ -22,6 +22,8 @@ def invoked_script(runner: str, arguments: list[str]) -> str | None:
 
 
 def script_names(command: str) -> set[str]:
+    if not root_working_directory(command):
+        return set()
     calls = program_calls(command, SCRIPT_RUNNERS)
     return {name for runner, arguments in calls if (name := invoked_script(runner, arguments)) is not None}
 

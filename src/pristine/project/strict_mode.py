@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 
 from pristine.project.automation import RULE_ID
-from pristine.project.commands.gates import FastGate, fast_gate
+from pristine.project.commands.gates import Gate, fast_gate
 from pristine.project.commands.shell import program_calls
 from pristine.project.repository.configuration import declares, every_project, is_configured, is_typescript
 from pristine.project.repository.loading import Project
@@ -29,14 +29,14 @@ def gate_calls(commands: Iterable[str]) -> dict[str, Arguments]:
     return {name: [arguments for called, arguments in calls if called == name] for name, _ in calls}
 
 
-def runs_type_checker(gate: FastGate | None, ecosystem: Ecosystem) -> bool:
+def runs_type_checker(gate: Gate | None, ecosystem: Ecosystem) -> bool:
     return gate is not None and any(
         (tool.name, Role.TYPE_CHECKER) in gate.invocations for tool in TOOLS if tool.ecosystem is ecosystem
     )
 
 
 def probed_checkers(
-    project: Project, ecosystem: Ecosystem, gate: FastGate | None, calls: dict[str, Arguments]
+    project: Project, ecosystem: Ecosystem, gate: Gate | None, calls: dict[str, Arguments]
 ) -> list[str]:
     manifest = project.root_manifest(ecosystem)
     if manifest is None or not APPLIES[ecosystem](project, project.manifests[ecosystem]):

@@ -20,7 +20,10 @@ UNASSERTED_PROJECT_RULES = {
     "TL-4": "its examples are dependency manifests, and TL-4 checks only that a deployable project commits a lockfile",
 }
 FAILING_SEVERITIES = {"error", "warning"}
-PYTHON_PROJECT_CONTEXT = {"pyproject.toml": '[project]\nname = "invoices"\n\n[tool.ruff]\n\n[tool.mypy]\n'}
+PYTHON_PROJECT_CONTEXT = {
+    "pyproject.toml": '[project]\nname = "invoices"\n\n[tool.ruff]\n\n[tool.mypy]\n',
+    "invoices.py": "sum([1, 2])\n",
+}
 UNASSERTED_BAD_EXAMPLES = {
     "BS-1-bad:request payload": "payload validation is semantic, and BS-1 checks only scattered environment reads",
     "BS-3-bad": "the HTTP client is an injected collaborator, and BS-3 recognizes only known libraries by their import",
