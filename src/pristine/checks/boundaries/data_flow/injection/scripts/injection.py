@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.scripts.processes import scan_processes
@@ -61,8 +61,8 @@ def evaluation_injection(node: Node) -> str | None:
 
 
 def scan_script(parsed: ParsedFile) -> Iterator[Injection]:
-    yield from scan_processes(parsed.root)
-    for node in all_nodes(parsed.root):
+    yield from scan_processes(parsed)
+    for node in all_nodes(parsed):
         message = markup_injection(node) or evaluation_injection(node)
         if message is not None:
             yield Injection(node, message)

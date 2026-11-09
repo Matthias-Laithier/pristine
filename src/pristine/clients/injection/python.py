@@ -1,10 +1,10 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.clients.injection import RECEIVER, InjectedClient, called_injections, dotted_path
 from pristine.clients.libraries import PYTHON_ENTRY_POINTS
-from pristine.syntax.parsing import all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_scopes import CLASS_KIND, ancestors, enclosing_functions, is_method, receiver_name
 
@@ -15,8 +15,8 @@ OPTIONAL = "typing.Optional"
 
 
 class PythonInjections:
-    def __init__(self, root: Node) -> None:
-        self.bindings = import_bindings(root)
+    def __init__(self, source: Node | ParsedFile) -> None:
+        self.bindings = import_bindings(source)
 
     def members(self, annotation: Node) -> list[Node]:
         if annotation.type in WRAPPER_KINDS:
@@ -48,8 +48,8 @@ class PythonInjections:
         if entry_point is not None and attribute is not None:
             yield InjectedClient(attribute[0], (RECEIVER, attribute[1]), entry_point, line_of(assignment))
 
-    def injections(self, root: Node) -> Iterator[InjectedClient]:
-        for node in all_nodes(root):
+    def injections(self, source: Node | ParsedFile) -> Iterator[InjectedClient]:
+        for node in all_nodes(source):
             if node.type in PARAMETER_KINDS:
                 yield from self.parameters(node)
             elif node.type == "assignment":
@@ -104,5 +104,5 @@ def callee_paths(scope: Node) -> set[tuple[str, ...]]:
     return paths
 
 
-def python_injected_clients(root: Node) -> Iterator[tuple[str, int]]:
-    return called_injections(PythonInjections(root).injections(root), callee_paths)
+def python_injected_clients(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
+    return called_injections(PythonInjections(source).injections(source), callee_paths)

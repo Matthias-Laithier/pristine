@@ -1,11 +1,11 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.testing.model_clients_in_tests.live_clients import LiveClient, all_environment_reads, is_within
 from pristine.clients.libraries import PYTHON_MODEL_CLIENTS
 from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, keyword_values, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
@@ -15,9 +15,9 @@ ENVIRONMENT = "os.environ"
 
 
 class PythonEnvironment:
-    def __init__(self, root: Node) -> None:
-        self.bindings = import_bindings(root)
-        assignments = (node for node in all_nodes(root) if node.type == "assignment")
+    def __init__(self, source: Node | ParsedFile) -> None:
+        self.bindings = import_bindings(source)
+        assignments = (node for node in all_nodes(source) if node.type == "assignment")
         self.assigned: dict[str, list[Node]] = {}
         for assignment in assignments:
             value = assignment.child_by_field_name("right")
@@ -49,9 +49,9 @@ def key_name(node: Node | None) -> str | None:
     return (node_text(node) or "").strip("'\"") if node is not None and is_constant_string(node) else None
 
 
-def python_live_clients(root: Node) -> Iterator[LiveClient]:
-    environment = PythonEnvironment(root)
-    for call in (node for node in all_nodes(root) if node.type == "call" and environment.is_model_client(node)):
+def python_live_clients(source: Node | ParsedFile) -> Iterator[LiveClient]:
+    environment = PythonEnvironment(source)
+    for call in (node for node in all_nodes(source) if node.type == "call" and environment.is_model_client(node)):
         arguments = call.child_by_field_name("arguments")
         key = None if arguments is None else keyword_values(arguments.named_children).get(API_KEY_ARGUMENT)
         is_read, name = (False, None) if key is None else environment.read_key(key)

@@ -1,11 +1,11 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.python.values import is_trusted
 from pristine.syntax.calls import calls_of
-from pristine.syntax.parsing import node_text
+from pristine.syntax.parsing import ParsedFile, node_text
 from pristine.syntax.python_calls import import_bindings, keyword_values, positional_arguments, qualified_callee
 
 SHELL_FUNCTIONS = frozenset(
@@ -49,9 +49,9 @@ def call_injection(callee: str, qualified: str, arguments: list[Node]) -> str | 
     return None
 
 
-def scan_execution(root: Node) -> Iterator[Injection]:
-    bindings = import_bindings(root)
-    for node, callee, arguments in calls_of(root, "call"):
+def scan_execution(parsed: ParsedFile) -> Iterator[Injection]:
+    bindings = import_bindings(parsed)
+    for node, callee, arguments in calls_of(parsed, "call"):
         message = call_injection(callee, qualified_callee(callee, bindings) or "", arguments)
         if message is not None:
             yield Injection(node, message)

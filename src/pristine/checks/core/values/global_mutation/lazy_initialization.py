@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.scopes import (
     COMPARISON_KINDS,

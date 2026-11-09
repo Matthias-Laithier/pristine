@@ -2,9 +2,10 @@ import re
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
-from pristine.syntax.parsing import node_text
+from pristine.syntax.nodes import SyntaxNode
+from pristine.syntax.parsing import ParsedFile, node_text
 
 RECEIVER = "<receiver>"
 DOTTED_PATH = re.compile(r"[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+")
@@ -14,7 +15,7 @@ type CalleePaths = Callable[[Node], set[tuple[str, ...]]]
 
 @dataclass(frozen=True)
 class InjectedClient:
-    scope: Node
+    scope: SyntaxNode
     path: tuple[str, ...]
     entry_point: str
     line: int
@@ -36,5 +37,5 @@ def called_injections(injections: Iterable[InjectedClient], callee_paths: Callee
             yield injected.entry_point, injected.line
 
 
-def no_injected_clients(root: Node) -> Iterator[tuple[str, int]]:
+def no_injected_clients(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
     yield from ()

@@ -1,9 +1,9 @@
 from collections import defaultdict
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
-from pristine.syntax.parsing import all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 
 TYPE_CHECKING_CONDITIONS = frozenset({"TYPE_CHECKING", "typing.TYPE_CHECKING"})
 PLAIN_IMPORT_KIND = "import_statement"
@@ -24,9 +24,9 @@ def is_type_checking_only(node: Node) -> bool:
     return False
 
 
-def attribute_uses(root: Node) -> AttributeUses:
+def attribute_uses(source: Node | ParsedFile) -> AttributeUses:
     uses: AttributeUses = defaultdict(set)
-    for node in all_nodes(root):
+    for node in all_nodes(source):
         owner = node_text(node.child_by_field_name("object")) if node.type == "attribute" else None
         if owner is not None:
             uses[owner].add(node_text(node.child_by_field_name("attribute")) or "")
@@ -45,8 +45,10 @@ def qualified(module: str, name: str) -> str:
     return f"{module}.{name}" if name else module
 
 
-def called_references(root: Node) -> set[str]:
-    calls = (node for node in all_nodes(root) if node.type == "call" and node.parent and node.parent.type != RAISE_KIND)
+def called_references(source: Node | ParsedFile) -> set[str]:
+    calls = (
+        node for node in all_nodes(source) if node.type == "call" and node.parent and node.parent.type != RAISE_KIND
+    )
     callees = ("".join((node_text(call.child_by_field_name("function")) or "").split()) for call in calls)
     segments = (callee.split("(", 1)[0].split(".") for callee in callees)
     return {".".join(parts[:end]) for parts in segments for end in range(1, len(parts) + 1)}
@@ -75,8 +77,8 @@ def statement_targets(statement: Node, uses: AttributeUses, called: set[str]) ->
     return []
 
 
-def python_import_targets(root: Node) -> Iterator[tuple[str, int]]:
-    uses, called = attribute_uses(root), called_references(root)
-    for statement in all_nodes(root):
+def python_import_targets(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
+    uses, called = attribute_uses(source), called_references(source)
+    for statement in all_nodes(source):
         targets = statement_targets(statement, uses, called)
         yield from ((target, line_of(statement)) for target in targets)

@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import (
     NARROW_HINT,
@@ -34,8 +34,8 @@ def hidden_shape(body: Node, scope: HandlerScope) -> str | None:
 
 @detects(*SCRIPT_LANGUAGES)
 def script_swallows(parsed: ParsedFile) -> Iterator[Finding]:
-    scope = script_scope(parsed.root, returned_values(LOGGED_DEFAULTS))
-    for clause in (node for node in all_nodes(parsed.root) if node.type == "catch_clause"):
+    scope = script_scope(parsed, returned_values(LOGGED_DEFAULTS))
+    for clause in (node for node in all_nodes(parsed) if node.type == "catch_clause"):
         shape = hidden_shape(clause.child_by_field_name("body") or clause, scope)
         if shape is not None:
             yield swallow(

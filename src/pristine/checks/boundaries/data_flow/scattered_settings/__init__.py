@@ -2,17 +2,17 @@ import re
 from collections.abc import Iterator
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.scattered_settings.composition_roots import is_composition_root, is_within
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
+from pristine.syntax.nodes import FUNCTION_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
-from pristine.syntax.syntax_kinds import FUNCTION_KINDS
 
 RULE_ID = "BS-1"
 PYTEST_HOOK_PREFIX = "pytest_"
@@ -39,10 +39,10 @@ def class_bases(node: Node) -> list[str]:
     return [] if bases is None else [node_text(base) or "" for base in bases.named_children]
 
 
-def defines_settings_class(root: Node, bindings: dict[str, str]) -> bool:
+def defines_settings_class(parsed: ParsedFile, bindings: dict[str, str]) -> bool:
     classes = {
         node_text(node.child_by_field_name("name")) or "": class_bases(node)
-        for node in all_nodes(root)
+        for node in all_nodes(parsed)
         if node.type == "class_definition"
     }
     settings = {name for name, bases in classes.items() if any(is_settings_base(base, bindings) for base in bases)}
@@ -54,7 +54,7 @@ def defines_settings_class(root: Node, bindings: dict[str, str]) -> bool:
 
 
 def is_exempt(parsed: ParsedFile, bindings: dict[str, str]) -> bool:
-    is_settings_module = defines_settings_class(parsed.root, bindings)
+    is_settings_module = defines_settings_class(parsed, bindings)
     return is_test_path(PurePath(parsed.path)) or is_settings_module or is_composition_root(parsed, bindings)
 
 
@@ -100,7 +100,7 @@ def is_inside_application_function(node: Node) -> bool:
 
 def environment_reads(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[Node]:
     constants = module_strings(parsed.root)
-    for node in all_nodes(parsed.root):
+    for node in all_nodes(parsed):
         key = read_key(node, bindings)
         if is_setting_name(key, constants) and is_inside_application_function(node):
             yield node
@@ -109,7 +109,7 @@ def environment_reads(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[
 def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    bindings = import_bindings(parsed.root)
+    bindings = import_bindings(parsed)
     if is_exempt(parsed, bindings):
         return []
     message = (

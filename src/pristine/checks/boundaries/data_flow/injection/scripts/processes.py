@@ -1,13 +1,14 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.scripts.values import is_built, string_value
 from pristine.syntax.calls import calls_of
-from pristine.syntax.parsing import all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 CHILD_PROCESS_MODULES = frozenset({"child_process", "node:child_process"})
+IMPORT_OR_DECLARATOR_KINDS = frozenset({"import_statement", "variable_declarator"})
 MODULE = "*"
 SHELL_EXECUTORS = frozenset({"exec", "execSync"})
 PROMISIFIERS = frozenset({"promisify", "util.promisify"})
@@ -60,8 +61,8 @@ def promisified(node: Node, bindings: dict[str, str]) -> str | None:
     return bindings.get(node_text(first_argument(value)) or "") if is_promisify else None
 
 
-def child_process_bindings(root: Node) -> dict[str, str]:
-    nodes = [node for node in all_nodes(root) if node.type in ("import_statement", "variable_declarator")]
+def child_process_bindings(parsed: ParsedFile) -> dict[str, str]:
+    nodes = [node for node in all_nodes(parsed) if node.type in IMPORT_OR_DECLARATOR_KINDS]
     bindings = dict(binding for node in nodes for binding in import_bindings(node))
     declarators = [node for node in nodes if node.type == "variable_declarator"]
     promises = {node_text(node.child_by_field_name("name")) or "": promisified(node, bindings) for node in declarators}
@@ -75,10 +76,10 @@ def runs_shell(callee: str, bindings: dict[str, str]) -> bool:
     return bindings.get(callee) in SHELL_EXECUTORS
 
 
-def scan_processes(root: Node) -> Iterator[Injection]:
-    bindings = child_process_bindings(root)
+def scan_processes(parsed: ParsedFile) -> Iterator[Injection]:
+    bindings = child_process_bindings(parsed)
     if not bindings:
         return
-    for node, callee, arguments in calls_of(root, "call_expression"):
+    for node, callee, arguments in calls_of(parsed, "call_expression"):
         if arguments and runs_shell(callee, bindings) and is_built(arguments[0]):
             yield Injection(node, f"'{callee}' runs a shell command built from non-literal values; {SHELL_FIX}")

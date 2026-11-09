@@ -54,7 +54,7 @@ by rule: BS-4 1, CR-13 1
 next: fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
 ```
 
-`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `--json` prints a structured report.
+`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
 
 Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
 
@@ -104,16 +104,16 @@ Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with 
 
 ## Performance
 
-Wall time of `pristine check` 0.4.1 on open-source repositories, on an Apple silicon laptop with the default worker count (half the cores). Files and lines count the code files pristine checks.
+Wall time of `pristine check` on open-source repositories at the linked revisions, using Python 3.15.2 on an Apple silicon laptop with the default 9 workers (half the cores). Times are medians of 5 runs after a warmup, with cached grammars and bytecode. Files and lines count successfully analyzed code files. Time covers the full repository scan.
 
 | Repository | Language | Files | Lines | Time |
 | --- | --- | ---: | ---: | ---: |
-| [requests](https://github.com/psf/requests) | Python | 49 | 12,753 | 1.4 s |
-| [ky](https://github.com/sindresorhus/ky) | TypeScript | 98 | 36,231 | 1.3 s |
-| [cobra](https://github.com/spf13/cobra) | Go | 38 | 16,810 | 0.7 s |
-| [fd](https://github.com/sharkdp/fd) | Rust | 33 | 9,515 | 0.8 s |
-| [gson](https://github.com/google/gson) | Java | 274 | 58,233 | 1.3 s |
-| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | C# | 954 | 196,120 | 6.7 s |
+| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 48 | 12,490 | 1.2 s |
+| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 1.0 s |
+| [cobra](https://github.com/spf13/cobra/tree/adbc8813901bba65827259daa8e22ff94ec1f30e) | Go | 38 | 16,810 | 0.6 s |
+| [fd](https://github.com/sharkdp/fd/tree/24d90b28d25438af2a8f2e7f7e46d03d6828da94) | Rust | 33 | 9,598 | 0.5 s |
+| [gson](https://github.com/google/gson/tree/65df6e5a99747f73d386f3a61d887a0257255e0f) | Java | 270 | 58,076 | 1.1 s |
+| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json/tree/52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa) | C# | 884 | 144,617 | 3.7 s |
 
 ## Contributing
 

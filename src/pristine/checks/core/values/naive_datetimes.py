@@ -1,4 +1,4 @@
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -60,9 +60,9 @@ def is_local_time_use(call: Node, qualified: str) -> bool:
 def check_naive_datetimes(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
-    bindings = import_bindings(parsed.root)
+    bindings = import_bindings(parsed)
     findings = []
-    for node, callee, arguments in calls_of(parsed.root, "call"):
+    for node, callee, arguments in calls_of(parsed, "call"):
         qualified = qualified_callee(callee, bindings) or ""
         call = NAIVE_CALLS.get(qualified)
         if call is not None and not has_bound(arguments, call) and not is_local_time_use(node, qualified):

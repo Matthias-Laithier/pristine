@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from functools import lru_cache
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import is_constant_reference
 from pristine.checks.boundaries.data_flow.injection.scripts.escaping import is_escaping_api

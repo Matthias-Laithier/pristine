@@ -1,10 +1,11 @@
 from collections.abc import Callable, Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_fan_out.sizes import passes_size
 from pristine.registration import registering
 from pristine.syntax.calls import callee_of
+from pristine.syntax.nodes import COMPREHENSION_KINDS
 from pristine.syntax.parsing import all_nodes, node_text
 from pristine.syntax.python_calls import import_bindings, imported_names, qualified_callee
 from pristine.syntax.python_scopes import (
@@ -14,7 +15,6 @@ from pristine.syntax.python_scopes import (
     parameter_names,
     receiver_name,
 )
-from pristine.syntax.syntax_kinds import COMPREHENSION_KINDS
 
 TRANSPARENT_WRAPPERS = frozenset({"enumerate", "sorted", "reversed", "list", "tuple", "set"})
 LOOP_CLAUSE_KINDS = frozenset({"for_statement", "for_in_clause"})

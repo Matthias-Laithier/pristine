@@ -2,7 +2,7 @@ import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -43,9 +43,9 @@ def resolves_to(node: Node | None, names: frozenset[str], bindings: dict[str, st
     return qualified_callee(node_text(node) or "", bindings) in names
 
 
-def python_escapes(root: Node) -> Iterator[Escape]:
-    bindings = import_bindings(root)
-    nodes = list(all_nodes(root))
+def python_escapes(parsed: ParsedFile) -> Iterator[Escape]:
+    bindings = import_bindings(parsed)
+    nodes = list(all_nodes(parsed))
     annotations = [node for node in nodes if node.type == ANNOTATION_KIND]
     any_uses = {
         inner.start_byte: inner
@@ -62,8 +62,8 @@ def python_escapes(root: Node) -> Iterator[Escape]:
             )
 
 
-def script_escapes(root: Node) -> Iterator[Escape]:
-    for node in all_nodes(root):
+def script_escapes(parsed: ParsedFile) -> Iterator[Escape]:
+    for node in all_nodes(parsed):
         if node.type == "predefined_type" and node_text(node) == SCRIPT_ANY:
             yield Escape(line_of(node), Severity.ERROR, f"'any' type; {ANY_FIX}")
         if node.type == "non_null_expression":
@@ -79,7 +79,7 @@ def suppressions(parsed: ParsedFile) -> Iterator[Escape]:
             yield Escape(line, Severity.ERROR, f"'{match['directive']}' without an error code; {SUPPRESSION_FIX}")
 
 
-SCANNERS: dict[str, Callable[[Node], Iterator[Escape]]] = {
+SCANNERS: dict[str, Callable[[ParsedFile], Iterator[Escape]]] = {
     "python": python_escapes,
     "typescript": script_escapes,
     "tsx": script_escapes,
@@ -90,7 +90,7 @@ def check_type_escapes(parsed: ParsedFile) -> list[Finding]:
     scanner = SCANNERS.get(parsed.language)
     if scanner is None or parsed.path.endswith(DECLARATION_SUFFIXES):
         return []
-    escapes = [*scanner(parsed.root), *suppressions(parsed)]
+    escapes = [*scanner(parsed), *suppressions(parsed)]
     return [Finding(parsed.path, escape.line, RULE_ID, escape.severity, escape.message) for escape in escapes]
 
 

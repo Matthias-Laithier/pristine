@@ -1,7 +1,7 @@
 import re
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures import (
     PROPAGATE_HINT,
@@ -72,7 +72,7 @@ def dropped_error(node: Node) -> str | None:
 
 @detects("go")
 def go_swallows(parsed: ParsedFile) -> Iterator[Finding]:
-    for node in all_nodes(parsed.root):
+    for node in all_nodes(parsed):
         message = dropped_error(node)
         if message is not None:
             yield swallow(parsed, node, Severity.WARNING, f"{message}; {PROPAGATE_HINT}")

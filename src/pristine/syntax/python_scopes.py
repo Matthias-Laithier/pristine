@@ -1,9 +1,9 @@
 from collections.abc import Iterator
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
-from pristine.syntax.parsing import all_nodes, node_text
-from pristine.syntax.syntax_kinds import NESTED_SCOPE_KINDS
+from pristine.syntax.nodes import NESTED_SCOPE_KINDS
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 FUNCTION_KIND = "function_definition"
 CLASS_KIND = "class_definition"
@@ -66,8 +66,8 @@ def parameter_names(function: Node) -> list[str]:
     return list(named_parameters(function))
 
 
-def all_parameter_names(root: Node) -> list[str]:
-    return [name for node in all_nodes(root) if node.type == FUNCTION_KIND for name in parameter_names(node)]
+def all_parameter_names(source: Node | ParsedFile) -> list[str]:
+    return [name for node in all_nodes(source) if node.type == FUNCTION_KIND for name in parameter_names(node)]
 
 
 def is_method(function: Node) -> bool:

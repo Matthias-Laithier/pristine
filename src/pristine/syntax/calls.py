@@ -1,10 +1,10 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.reports.findings import Severity
-from pristine.syntax.parsing import all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 UNKNOWN_ARGUMENT_KINDS = frozenset({"list_splat", "dictionary_splat", "spread_element"})
 
@@ -21,8 +21,8 @@ def callee_of(call: Node) -> str:
     return "".join((node_text(call.child_by_field_name("function")) or "").split())
 
 
-def calls_of(root: Node, call_kind: str) -> Iterator[tuple[Node, str, list[Node]]]:
-    for node in all_nodes(root):
+def calls_of(source: Node | ParsedFile, call_kind: str) -> Iterator[tuple[Node, str, list[Node]]]:
+    for node in all_nodes(source):
         arguments = node.child_by_field_name("arguments")
         if node.type == call_kind and arguments is not None:
             yield node, callee_of(node), arguments.named_children

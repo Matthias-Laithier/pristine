@@ -1,4 +1,4 @@
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_fan_out.limiters import Limiters, acquires_limiter, last_segment
 from pristine.syntax.calls import callee_of

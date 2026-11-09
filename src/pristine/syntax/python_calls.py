@@ -1,10 +1,10 @@
 import re
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.reports.findings import Severity
 from pristine.syntax.calls import BoundedCall, has_unknown_argument
-from pristine.syntax.parsing import all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 DOTTED_CALLEE = re.compile(r"[A-Za-z_][\w.]*(\(\)\.\w+)?")
 KEYWORD_ARGUMENT_KIND = "keyword_argument"
@@ -24,9 +24,9 @@ EXTERNAL_CALLS = {
 }
 
 
-def import_bindings(root: Node) -> dict[str, str]:
+def import_bindings(source: Node | ParsedFile) -> dict[str, str]:
     bindings = {}
-    for node in all_nodes(root):
+    for node in all_nodes(source):
         module = node.child_by_field_name("module_name")
         is_absolute_from = node.type == "import_from_statement" and module is not None and module.type == "dotted_name"
         prefix = f"{node_text(module)}." if is_absolute_from else ""
@@ -42,8 +42,8 @@ def import_binding(name: Node, prefix: str) -> tuple[str, str]:
     return local, prefix + (imported if prefix or alias is not None else local)
 
 
-def imported_names(root: Node) -> frozenset[str]:
-    imports = (node for node in all_nodes(root) if node.type in IMPORT_KINDS)
+def imported_names(source: Node | ParsedFile) -> frozenset[str]:
+    imports = (node for node in all_nodes(source) if node.type in IMPORT_KINDS)
     names = (name for node in imports for name in node.children_by_field_name("name"))
     return frozenset(local_name(name) for name in names)
 

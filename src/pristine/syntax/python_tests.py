@@ -1,6 +1,6 @@
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.files.path_roles import PYTEST_CONFTEST, is_test_path
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
@@ -14,12 +14,12 @@ def is_test_definition(node: Node) -> bool:
     return prefix is not None and name.startswith(prefix)
 
 
-def defines_tests(root: Node) -> bool:
-    return any(is_test_definition(node) for node in all_nodes(root))
+def defines_tests(source: Node | ParsedFile) -> bool:
+    return any(is_test_definition(node) for node in all_nodes(source))
 
 
 def is_python_test_module(parsed: ParsedFile) -> bool:
     path = PurePath(parsed.path)
     if parsed.language != "python" or not is_test_path(path):
         return False
-    return path.name == PYTEST_CONFTEST or defines_tests(parsed.root)
+    return path.name == PYTEST_CONFTEST or defines_tests(parsed)

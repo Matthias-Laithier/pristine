@@ -2,7 +2,7 @@ import re
 from collections.abc import Callable, Iterator
 from pathlib import PurePath
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.checks.testing.model_clients_in_tests.live_clients import LiveClient, key_label
@@ -19,7 +19,7 @@ EVALS_DIRECTORY = "evals"
 MODEL_SURFACE = re.compile(
     r"\.(chat|fim|embeddings|ocr|agents|conversations|classifiers|messages|responses|completions)\.\w+|\.generate_content\b"
 )
-LIVE_CLIENT_READERS: dict[str, Callable[[Node], Iterator[LiveClient]]] = {
+LIVE_CLIENT_READERS: dict[str, Callable[[Node | ParsedFile], Iterator[LiveClient]]] = {
     "python": python_live_clients,
     **dict.fromkeys(SCRIPT_LANGUAGES, script_live_clients),
 }
@@ -35,8 +35,8 @@ def check_model_clients_in_tests(parsed: ParsedFile) -> list[Finding]:
     table, read_live_clients = client_table(parsed.language), LIVE_CLIENT_READERS.get(parsed.language)
     if table is None or read_live_clients is None or not is_test_module(parsed.path):
         return []
-    clients = table.model_clients(parsed.root)
-    live = list(read_live_clients(parsed.root)) if clients else []
+    clients = table.model_clients(parsed)
+    live = list(read_live_clients(parsed)) if clients else []
     if not live or MODEL_SURFACE.search(parsed.text) is None:
         return []
     message = (

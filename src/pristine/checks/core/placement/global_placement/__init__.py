@@ -2,15 +2,15 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.core.placement.global_placement.type_expressions import is_type_expression
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.nodes import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings
-from pristine.syntax.syntax_kinds import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 
 RULE_ID = "CR-6"
 PYTHON = "python"
@@ -123,7 +123,7 @@ def check_global_placement(parsed: ParsedFile) -> list[Finding]:
     spec = LANGUAGE_SPECS.get(parsed.language)
     if spec is None:
         return []
-    state = ModuleState(import_bindings(parsed.root) if parsed.language == PYTHON else {})
+    state = ModuleState(import_bindings(parsed) if parsed.language == PYTHON else {})
     findings = []
     for item in module_statements(parsed.root):
         record_definition(item, spec, state)

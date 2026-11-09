@@ -1,19 +1,21 @@
 import io
 import tokenize
 from collections.abc import Iterator
-from dataclasses import dataclass
 from itertools import pairwise
 
-from tree_sitter import Node, Tree
+lazy from tree_sitter import Node
 
 from pristine.services.grammars import parser_for
-from pristine.syntax.syntax_kinds import (
+from pristine.syntax.nodes import (
     ASYNC_KINDS,
     COMMENT_KINDS,
     DOCSTRING_CONTAINERS,
     DOCSTRING_LANGUAGES,
     DOCUMENTATION_PREFIXES,
     FUNCTION_KINDS,
+    CommentText,
+    FunctionSpan,
+    ParsedFile,
 )
 
 MODULE_WRAPPER_FIELDS = {"export_statement": "declaration", "decorated_definition": "definition"}
@@ -24,40 +26,19 @@ _LAZY_IMPORT_KEYWORDS = frozenset({("lazy", keyword) for keyword in ("import", "
 _PYTHON = "python"
 
 
-@dataclass(frozen=True)
-class FunctionSpan:
-    name: str
-    start_line: int
-    end_line: int
-
-
-@dataclass(frozen=True)
-class CommentText:
-    line: int
-    text: str
-    is_documentation: bool
-
-
-@dataclass(frozen=True)
-class ParsedFile:
-    path: str
-    language: str
-    text: str
-    tree: Tree
-    functions: list[FunctionSpan]
-    comments: list[CommentText]
-
-    @property
-    def root(self) -> Node:
-        return self.tree.root_node
-
-
 def line_of(node: Node) -> int:
     return node.start_point.row + 1
 
 
-def all_nodes(root: Node) -> Iterator[Node]:
-    pending = [root]
+def root_of(source: Node | ParsedFile) -> Node:
+    return source.root if isinstance(source, ParsedFile) else source
+
+
+def all_nodes(source: Node | ParsedFile) -> Iterator[Node]:
+    if isinstance(source, ParsedFile):
+        yield from source.nodes
+        return
+    pending = [source]
     while pending:
         node = pending.pop()
         yield node
@@ -134,7 +115,7 @@ def comment_text(node: Node) -> CommentText:
 
 def parse_file(path: str, text: str, language: str) -> ParsedFile:
     tree = parser_for(language).parse(_parser_text(text, language).encode())
-    nodes = list(all_nodes(tree.root_node))
+    nodes = tuple(all_nodes(tree.root_node))
     functions = [
         FunctionSpan(function_name(node), line_of(node), node.end_point.row + 1)
         for node in nodes
@@ -144,4 +125,4 @@ def parse_file(path: str, text: str, language: str) -> ParsedFile:
     comments = [
         comment_text(node) for node in nodes if node.type in COMMENT_KINDS or (has_docstrings and is_docstring(node))
     ]
-    return ParsedFile(path, language, text, tree, functions, sorted(comments, key=lambda comment: comment.line))
+    return ParsedFile(path, language, text, tree, nodes, functions, sorted(comments, key=lambda comment: comment.line))

@@ -1,6 +1,6 @@
 import re
 
-from tree_sitter import Node
+lazy from tree_sitter import Node
 
 from pristine.checks.registry import FileCheck, register_file_check
 from pristine.reports.findings import Finding, Severity
@@ -32,11 +32,11 @@ FIXES = {
 }
 
 
-def implicit_module_names(root: Node, heads: set[str]) -> frozenset[str]:
+def implicit_module_names(source: Node | ParsedFile, heads: set[str]) -> frozenset[str]:
     if not heads:
         return frozenset[str]()
     module_uses = dict.fromkeys(heads, True)
-    for node in all_nodes(root):
+    for node in all_nodes(source):
         if node.type != "identifier":
             continue
         name = node_text(node)
@@ -92,10 +92,10 @@ def exempt_kinds(text: str) -> set[str]:
 
 
 def nondeterministic_calls(parsed: ParsedFile) -> list[tuple[Node, str, str]]:
-    bindings = import_bindings(parsed.root)
-    calls = [(node, callee) for node, callee, _ in calls_of(parsed.root, "call")]
+    bindings = import_bindings(parsed)
+    calls = [(node, callee) for node, callee, _ in calls_of(parsed, "call")]
     heads = {callee.partition(".")[0] for _, callee in calls}
-    implicit_modules = implicit_module_names(parsed.root, (heads & IMPLICIT_MODULES) - bindings.keys())
+    implicit_modules = implicit_module_names(parsed, (heads & IMPLICIT_MODULES) - bindings.keys())
     calls = [(node, callee, qualified_name(callee, bindings, implicit_modules)) for node, callee in calls]
     seeded = any(qualified in SEEDING_CALLS and has_seed(node) for node, _, qualified in calls)
     exempt = exempt_kinds(parsed.text)
