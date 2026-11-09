@@ -11,10 +11,9 @@ When instructions conflict, the higher one wins:
 These rules are the default when the project is silent. They never override the project or the user.
 
 ## Before coding
-1. Read this hub and the rule index `pristine guide` prints after it. The index gives each rule's ID, title, how it is checked, and its statement.
-2. Read CR-20 in full on every coding task.
-3. Read in full, with `pristine rule <ID>`, every rule whose statement touches the task. When in doubt, read it.
-4. A statement only routes. Judge a rule from its full text before relying on it.
+1. Run `pristine guide` and read this hub.
+2. Read every rule in full with `pristine rule all` before every coding task. Reading the index or only selected rules does not satisfy this requirement.
+3. Read long output in chunks, through the final rule. Request rules by chapter or ID when the output would otherwise be truncated. Every rule must be read.
 
 ## While coding
 Apply the rules while writing the code. When a decision genuinely conflicts with a rule, never pick a side silently. Cite the rule ID and state the conflict in the response.
@@ -23,12 +22,12 @@ Apply the rules while writing the code. When a decision genuinely conflicts with
 1. Run `pristine check` on the directories the task touched, or on the repository root, so checks that span files, such as import cycles, see the unchanged files too. Fix every finding in the code the task wrote or changed, or keep it as a deliberate break.
 2. Run `pristine project` on the repository root.
 3. Handle findings in code the task did not change. Fix them when they sit in a unit the task rewrote, as CR-11 requires. Otherwise leave them and count them per rule ID.
-4. Walk the review rules relevant to the change, marked `review` in `pristine rules`. Confirm compliance against the full rule. A reviewer checking a change against every rule writes them all to a file with `pristine rule all > rules.md` and reads the file in parts, so no output gets cut.
+4. Review your change against every rule, including checked rules. Assess each rule's full requirement and exceptions. A rule outside the scope of the change is inapplicable. An automated result never replaces this review.
 5. Complete the CR-20 subtraction pass and growth account.
 6. Report three things: every deliberate break with its rule ID and reason, the pre-existing findings counted per rule ID, and the CR-20 growth account.
 
 ## Automated checks
-The installed `pristine` command checks the rules a parser or a file path can judge reliably. It favors precision over recall: a finding is reliable, and silence proves nothing. Many rules have no automated check at all, and a checked rule is often checked only in part, the part a static analysis can decide. A clean `pristine check` never replaces the review of every rule relevant to the change.
+Automated checks cover only mechanical parts of the rules. Many rules have no automated check, and a checked rule may be checked only in part. The checks favor precision over recall. A clean report does not establish full rule compliance. Reading every rule in full before coding and reviewing the change against every rule before finishing are mandatory.
 - `pristine check <paths>` checks files and directories. `--exclude <glob>` skips paths, and `--json` prints a structured report. A path that does not exist is listed as missing, so a list of changed files may include deleted ones.
 - On a big repository, `--max N` prints only the first N findings. The summary and its `by rule:` line still count every finding per rule ID.
 - `--jobs N` caps the worker processes. The default is half the CPU cores.
@@ -36,7 +35,7 @@ The installed `pristine` command checks the rules a parser or a file path can ju
 - `pristine rules` lists every rule and how it is checked: by `pristine check`, by `pristine project`, or by the agent's own review. That list is the authority on coverage. `--help` on each command documents the rest.
 - Each finding gives the file, the line, the rule ID, and a severity. An error breaks a hard limit or a strict rule. A warning passes a target.
 - An error exits with code 1, and warnings alone exit with code 0. Both still need a fix or a reported reason.
-- Files without a grammar are listed as unchecked. Those files, and every rule the tool does not check, still need the agent's own review.
+- Files without a grammar are listed as unchecked. Automated inspection of a file never establishes compliance with every rule.
 - The tool reads no project configuration. When the project's own rules set other limits, the project wins, and the agent reports the difference.
 
 ## Chapters

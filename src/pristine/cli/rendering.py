@@ -6,10 +6,10 @@ from pristine.reports.report import Report
 from pristine.reports.triage import FileTriage, ranked_files
 
 NEXT_STEP = (
-    "next: read each implicated rule with 'pristine rule <ID>', fix every finding, or report it by rule ID "
-    "as a deliberate break with its reason. "
-    "This check favors precision over recall: a clean result proves nothing about the rules it cannot "
-    "decide, so review your change against every relevant rule yourself."
+    "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
+    "against every rule, including checked rules. Automated checks cover only mechanical parts. "
+    "A clean report does not establish full rule compliance. "
+    "Fix every finding or report it by rule ID as a deliberate break with its reason."
 )
 
 
@@ -40,6 +40,7 @@ def render_json(report: Report, limit: int | None) -> str:
         "skipped": [{"path": path, "reason": reason} for path, reason in report.skipped.items()],
         "unsupported": list(report.unsupported),
         "missing": report.missing,
+        "next_step": NEXT_STEP,
     }
     return json.dumps(document, indent=2)
 

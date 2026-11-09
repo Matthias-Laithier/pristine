@@ -49,6 +49,12 @@ EXPECTED_JSON_REPORT = {
     "skipped": [],
     "unsupported": [],
     "missing": [],
+    "next_step": (
+        "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
+        "against every rule, including checked rules. Automated checks cover only mechanical parts. "
+        "A clean report does not establish full rule compliance. "
+        "Fix every finding or report it by rule ID as a deliberate break with its reason."
+    ),
 }
 
 

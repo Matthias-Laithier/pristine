@@ -1,25 +1,34 @@
+AGENT_WORKFLOW = (
+    "Read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
+    "against every rule, including checked rules. Automated checks cover only mechanical parts. "
+    "A clean report does not establish full rule compliance."
+)
 DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
     "Check code against the coding rules and print the rules themselves. Built for agents: run 'pristine guide' "
-    "before coding to read how to apply the rules, 'pristine rule <ID>' to read a rule, and, before finishing a "
+    "before coding to read how to apply the rules, 'pristine rule all' to read every rule, and, before finishing a "
     "task, 'pristine check' on the files you wrote or changed and 'pristine project' on the repository root. Exit "
     "code 0 means verification completed with no error findings (warnings may remain), 1 means at least one error "
     "finding, 2 means a usage problem such as an invalid option, an unknown rule ID or chapter, or a project path "
     "that is no directory, and 3 means verification did not complete; 3 takes priority over 1."
 )
 GUIDE_DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
     "Print the rules hub as markdown: precedence, the steps to follow before coding, while coding, and before "
     "finishing, and the chapter lists with every rule ID and title. A rule index follows: one line per rule in "
     "ID order, '- ID Title (checked_by): statement', the statement being the rule's first paragraph. Links "
-    "between rule files print as their plain label. Read it before coding. Exit code 0."
+    "between rule files print as their plain label. The index does not replace the full rules. Exit code 0."
 )
 RULE_DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
     "Print the full markdown text of each selected rule, in the order given, separated by a blank line. A "
     "selector is a rule ID such as CR-13, a chapter prefix such as BS for every rule of that chapter, or 'all' "
     "for every rule, matched case-insensitively. Links between rule files print as their plain label. 'all' "
-    "prints about 150 KB: write it to a file and read the file in parts. Exit code 0, or 2 when a selector is "
-    "unknown, with the known IDs on stderr and nothing on stdout."
+    "can exceed an agent's output limit: read it in chunks through the final rule, or request every chapter "
+    "separately. Exit code 0, or 2 when a selector is unknown, with the known IDs on stderr and nothing on stdout."
 )
 RULES_DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
     "List every rule, in chapter and number order, with how it is checked: 'check' (pristine check), 'project' "
     "(pristine project), or 'review' (no automated check: review your code against it yourself). Text lines read "
     "'ID Title (checked_by): summary', the summary of what the check detects given only for checked_by 'check' "
@@ -27,6 +36,7 @@ RULES_DESCRIPTION = (
     "(null for review), and statement, the rule's first paragraph. Exit code 0."
 )
 CHECK_DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
     "Check files and directories. Directories expand to their git-tracked and untracked, non-ignored files, "
     "or to every non-hidden file outside a git repository. Prose, data, lockfiles, binaries, and files marked "
     "as generated are skipped. Files without a known grammar, unreadable files, and files whose parser crashes or "
@@ -38,6 +48,8 @@ CHECK_DESCRIPTION = (
     "skipped paths follow, then a summary line counting errors, warnings, and checked, unchecked, skipped, and "
     "missing paths. When there are findings, a 'by rule:' line counts them per rule ID, most frequent first. A "
     "'next:' line ends the output. --json gives the same report, with the per-rule counts as summary.by_rule. "
+    "JSON includes the same guidance as text in next_step, even for a clean report. "
+    "verification_status describes mechanical verification only. "
     "--max N prints only the first N findings and a line counting the omitted ones. The summary and the per-rule "
     "counts still cover every finding. A path that does not exist is listed as 'missing: <path>' (the JSON "
     "'missing' list) and counted in the summary. It causes no usage error, so 'git diff --name-only | xargs "
@@ -47,6 +59,7 @@ CHECK_DESCRIPTION = (
     "with its reason."
 )
 PROJECT_DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
     "Check the tooling contract of a repository, given its root directory. TL-1: a root Makefile (error if "
     "missing) with the targets dev, check, and check-all (error per missing target), a build target when the "
     "project produces artifacts, detected by a container build file or a root package.json build script "
@@ -59,5 +72,6 @@ PROJECT_DESCRIPTION = (
     "manifest, verified with git ls-files (warning). Paths under node_modules, vendor, third_party, and template "
     "directories are ignored. Output, --json, --max, and exit codes match 'check': exit 0 without error findings, "
     "1 with at least one, 2 when PATH is not a directory, and 3 when verification did not complete. Makefiles and "
-    "manifests read count as checked files. Unreadable or invalid ones are listed as unchecked."
+    "manifests read count as checked files. Unreadable or invalid ones are listed as unchecked. "
+    "JSON includes the same guidance as text in next_step. verification_status describes mechanical verification only."
 )

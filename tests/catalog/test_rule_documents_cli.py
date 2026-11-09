@@ -33,6 +33,16 @@ def test_guide_ends_with_a_rule_index_of_statements(capsys: pytest.CaptureFixtur
     assert "\n- CR-20 Minimize the Resulting Codebase (review): " in index
 
 
+@pytest.mark.parametrize("command", ["guide", "rules"])
+def test_rule_guidance_requires_full_reading_and_review(capsys: pytest.CaptureFixture[str], command: str) -> None:
+    assert main([command]) == 0
+    output = capsys.readouterr().out.lower()
+    assert "read every rule in full" in output
+    assert "pristine rule all" in output
+    assert "review your change against every rule, including checked rules" in output
+    assert "only mechanical parts" in output
+
+
 def test_rule_prints_each_rule_matched_case_insensitively(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["rule", "cr-14", "CR-12"]) == 0
     output = capsys.readouterr().out

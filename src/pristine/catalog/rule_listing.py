@@ -18,13 +18,14 @@ PROJECT_RULE_SUMMARIES = {
 
 REVIEW = "review"
 RULES_NEXT_STEP = (
-    "next: read a rule with 'pristine rule <ID>'. Rules marked (review) have no automated check, and a checked "
-    "rule is often checked only in part: review your code against every relevant rule yourself."
+    "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
+    "against every rule, including checked rules. Automated checks cover only mechanical parts. "
+    "Rules marked (review) have no automated check. A clean report does not establish full rule compliance."
 )
 INDEX_HEADING = (
     "## Rule index\n"
-    "Each entry gives a rule ID, its title, how it is checked, and its statement. Read the full rule with "
-    "`pristine rule <ID>`."
+    "Each entry gives a rule ID, its title, how it is checked, and its statement. Read every rule in full with "
+    "`pristine rule all`. The index does not replace the full rules."
 )
 
 

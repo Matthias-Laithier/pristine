@@ -2,7 +2,7 @@
 
 This guide is for agents that change this repository. [README.md](README.md) covers installation and usage.
 
-Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README.md). Read the hub before coding, or run `pristine guide`.
+Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README.md). Before coding, run `pristine guide` and read every rule in full with `pristine rule all`. Read long output in chunks through the final rule. Before finishing, review the change against every rule, including checked rules. Automated checks cover only mechanical parts. A clean report does not establish full rule compliance.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README
 ### Report
 - A report holds the findings, the unchecked, skipped, and missing paths, and the finding counts per rule ID.
 - A path that does not exist is reported as missing and never aborts the run.
-- The text and JSON renderers print the same report. `--max N` caps the printed findings. The summary and the per-rule counts still cover every finding.
+- The text and JSON renderers print the same report. `--max N` caps the printed findings. The summary and the per-rule counts still cover every finding. Both formats always include the mandatory full-rule reading and review guidance, through `next_step` in JSON. Complete verification describes the mechanical checks only.
 
 ### Packages
 Each package of `src/pristine/` owns one responsibility, and no directory holds more than 8 code files.
@@ -93,7 +93,7 @@ When the maintainer gives a rule or a thought, determine its scope first. A requ
 - IDs are stable for life. A rule keeps its ID when its file moves. IDs are never renumbered and never reused.
 - Prefixes are unique across all chapters. Before creating a chapter, check its initials against every existing prefix. On a collision, pick an unambiguous alternative, such as TST for Testing when T is taken.
 - The title names the rule.
-- The first paragraph of a rule file is its statement. `pristine guide` prints every statement in its rule index, and agents read the index to decide which rules to open. The statement stands alone: it gives the requirement and its scope specifically enough to judge relevance without the rest of the file. The one-line description of a chapter meets the same bar.
+- The first paragraph of a rule file is its statement. `pristine guide` prints every statement in its rule index. The index helps navigation, and agents must still read every rule in full. The statement stands alone: it gives the requirement and its scope specifically enough to judge relevance without the rest of the file. The one-line description of a chapter meets the same bar.
 - Agents cite rule IDs to report compliance or violations when writing or reviewing code.
 
 ### Examples in rule files

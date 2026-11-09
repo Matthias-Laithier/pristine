@@ -26,6 +26,7 @@ uv tool install git+https://github.com/Matthias-Laithier/pristine
 
 ```sh
 pristine guide            # print the rules hub and the rule index
+pristine rule all         # read every rule in full before coding, in chunks if needed
 pristine check src tests  # check files and directories against the rules
 pristine project          # check the repository root against the Tooling chapter
 ```
@@ -54,10 +55,10 @@ reminders.py:8: BS-4 error: 'except Exception' swallows every failure with 'pass
 summary: 2 errors, 0 warnings, 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths
 by rule: BS-4 1, CR-13 1
 verification: complete, 0 failures
-next: read each implicated rule with 'pristine rule <ID>', fix every finding, or report it by rule ID as a deliberate break with its reason. This check favors precision over recall: a clean result proves nothing about the rules it cannot decide, so review your change against every relevant rule yourself.
+next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change against every rule, including checked rules. Automated checks cover only mechanical parts. A clean report does not establish full rule compliance. Fix every finding or report it by rule ID as a deliberate break with its reason.
 ```
 
-`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
+`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. Both formats include the reading and review obligation, through `next_step` in JSON. `verification_status` describes mechanical verification only. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
 
 Text groups findings by file, ranked by the number of distinct code rules, then by path alphabetically. Each file has one fix checklist; verification failures say `verify` rather than `fix` and do not count as violated code rules. With `--max`, text shows details from the highest-ranked files first, but keeps every file's checklist and full counts. JSON keeps findings in path/line/rule order and adds a ranked `triage` array: each entry has `path`, `distinct_rules`, the total `findings` count, and `fix` and `verify` maps of rule IDs to counts. Those maps cover the full report, not just printed findings.
 
@@ -65,14 +66,16 @@ Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or lat
 
 ## How it works
 
-The agent reads the guide, writes the code, runs `pristine check` and `pristine project`, and fixes the findings. It then reviews its change against the rules no tool can decide, and reports every deliberate break by rule ID.
+Before coding, the agent runs `pristine guide` and reads every rule in full with `pristine rule all`. It reads long output in chunks through the final rule, or requests every chapter separately. The guide's index does not replace reading the full rules.
 
-The checks favor precision over recall. A check reports only what it can judge with certainty, because an agent acts on every finding and a false positive costs more than a miss. A finding is reliable. A clean run proves nothing about the rules a static analysis cannot decide, and the agent's review covers those.
+Before finishing, the agent runs `pristine check` and `pristine project`, fixes the findings, and reviews its change against every rule, including checked rules. Each rule's full requirement and exceptions must be assessed. Rules outside the change's scope are inapplicable. The agent reports every deliberate break by rule ID.
+
+Automated checks cover only mechanical parts of the rules. They favor precision over recall. A checked rule may be checked only in part. A clean report does not establish full rule compliance. The CLI communicates the reading and review obligation. It cannot verify that an agent fulfilled it.
 
 To set it up, add this line to the agent's instructions, such as `AGENTS.md` or `CLAUDE.md`:
 
 ```
-Before coding, run `pristine guide` and follow it.
+Before coding, run `pristine guide` and read every rule in full with `pristine rule all`, in chunks if needed. Before finishing, review your change against every rule, including checked rules. Automated checks cover only mechanical parts. A clean report does not establish full rule compliance.
 ```
 
 ## Rules
@@ -88,7 +91,7 @@ The rules live in [src/pristine/rules/](src/pristine/rules/README.md), one file 
 | Tooling (TL) | Makefile contract, quality gates, lockfiles | 4 | | 4 | |
 | Total | | 63 | 33 | 4 | 26 |
 
-`check` rules are judged on source files, `project` rules on the repository root, and review rules by the agent.
+`check` marks mechanical checks on source files, `project` marks mechanical checks on the repository root, and `review` marks rules with no automated check. Every rule still requires the agent's review.
 
 `pristine project` recognizes Python, JavaScript/TypeScript, Go, and Rust repositories. For Go it reads `go.mod` and accepts the native toolchain (`gofmt`, `go vet`, `go test`, `go build`) plus golangci-lint and staticcheck. For Rust it reads `Cargo.toml` and accepts `cargo fmt`, `cargo clippy`, `cargo check`, `cargo test`, and `cargo build`.
 
