@@ -1,9 +1,8 @@
-from pathlib import Path
-
 import pytest
 
 from pristine.cli.main import main
 from tests.conftest import RunPristine, parsed_report
+from tests.services.secret_scan import unavailable_native_tool
 
 LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))
 
@@ -16,9 +15,9 @@ def test_parser_recovery_is_incomplete_verification(run_pristine: RunPristine) -
 
 
 def test_incomplete_verification_takes_priority_over_rule_errors(
-    run_pristine: RunPristine, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    run_pristine: RunPristine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("PATH", str(tmp_path))
+    monkeypatch.setattr("pristine.services.gitleaks.resolve_tool", unavailable_native_tool)
     exit_code, report = run_pristine(
         {
             "broken.py": "def broken(:\n",

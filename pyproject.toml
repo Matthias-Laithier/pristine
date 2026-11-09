@@ -49,7 +49,7 @@ extend-select = ["I", "B", "UP", "SIM", "PL", "ERA", "S", "ASYNC", "DTZ", "G", "
 "tests/conftest.py" = ["S603"]
 "src/pristine/cli/main.py" = ["T20"]
 "src/pristine/services/git.py" = ["S603"]
-"src/pristine/services/gitleaks.py" = ["S603"]
+"src/pristine/services/native_tools/processes.py" = ["S603"]
 "src/pristine/services/isolated_inspection.py" = ["S603"]
 "src/pristine/services/worker_pool.py" = ["S603"]
 

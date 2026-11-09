@@ -1,0 +1,26 @@
+{
+  "results": [
+    {
+      "source": {
+        "path": "/fixtures/clean/uv.lock",
+        "type": "lockfile"
+      },
+      "packages": [
+        {
+          "package": {
+            "name": "emoji",
+            "version": "2.14.0",
+            "ecosystem": "PyPI",
+            "purl": "pkg:pypi/emoji@2.14.0"
+          }
+        }
+      ]
+    }
+  ],
+  "experimental_config": {
+    "licenses": {
+      "summary": false,
+      "allowlist": null
+    }
+  }
+}

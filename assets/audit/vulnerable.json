@@ -1,0 +1,256 @@
+{
+  "results": [
+    {
+      "source": {
+        "path": "/fixtures/vulnerable/uv.lock",
+        "type": "lockfile"
+      },
+      "packages": [
+        {
+          "package": {
+            "name": "emoji",
+            "version": "2.14.0",
+            "ecosystem": "PyPI",
+            "purl": "pkg:pypi/emoji@2.14.0"
+          }
+        },
+        {
+          "package": {
+            "name": "protobuf",
+            "version": "4.25.5",
+            "ecosystem": "PyPI",
+            "purl": "pkg:pypi/protobuf@4.25.5"
+          },
+          "groups": [
+            {
+              "ids": [
+                "PYSEC-2026-1805",
+                "GHSA-7gcm-g887-7qv7"
+              ],
+              "aliases": [
+                "CVE-2026-0994",
+                "GHSA-7gcm-g887-7qv7",
+                "PYSEC-2026-1805"
+              ],
+              "max_severity": "8.2"
+            },
+            {
+              "ids": [
+                "PYSEC-2026-1806",
+                "GHSA-8qvm-5x2c-j2w7"
+              ],
+              "aliases": [
+                "CVE-2025-4565",
+                "GHSA-8qvm-5x2c-j2w7",
+                "PYSEC-2026-1806"
+              ],
+              "max_severity": "8.2"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "id": "PYSEC-2026-1805",
+              "aliases": [
+                "CVE-2026-0994",
+                "GHSA-7gcm-g887-7qv7"
+              ],
+              "affected": [
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "5.29.6"
+                        },
+                        {
+                          "introduced": "6.30.0rc1"
+                        },
+                        {
+                          "fixed": "6.33.5"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PYSEC-2026-1806",
+              "aliases": [
+                "CVE-2025-4565",
+                "GHSA-8qvm-5x2c-j2w7"
+              ],
+              "affected": [
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "4.25.8"
+                        },
+                        {
+                          "introduced": "5.26.0rc1"
+                        },
+                        {
+                          "fixed": "5.29.5"
+                        },
+                        {
+                          "introduced": "6.30.0rc1"
+                        },
+                        {
+                          "fixed": "6.31.1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "GHSA-7gcm-g887-7qv7",
+              "aliases": [
+                "CVE-2026-0994",
+                "PYSEC-2026-1805"
+              ],
+              "affected": [
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "6.30.0rc1"
+                        },
+                        {
+                          "fixed": "6.33.5"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                },
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "5.29.6"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "GHSA-8qvm-5x2c-j2w7",
+              "aliases": [
+                "CVE-2025-4565",
+                "PYSEC-2026-1806"
+              ],
+              "affected": [
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "4.25.8"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                },
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "5.26.0rc1"
+                        },
+                        {
+                          "fixed": "5.29.5"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                },
+                {
+                  "package": {
+                    "ecosystem": "PyPI",
+                    "name": "protobuf",
+                    "purl": "pkg:pypi/protobuf"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "6.30.0rc1"
+                        },
+                        {
+                          "fixed": "6.31.1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "experimental_config": {
+    "licenses": {
+      "summary": false,
+      "allowlist": null
+    }
+  }
+}

@@ -61,6 +61,20 @@ CHECK_DESCRIPTION = (
     "and unsupported formats do not cause it. Fix every finding, or report it by rule ID as a deliberate break "
     "with its reason."
 )
+AUDIT_DESCRIPTION = (
+    f"{AGENT_WORKFLOW} "
+    "Audit uv.lock, or the root uv.lock directly in a directory, using the optional native osv-scanner executable. "
+    "A compatible installed executable is preferred; otherwise a pinned official release is verified and cached "
+    "on first use. Provisioning failures mean incomplete verification. Only uv.lock is supported. "
+    "No recursive source scan or reachability analysis. "
+    "Online advisory lookup requires network access; results carry no advisory freshness guarantee. "
+    "Known vulnerability matches do not establish exploitability. --json prints a JSON report, and --max N "
+    "caps findings without changing full counts or verification status. Exit code 0 requires a completed "
+    "scan with dependency evidence and no known advisory matches, 1 means known advisory matches with complete verification, "
+    "2 means invalid usage, and 3 means incomplete verification, with priority over 1. A missing scanner, "
+    "a scanner failure, unsupported input, or absent dependency evidence never becomes a clean result. "
+    "Reported fixed versions are contextual advisory releases, not applicable upgrade recommendations."
+)
 PROJECT_DESCRIPTION = (
     f"{AGENT_WORKFLOW} "
     "Check the tooling contract of a repository, given its root directory. TL-1: a root Makefile (error if "

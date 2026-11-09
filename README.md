@@ -73,7 +73,30 @@ Required agent review
 
 Text groups findings into spaced file sections, ranked by the number of distinct code rules, then by path alphabetically. Each full path appears once as a heading, followed by nonzero error and warning totals and `fix`/`verify` rule IDs. Finding bullets use `line N` under that heading, or `file` for file-wide findings and findings without a source line. Verification bullets also say `verify`; they do not count as violated code rules. Mechanical totals and the mandatory agent review checklist follow. With `--max`, text caps finding bullets but keeps every file's overview and full counts. JSON keeps the original full paths and lines, in path/line/rule order, and adds a ranked `triage` array: each entry has `path`, `distinct_rules`, the total `findings` count, and `fix` and `verify` maps of rule IDs to counts. Those maps cover the full report, not just printed findings.
 
-Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed, and [gitleaks](https://github.com/gitleaks/gitleaks) on the path for the secret scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
+Requirements: [uv](https://docs.astral.sh/uv/), which fetches Python 3.15 or later when needed. Native scanners ([gitleaks](https://github.com/gitleaks/gitleaks) for secrets and OSV-Scanner for dependency audits) prefer compatible installed executables. When absent or incompatible, pristine obtains a pinned official release in a private per-user cache and verifies it against committed release hashes. Provisioning, cache, or network failures mean incomplete verification, never a clean scan. Each language grammar downloads on its first use. The `pristine` package on PyPI is an unrelated project.
+
+Installed compatibility is deliberately exact: OSV-Scanner 2.7.0 and gitleaks 8.30.1. Other installed versions are left untouched; pristine uses its verified pinned copy instead. Native provisioning supports macOS and Linux on arm64/aarch64 and x86_64, uses `~/.pristine-native-tools`, and requires HTTPS access to official GitHub release assets on first use. Warm cached use needs no binary download and rechecks executable integrity. Corrupt or unsafe cache entries fail explicitly; remove the private cache and retry. No package manager, administrator access, global PATH change, project-owned Ruff/typechecker installation, or audited-project dependency installation is performed.
+
+## Optional dependency audit
+
+`pristine audit` uses one native [OSV-Scanner](https://github.com/google/osv-scanner), tested with version 2.7.0 on the POSIX process boundary used by macOS and Linux. Unsupported platforms return incomplete verification. A compatible installed `osv-scanner` is preferred; otherwise the pinned official release is verified and cached on first use. No separate setup command is needed, and provisioning failures remain incomplete. Native experimental extraction flags may change between scanner versions; unknown diagnostics or output shapes fail closed instead of certifying a scan.
+
+```sh
+pristine audit .
+pristine audit path/to/uv.lock --json --max 10
+```
+
+`PATH` is required and selects either one `uv.lock` or the root `uv.lock` directly inside a directory. Only `uv.lock` is supported initially, and coverage is limited to the PyPI package/version records the native scanner extracts. This is not assurance about the whole project, installed dependencies, or package origins. There is no recursive discovery, manifest resolution, source scanning, reachability analysis, or dependency installation. OSV-Scanner owns dependency extraction and advisory lookup; pristine renders its evidence and verification gaps. Other lockfile formats and projects without a supported lockfile cannot produce a clean result.
+
+The target is resolved to an absolute path before scanning; leaf symlinks are refused, while ancestor path components are resolved. A scan requires exactly one matching native source and a positive extraction count consistent with its JSON package evidence. Input and combined scanner output are capped at 8 MiB, with a 300-second scan deadline. Binary downloads have a 64 MiB cap and a finite deadline. Native warnings, errors, filters, skips, or unrecognized diagnostics remain verification problems even when advisories are found.
+
+Online lookup requires network access and sends package identities to OSV. Results describe known advisory matches at scan time; they guarantee neither advisory freshness nor the absence of undisclosed vulnerabilities. A match does not establish exploitability. `aliases` includes native group aliases as well as advisory aliases. `fixed_versions` contains contextual fixed releases reported by the advisory, not an applicable upgrade recommendation.
+
+Tests replay reviewed native responses and fake download/process boundaries. Live advisory queries and first-use release downloads stay outside `make check` and CI tests.
+
+Text and JSON include source evidence, full counts, verification problems, an explicit coverage statement, and the same mandatory rule-reading and review guidance as the other reports. JSON has `scope`, `verification_status`, `summary`, `findings`, `sources`, `problems`, and `next_step`. `--max N` requires a positive integer and caps only findings; `summary.omitted` counts the rest, while all source evidence, problems, and totals remain visible. A complete scan with no findings says no known advisory matches, not proof of security; absent fixed-version evidence is reported explicitly.
+
+Audit exits are 0 for complete verification with dependency evidence and no vulnerability findings, 1 for vulnerability findings with complete verification, 2 for invalid command usage, and 3 for incomplete verification. Exit 3 takes priority over 1: missing scanners, failed lookups, unsupported inputs, invalid scanner output, absent dependency evidence, and native exit statuses that contradict the findings never become clean. The command does not replace `pristine check`, `pristine project`, or the agent's full-rule review, and their reports and exits are unchanged.
 
 ## How it works
 
