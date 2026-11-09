@@ -65,23 +65,29 @@ def _source_sections(report: AuditReport, shown: tuple[DependencyFinding, ...]) 
         (finding.source_path, finding.source_type) for finding in report.findings
     )
     lines: list[str] = []
-    for (path, source_type), package_count in (dict.fromkeys(records, 0) | dict(packages)).items():
+    for source_key, package_count in (dict.fromkeys(records, 0) | dict(packages)).items():
+        path, source_type = source_key
         lines += [
             "",
             f"{path} ({source_type})",
-            f"  {counted(package_count, 'package')}; {counted(records[path, source_type], 'advisory record')}",
+            f"  {counted(package_count, 'package')}; {counted(records[source_key], 'advisory record')}",
         ]
         lines += _package_sections(
-            [finding for finding in shown if (finding.source_path, finding.source_type) == (path, source_type)]
+            [finding for finding in report.findings if (finding.source_path, finding.source_type) == source_key],
+            [finding for finding in shown if (finding.source_path, finding.source_type) == source_key],
         )
     return lines
 
 
-def _package_sections(shown: list[DependencyFinding]) -> list[str]:
-    groups: dict[tuple[str, str, str], list[DependencyFinding]] = {}
+def _package_sections(all_findings: list[DependencyFinding], shown: list[DependencyFinding]) -> list[str]:
+    records = Counter((finding.ecosystem, finding.package, finding.version) for finding in all_findings)
+    groups: dict[tuple[str, str, str], list[DependencyFinding]] = {identity: [] for identity in records}
     for finding in shown:
-        groups.setdefault((finding.ecosystem, finding.package, finding.version), []).append(finding)
+        groups[finding.ecosystem, finding.package, finding.version].append(finding)
     lines: list[str] = []
     for (ecosystem, package, version), findings in groups.items():
-        lines += [f"  {ecosystem} {package}@{version}", *(_finding_line(finding) for finding in findings)]
+        lines += [
+            f"  {ecosystem} {package}@{version}; {counted(records[ecosystem, package, version], 'advisory record')}",
+            *(_finding_line(finding) for finding in findings),
+        ]
     return lines

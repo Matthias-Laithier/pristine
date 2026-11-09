@@ -34,3 +34,16 @@ def test_text_limit_keeps_full_overviews_without_printing_hidden_advisories() ->
     assert "  1 package; 2 advisory records" in output
     assert "... 1 findings omitted" in output
     assert "fixed releases: not reported" in output
+
+
+def test_text_limit_keeps_all_affected_packages_in_one_source() -> None:
+    first = DependencyFinding("uv.lock", "lockfile", "protobuf", "1.0", "PyPI", "OSV-2026-1", (), ())
+    second = DependencyFinding("uv.lock", "lockfile", "requests", "2.0", "PyPI", "OSV-2026-2", (), ("2.1",))
+    report = AuditReport((first, second), (SourceEvidence("uv.lock", "lockfile", 2),), ())
+    output = render_text(report, 1)
+    assert "uv.lock (lockfile)\n  2 packages; 2 advisory records" in output
+    assert "  PyPI requests@2.0; 1 advisory record\n... 1 findings omitted" in output
+    assert "  PyPI protobuf@1.0; 1 advisory record\n    - OSV-2026-1;" in output
+    assert "OSV-2026-2" not in output
+    assert output.count("    - ") == 1
+    assert "summary: 2 advisory records, 2 packages, 1 sources, 0 verification failures" in output
