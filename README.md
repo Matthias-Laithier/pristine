@@ -87,6 +87,10 @@ The rules live in [src/pristine/rules/](src/pristine/rules/README.md), one file 
 
 `pristine project` recognizes Python, JavaScript/TypeScript, Go, and Rust repositories. For Go it reads `go.mod` and accepts the native toolchain (`gofmt`, `go vet`, `go test`, `go build`) plus golangci-lint and staticcheck. For Rust it reads `Cargo.toml` and accepts `cargo fmt`, `cargo clippy`, `cargo check`, `cargo test`, and `cargo build`.
 
+For Python, `project` verifies an explicit-annotation capability in `make check`: strict mypy or Ruff's ANN001/002/003/201/202/204/205/206 rules. Inference alone does not satisfy this check. Recognized suppressions disable the capability; unsupported overrides, exclusions, or incomplete source scope produce verification findings. Pristine reads the configuration without running those tools; the gate checks the actual annotations.
+
+TypeScript CR-21 also warns on double assertions through `unknown`, including parenthesized and angle-bracket assertions. Single assertions and operations whose result remains `unknown` are not reported.
+
 ## Languages
 
 Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with a grammar gets the shared checks: file and function size, nesting, comments, if/else dispatch chains, asset and directory layout, test location, and secrets.
