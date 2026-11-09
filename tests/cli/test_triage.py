@@ -9,7 +9,7 @@ LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))
 TRIAGE_FILES = {
     "a.py": "# first\n# second\n# third\n",
     "b.py": LONG_FILE + "# first\n",
-    "c.py": "".join(LONG_FILE.splitlines(keepends=True)[:150]) + "# first\n# second\n",
+    "c.py": "def calculate_invoice():\n" + "    value = 1\n" * 30 + "# first\n# second\n",
 }
 CANONICAL_LOCATIONS = [
     ("a.py", 1),
@@ -18,8 +18,8 @@ CANONICAL_LOCATIONS = [
     ("b.py", 1),
     ("b.py", 202),
     ("c.py", 1),
-    ("c.py", 151),
-    ("c.py", 152),
+    ("c.py", 32),
+    ("c.py", 33),
 ]
 
 
@@ -32,14 +32,14 @@ def test_json_triage_uses_all_findings_without_reordering_records(
     document = json_object(json.loads(capsys.readouterr().out))
     assert document["triage"] == [
         {"path": "b.py", "distinct_rules": 2, "findings": 2, "fix": {"CR-1": 1, "CR-3": 1}, "verify": {}},
-        {"path": "c.py", "distinct_rules": 2, "findings": 3, "fix": {"CR-1": 1, "CR-3": 2}, "verify": {}},
+        {"path": "c.py", "distinct_rules": 2, "findings": 3, "fix": {"CR-12": 1, "CR-3": 2}, "verify": {}},
         {"path": "a.py", "distinct_rules": 1, "findings": 3, "fix": {"CR-3": 3}, "verify": {}},
     ]
     summary = json_object(document["summary"])
     assert (summary["errors"], summary["warnings"], summary["by_rule"], summary["omitted"]) == (
         7,
         1,
-        {"CR-3": 6, "CR-1": 2},
+        {"CR-3": 6, "CR-1": 1, "CR-12": 1},
         8 - int(limit),
     )
     findings = document["findings"]
@@ -59,15 +59,15 @@ def test_text_groups_ranked_files_and_keeps_the_full_fix_checklist(
     assert lines[0] == "fix checklist (all findings; ranked by distinct code rules, then path):"
     assert [line for line in lines if line.startswith("[ ]")] == [
         "[ ] b.py: 2 rules, 2 findings; fix CR-1, CR-3",
-        "[ ] c.py: 2 rules, 3 findings; fix CR-1, CR-3",
+        "[ ] c.py: 2 rules, 3 findings; fix CR-12, CR-3",
         "[ ] a.py: 1 rule, 3 findings; fix CR-3",
     ]
     assert lines[2].startswith("b.py:1: CR-1 error:")
     locations = [line.partition(":")[0] for line in lines if line.partition(":")[0] in TRIAGE_FILES]
     assert locations == (["b.py"] if options else ["b.py", "b.py", "c.py", "c.py", "c.py", "a.py", "a.py", "a.py"])
     if options:
-        assert "... 7 more findings omitted (CR-1 1, CR-3 6); raise --max or remove --max to see them all" in lines
-    assert "by rule: CR-3 6, CR-1 2" in lines
+        assert "... 7 more findings omitted (CR-12 1, CR-3 6); raise --max or remove --max to see them all" in lines
+    assert "by rule: CR-3 6, CR-1 1, CR-12 1" in lines
     assert "verification: complete, 0 failures" in lines
 
 

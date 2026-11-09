@@ -16,8 +16,10 @@ COMMENTED_LONG_FILE = LONG_FILE + "# first\n# second\n"
 
 
 def test_exit_code_is_zero_with_warnings_only(run_pristine: RunPristine) -> None:
-    exit_code, report = run_pristine({"values.py": LONG_FILE[: len(LONG_FILE) // 2] + "x = 1\n" * 60})
+    source = "def calculate_invoice():\n" + "    value = 1\n" * 30
+    exit_code, report = run_pristine({"values.py": source})
     assert report["summary"]["warnings"] == 1
+    assert report["summary"]["by_rule"] == {"CR-12": 1}
     assert exit_code == 0
 
 
