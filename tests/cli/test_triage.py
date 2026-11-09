@@ -7,6 +7,7 @@ from pristine.cli.rendering import render_text
 from pristine.reports.findings import Finding, FindingKind, Severity
 from pristine.reports.report import Report
 from tests.conftest import RunPristine, json_object
+from tests.services.secret_scan import unavailable_native_tool
 
 LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))
 TRIAGE_FILES = {
@@ -83,7 +84,7 @@ def test_verification_findings_are_not_code_fixes_and_missing_paths_remain_visib
     run_pristine: RunPristine, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     run_pristine({"clean.py": "value = 1\n", "broken.py": "def broken(:\n"})
-    monkeypatch.setenv("PATH", "")
+    monkeypatch.setattr("pristine.services.gitleaks.resolve_tool", unavailable_native_tool)
     assert main(["check", ".", "gone.py", "--json", "--max", "1"]) == 3
     document = json_object(json.loads(capsys.readouterr().out))
     assert document["triage"] == [

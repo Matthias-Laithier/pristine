@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import RunPristine, rule_findings
+from tests.services.secret_scan import unavailable_native_tool
 
 FAKE_TOKEN = "ghp" + "_" + "Fake0Token1For2Tests3Only4Abcdefghij"
 FAILING_GITLEAKS = "#!/bin/sh\necho 'config is broken' >&2\nexit 3\n"
@@ -18,7 +19,9 @@ def test_secret_in_skipped_data_file_is_reported_without_its_value(run_pristine:
     assert FAKE_TOKEN not in json.dumps(report)
 
 
-@pytest.mark.parametrize(("gitleaks_script", "reason"), [(None, "not installed"), (FAILING_GITLEAKS, "code 3")])
+@pytest.mark.parametrize(
+    ("gitleaks_script", "reason"), [(None, "provisioning is unavailable"), (FAILING_GITLEAKS, "code 3")]
+)
 def test_scan_that_cannot_run_is_one_warning(
     run_pristine: RunPristine,
     monkeypatch: pytest.MonkeyPatch,
@@ -31,7 +34,8 @@ def test_scan_that_cannot_run_is_one_warning(
     if gitleaks_script is not None:
         (tools / "gitleaks").write_text(gitleaks_script)
         (tools / "gitleaks").chmod(0o755)
-    monkeypatch.setenv("PATH", str(tools))
+    resolver = (lambda _: str(tools / "gitleaks")) if gitleaks_script is not None else unavailable_native_tool
+    monkeypatch.setattr("pristine.services.gitleaks.resolve_tool", resolver)
     exit_code, report = run_pristine({"ship.py": "def ship():\n    return 1\n"})
     findings = [finding for finding in report["findings"] if finding["rule_id"] == "BS-2"]
     assert exit_code == 3

@@ -3,6 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from pristine.cli.help import (
+    AUDIT_DESCRIPTION,
     CHECK_DESCRIPTION,
     DESCRIPTION,
     GUIDE_DESCRIPTION,
@@ -22,6 +23,7 @@ def parser() -> argparse.ArgumentParser:
     )
     project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
     add_report_options(project)
+    add_audit_command(commands)
     add_rule_commands(commands)
     return root
 
@@ -52,6 +54,16 @@ def positive_count(text: str) -> int:
     if count < 1:
         raise argparse.ArgumentTypeError(f"must be at least 1, got {count}")
     return count
+
+
+def add_audit_command(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    audit = commands.add_parser(
+        "audit", help="audit resolved dependencies with optional OSV-Scanner", description=AUDIT_DESCRIPTION
+    )
+    audit.add_argument(
+        "path", type=Path, metavar="PATH", help="uv.lock or directory containing a root uv.lock; no recursion"
+    )
+    add_report_options(audit)
 
 
 def add_report_options(command: argparse.ArgumentParser) -> None:
