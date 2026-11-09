@@ -55,15 +55,22 @@ def test_text_groups_ranked_files_and_keeps_the_full_fix_checklist(
 ) -> None:
     run_pristine(TRIAGE_FILES)
     assert main(["check", ".", *options]) == 1
-    lines = capsys.readouterr().out.splitlines()
-    assert lines[0] == "fix checklist (all findings; ranked by distinct code rules, then path):"
+    output = capsys.readouterr().out
+    lines = output.splitlines()
+    assert lines[0] == "Findings (ranked by distinct code rules, then path)"
     assert [line for line in lines if line.startswith("[ ]")] == [
-        "[ ] b.py: 2 rules, 2 findings; fix CR-1, CR-3",
-        "[ ] c.py: 2 rules, 3 findings; fix CR-12, CR-3",
-        "[ ] a.py: 1 rule, 3 findings; fix CR-3",
+        "[ ] b.py: 2 rules, 2 findings",
+        "[ ] c.py: 2 rules, 3 findings",
+        "[ ] a.py: 1 rule, 3 findings",
     ]
-    assert lines[2].startswith("b.py:1: CR-1 error:")
-    locations = [line.partition(":")[0] for line in lines if line.partition(":")[0] in TRIAGE_FILES]
+    assert [line for line in lines if line.startswith("  fix:")] == [
+        "  fix: CR-1, CR-3",
+        "  fix: CR-12, CR-3",
+        "  fix: CR-3",
+    ]
+    assert all(f"\n\n[ ] {path}:" in output for path in ("b.py", "c.py", "a.py"))
+    assert next(line for line in lines if line.startswith("  b.py:")).startswith("  b.py:1: CR-1 error:")
+    locations = [line.strip().partition(":")[0] for line in lines if line.strip().partition(":")[0] in TRIAGE_FILES]
     assert locations == (["b.py"] if options else ["b.py", "b.py", "c.py", "c.py", "c.py", "a.py", "a.py", "a.py"])
     if options:
         assert "... 7 more findings omitted (CR-12 1, CR-3 6); raise --max or remove --max to see them all" in lines
@@ -88,7 +95,7 @@ def test_verification_findings_are_not_code_fixes_and_missing_paths_remain_visib
     assert [json_object(entry)["path"] for entry in unchecked] == ["broken.py"]
     assert main(["check", ".", "gone.py", "--max", "1"]) == 3
     output = capsys.readouterr().out
-    assert "[ ] .: 0 rules, 1 finding; verify BS-2\n" in output
+    assert "[ ] .: 0 rules, 1 finding\n  verify: BS-2\n" in output
     assert "missing: gone.py\n" in output
     assert "unchecked: broken.py (" in output
     assert "verification: incomplete, 2 failures\n" in output
@@ -100,4 +107,15 @@ def test_clean_report_has_no_triage_work(run_pristine: RunPristine, capsys: pyte
     document = json_object(json.loads(capsys.readouterr().out))
     assert document["triage"] == []
     assert main(["check", "."]) == 0
-    assert capsys.readouterr().out.startswith("summary: 0 errors, 0 warnings, 1 checked file")
+    assert capsys.readouterr().out == (
+        "Mechanical checks\n"
+        "summary: 0 errors, 0 warnings\n"
+        "files: 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n"
+        "verification: complete, 0 failures\n\n"
+        "Required agent review\n"
+        "  - read every rule in full with 'pristine rule all' before coding.\n"
+        "  - Before finishing, review your change against every rule, including checked rules.\n"
+        "  - Automated checks cover only mechanical parts.\n"
+        "  - A clean report does not establish full rule compliance.\n"
+        "  - Fix every finding or report it by rule ID as a deliberate break with its reason.\n"
+    )
