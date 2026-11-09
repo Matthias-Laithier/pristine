@@ -43,11 +43,9 @@ def test_text_output_names_rule_and_location(run_pristine: RunPristine, capsys: 
     run_pristine({"values.py": LONG_FILE})
     main(["check", "values.py"])
     output = capsys.readouterr().out
-    assert "values.py:1: CR-1 error: file has 201 lines" in output
-    assert (
-        "\nsummary: 1 error, 0 warnings, 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n"
-        in output
-    )
+    assert "values.py\n  1 error; fix CR-1\n  - file: CR-1 error: file has 201 lines" in output
+    assert "\nMechanical checks\nsummary: 1 error, 0 warnings\n" in output
+    assert "\nfiles: 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n" in output
 
 
 def test_summary_counts_findings_per_rule_by_count(
@@ -140,7 +138,12 @@ def test_clean_reports_still_require_full_rule_review(
     assert document["findings"] == []
     assert document["verification_status"] == "complete"
     assert main(arguments) == 0
-    next_step = capsys.readouterr().out.splitlines()[-1]
+    output = capsys.readouterr().out
+    review = output.partition("\n\nRequired agent review\n")[2]
+    sentences = [line.removeprefix("  - ") for line in review.splitlines()]
+    assert len(sentences) == 5
+    assert "\x1b" not in output
+    next_step = "next: " + " ".join(sentences)
     assert document["next_step"] == next_step
     assert "read every rule in full with 'pristine rule all' before coding" in next_step
     assert "review your change against every rule, including checked rules" in next_step

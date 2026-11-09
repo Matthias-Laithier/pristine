@@ -1,10 +1,12 @@
 import json
 from collections import Counter
 
-from pristine.reports.findings import FindingKind, Severity, finding_record
+from pristine.reports.findings import Finding, FindingKind, Severity, finding_record
 from pristine.reports.report import Report
 from pristine.reports.triage import FileTriage, ranked_files
 
+_FILE_LEVEL_RULES = frozenset({"CR-1", "CR-9", "CR-15", "CO-14", "TL-1"})
+_FILE_LEVEL_FIRST_LINE_RULES = frozenset({"TL-3", "TL-4"})
 NEXT_STEP = (
     "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
     "against every rule, including checked rules. Automated checks cover only mechanical parts. "
@@ -61,10 +63,23 @@ def render_text(report: Report, limit: int | None) -> str:
     lines += [f"unchecked: {path} ({reason})" for path, reason in report.unchecked.items()]
     skipped_reasons = Counter(report.skipped.values())
     lines += [f"skipped: {counted(count, 'file')}, {reason}" for reason, count in sorted(skipped_reasons.items())]
-    lines.append(
-        "summary: "
-        + ", ".join(counted(value, key.replace("_", " ").removesuffix("s")) for key, value in summary(report).items())
+    if lines:
+        lines.append("")
+    lines += _render_summary(report)
+    lines += ["", *_review_guidance()]
+    return "\n".join(lines)
+
+
+def _render_summary(report: Report) -> list[str]:
+    counts = summary(report)
+    groups = (
+        ("summary", ("errors", "warnings")),
+        ("files", ("checked_files", "unchecked_files", "skipped_files", "missing_paths")),
     )
+    lines = ["Mechanical checks"] + [
+        f"{label}: " + ", ".join(counted(counts[key], key.replace("_", " ").removesuffix("s")) for key in keys)
+        for label, keys in groups
+    ]
     if report.findings:
         lines.append("by rule: " + ", ".join(f"{rule_id} {count}" for rule_id, count in report.by_rule().items()))
     lines.append(
@@ -72,8 +87,12 @@ def render_text(report: Report, limit: int | None) -> str:
         + ("incomplete" if report.verification_failed else "complete")
         + f", {report.verification_failures} failures"
     )
-    lines.append(NEXT_STEP)
-    return "\n".join(lines)
+    return lines
+
+
+def _review_guidance() -> list[str]:
+    sentences = NEXT_STEP.removeprefix("next: ").split(". ")
+    return ["Required agent review", *(f"  - {sentence.rstrip('.')}." for sentence in sentences)]
 
 
 def _triage_record(file: FileTriage) -> dict[str, object]:
@@ -86,30 +105,43 @@ def _triage_record(file: FileTriage) -> dict[str, object]:
     }
 
 
-def _file_checklist(file: FileTriage) -> str:
-    actions = []
+def _file_overview(file: FileTriage) -> str:
+    severity_counts = Counter(finding.severity for finding in file.findings)
+    overview = [
+        ", ".join(counted(severity_counts[severity], severity) for severity in Severity if severity_counts[severity])
+    ]
     if rules := file.by_rule(FindingKind.CODE):
-        actions.append("fix " + ", ".join(rules))
+        overview.append("fix " + ", ".join(rules))
     if rules := file.by_rule(FindingKind.VERIFICATION):
-        actions.append("verify " + ", ".join(rules))
-    counts = f"{counted(file.distinct_rules, 'rule')}, {counted(len(file.findings), 'finding')}"
-    return f"[ ] {file.path}: {counts}; " + "; ".join(actions)
+        overview.append("verify " + ", ".join(rules))
+    return f"{file.path}\n  " + "; ".join(overview)
+
+
+def _render_finding(finding: Finding) -> str:
+    file_level = (
+        finding.line <= 0
+        or finding.rule_id in _FILE_LEVEL_RULES
+        or (
+            finding.line == 1
+            and (finding.kind is FindingKind.VERIFICATION or finding.rule_id in _FILE_LEVEL_FIRST_LINE_RULES)
+        )
+    )
+    location = "file" if file_level else f"line {finding.line}"
+    action = "verify " if finding.kind is FindingKind.VERIFICATION else ""
+    return f"  - {location}: {action}{finding.rule_id} {finding.severity}: {finding.message}"
 
 
 def _render_triage(report: Report, limit: int | None) -> list[str]:
     if not report.findings:
         return []
-    lines = ["fix checklist (all findings; ranked by distinct code rules, then path):"]
+    lines: list[str] = ["Findings (ranked by distinct code rules, then path)"]
     remaining = len(report.findings) if limit is None else limit
     omitted: Counter[str] = Counter()
     for file in ranked_files(report.findings):
         shown = file.findings[:remaining]
         remaining -= len(shown)
-        lines.append(_file_checklist(file))
-        lines.extend(
-            f"{finding.path}:{finding.line}: {finding.rule_id} {finding.severity}: {finding.message}"
-            for finding in shown
-        )
+        lines += ["", _file_overview(file)]
+        lines.extend(_render_finding(finding) for finding in shown)
         omitted.update(finding.rule_id for finding in file.findings[len(shown) :])
     if omitted:
         omitted_rules = ", ".join(f"{rule_id} {count}" for rule_id, count in sorted(omitted.items()))

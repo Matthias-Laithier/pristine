@@ -112,9 +112,9 @@ def test_check_returns_the_full_result_after_every_worker(
     if report_options:
         assert json.loads(output) == EXPECTED_JSON_REPORT
     else:
-        assert "invoice.py:1: CR-1 error: invoice file is too long" in output
-        assert "receipt.py:2: CR-3 error: receipt file has a comment" in output
-        assert "summary: 2 errors, 0 warnings, 2 checked files" in output
+        assert "invoice.py\n  1 error; fix CR-1\n  - file: CR-1 error: invoice file is too long" in output
+        assert "receipt.py\n  1 error; fix CR-3\n  - line 2: CR-3 error: receipt file has a comment" in output
+        assert "summary: 2 errors, 0 warnings\nfiles: 2 checked files" in output
         assert "verification: complete, 0 failures" in output
 
 
