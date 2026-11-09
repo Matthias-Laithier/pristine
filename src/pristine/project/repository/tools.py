@@ -1,10 +1,23 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from pristine.project.commands.shell import positionals
-
-type ArgumentsTest = Callable[[list[str]], bool]
+from pristine.project.commands.tool_arguments import (
+    ArgumentsTest,
+    all_of,
+    any_arguments,
+    any_of,
+    audit_command,
+    checking,
+    denies_warnings,
+    knip_dead_code,
+    non_writing,
+    option,
+    pylint_dead_code,
+    rust_dead_code,
+    subcommand,
+    without,
+)
 
 
 class Ecosystem(StrEnum):
@@ -18,6 +31,8 @@ class Role(StrEnum):
     FORMATTER = "formatter"
     LINTER = "linter"
     TYPE_CHECKER = "type checker"
+    DEAD_CODE = "dead-code checker"
+    VULNERABILITY_AUDIT = "dependency vulnerability audit"
 
 
 @dataclass(frozen=True)
@@ -28,42 +43,6 @@ class Tool:
     config_files: tuple[str, ...] = ()
     packages: frozenset[str] = field(default_factory=frozenset)
     settings_keys: tuple[str, ...] = ()
-
-
-def any_arguments(_: list[str]) -> bool:
-    return True
-
-
-def non_writing(arguments: list[str]) -> bool:
-    return bool(arguments) and arguments[0] in {"-l", "-d"}
-
-
-def subcommand(*names: str) -> ArgumentsTest:
-    return lambda arguments: next(iter(positionals(arguments)), None) in names
-
-
-def option(*names: str) -> ArgumentsTest:
-    return lambda arguments: any(argument in names for argument in arguments)
-
-
-def without(*names: str) -> ArgumentsTest:
-    return lambda arguments: not option(*names)(arguments)
-
-
-def all_of(*tests: ArgumentsTest) -> ArgumentsTest:
-    return lambda arguments: all(test(arguments) for test in tests)
-
-
-def any_of(*tests: ArgumentsTest) -> ArgumentsTest:
-    return lambda arguments: any(test(arguments) for test in tests)
-
-
-def denies_warnings(arguments: list[str]) -> bool:
-    return any(
-        argument in {"-Dwarnings", "--deny=warnings"}
-        or (argument in {"-D", "--deny"} and arguments[index + 1 : index + 2] == ["warnings"])
-        for index, argument in enumerate(arguments)
-    )
 
 
 def native_tool(name: str, ecosystem: Ecosystem, checks: Mapping[Role, ArgumentsTest], *config_files: str) -> Tool:
@@ -86,7 +65,9 @@ TOOLS = (
     ),
     python_tool("black", {Role.FORMATTER: option("--check")}),
     python_tool("flake8", {Role.LINTER: any_arguments}, (".flake8",)),
-    python_tool("pylint", {Role.LINTER: any_arguments}, (".pylintrc", "pylintrc")),
+    python_tool("pylint", {Role.LINTER: any_arguments, Role.DEAD_CODE: pylint_dead_code}, (".pylintrc", "pylintrc")),
+    python_tool("vulture", {Role.DEAD_CODE: checking}),
+    python_tool("pip-audit", {Role.VULNERABILITY_AUDIT: all_of(checking, without("--dry-run", "-d"))}),
     python_tool("mypy", {Role.TYPE_CHECKER: any_arguments}, ("mypy.ini", ".mypy.ini")),
     python_tool("pyright", {Role.TYPE_CHECKER: any_arguments}, ("pyrightconfig.json",)),
     python_tool("basedpyright", {Role.TYPE_CHECKER: any_arguments}, ("pyrightconfig.json",)),
@@ -126,16 +107,26 @@ TOOLS = (
     Tool("tsc", Ecosystem.JAVASCRIPT, {Role.TYPE_CHECKER: any_arguments}, packages=frozenset({"typescript"})),
     javascript_tool("vue-tsc", {Role.TYPE_CHECKER: any_arguments}),
     javascript_tool("tsgo", {Role.TYPE_CHECKER: any_arguments}, package="@typescript/native-preview"),
+    javascript_tool("knip", {Role.DEAD_CODE: knip_dead_code}, "knip.*", ".knip.*"),
+    *(
+        native_tool(name, Ecosystem.JAVASCRIPT, {Role.VULNERABILITY_AUDIT: audit_command})
+        for name in ("npm", "pnpm", "bun")
+    ),
     native_tool("gofmt", Ecosystem.GO, {Role.FORMATTER: non_writing}, "go.mod"),
     native_tool("gofumpt", Ecosystem.GO, {Role.FORMATTER: non_writing}),
     native_tool(
         "go",
         Ecosystem.GO,
-        {Role.LINTER: subcommand("vet"), Role.TYPE_CHECKER: subcommand("test", "build")},
+        {
+            Role.LINTER: subcommand("vet"),
+            Role.TYPE_CHECKER: subcommand("test", "build"),
+            Role.DEAD_CODE: all_of(subcommand("test", "build"), option("./..."), checking),
+        },
         "go.mod",
     ),
     native_tool("golangci-lint", Ecosystem.GO, {Role.LINTER: any_arguments}, ".golangci.yml", ".golangci.yaml"),
     native_tool("staticcheck", Ecosystem.GO, {Role.LINTER: any_arguments}, "staticcheck.conf"),
+    native_tool("govulncheck", Ecosystem.GO, {Role.VULNERABILITY_AUDIT: all_of(checking, without("-mode", "--mode"))}),
     native_tool(
         "cargo",
         Ecosystem.RUST,
@@ -143,6 +134,8 @@ TOOLS = (
             Role.FORMATTER: all_of(subcommand("fmt"), option("--check")),
             Role.LINTER: all_of(subcommand("clippy"), denies_warnings),
             Role.TYPE_CHECKER: subcommand("check", "test", "build"),
+            Role.DEAD_CODE: rust_dead_code,
+            Role.VULNERABILITY_AUDIT: audit_command,
         },
         "Cargo.toml",
     ),

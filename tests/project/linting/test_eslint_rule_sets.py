@@ -50,9 +50,7 @@ def test_eslint_checks_package_config_without_the_dependency(run_project: RunPro
         "extends": [STRICT_PRESET],
         "rules": {ANY_RULE: "off", "react-hooks/rules-of-hooks": "off", "jsx-a11y/alt-text": "off"},
     }
-    makefile = (
-        'dev:\n\tnpm start\ncheck:\n\ttest -z "$$(prettier --check .)"\n\teslint .\n\ttsc --noEmit\ncheck-all: check\n'
-    )
+    makefile = 'dev:\n\tnpm start\ncheck:\n\ttest -z "$$(prettier --check .)"\n\teslint .\n\ttsc --noEmit\n\tknip\ncheck-all: check\n'
     files = {
         "package.json": json.dumps(package),
         "Makefile": makefile,

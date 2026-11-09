@@ -1,5 +1,6 @@
 import posixpath
 
+from pristine.project.commands.tool_arguments import checking, option, option_values
 from pristine.project.repository.loading import Project
 from pristine.project.repository.manifests import array, table
 from pristine.project.strictness.strictness import (
@@ -40,15 +41,15 @@ def extended_names(document: dict[str, object]) -> list[str]:
     return [name for name in names if isinstance(name, str)]
 
 
-def strict_setting(project: Project, path: str, visited: frozenset[str]) -> bool | None:
+def compiler_setting(project: Project, path: str, name: str, visited: frozenset[str]) -> bool | None:
     if path in visited:
         raise UnverifiedConfigError(path, f"the {EXTENDS} chain of {path} is circular")
     document = read_json_config(project, path)
-    strict = table(document, "compilerOptions").get(STRICT_OPTION)
+    strict = table(document, "compilerOptions").get(name)
     if isinstance(strict, bool):
         return strict
     bases = (located(project, path, local_extension(path, name)) for name in reversed(extended_names(document)))
-    settings = (strict_setting(project, base, visited | {path}) for base in bases)
+    settings = (compiler_setting(project, base, name, visited | {path}) for base in bases)
     return next((setting for setting in settings if setting is not None), None)
 
 
@@ -64,9 +65,47 @@ def checked_configs(project: Project) -> list[str]:
 def typescript_shortfall(project: Project, calls: Arguments) -> Shortfall | None:
     if passes_strict_flag(calls) or TYPESCRIPT_CONFIG not in project.entries:
         return None
-    lax = (path for path in checked_configs(project) if strict_setting(project, path, frozenset()) is not True)
+    lax = (
+        path
+        for path in checked_configs(project)
+        if compiler_setting(project, path, STRICT_OPTION, frozenset()) is not True
+    )
     return next((Shortfall(path, TYPESCRIPT_FIX) for path in lax), None)
 
 
 TYPESCRIPT = Probe("TypeScript", typescript_shortfall)
 TYPESCRIPT_PROBES = {"tsc": TYPESCRIPT, "vue-tsc": TYPESCRIPT, "tsgo": TYPESCRIPT}
+
+
+def unused_typescript_shortfall(project: Project, calls: Arguments) -> Shortfall | None:
+    required = ("noUnusedLocals", "noUnusedParameters")
+    for arguments in calls:
+        if not checking(arguments):
+            continue
+        if option("--project", "-p", "--build", "-b")(arguments):
+            raise UnverifiedConfigError(
+                TYPESCRIPT_CONFIG, "review the TypeScript unused-code checks for the explicit project or build graph"
+            )
+        paths = checked_configs(project) if TYPESCRIPT_CONFIG in project.entries else []
+        if paths and paths != [TYPESCRIPT_CONFIG]:
+            raise UnverifiedConfigError(
+                TYPESCRIPT_CONFIG, "a TypeScript solution requires review of the invoked build graph"
+            )
+        supplies_sources = any(
+            argument.endswith((".ts", ".tsx", ".mts", ".cts", ".js", ".jsx")) for argument in arguments
+        )
+        if supplies_sources:
+            paths = []
+        enabled = [unused_option_enabled(project, paths, arguments, name) for name in required]
+        if all(enabled):
+            return None
+    return Shortfall(
+        TYPESCRIPT_CONFIG,
+        "enable noUnusedLocals and noUnusedParameters in the invoked TypeScript configuration or command; these are limited native unused-code checks",
+    )
+
+
+def unused_option_enabled(project: Project, paths: list[str], arguments: list[str], name: str) -> bool:
+    if option(f"--{name}")(arguments):
+        return "false" not in option_values(arguments, f"--{name}")
+    return bool(paths) and all(compiler_setting(project, path, name, frozenset()) is True for path in paths)

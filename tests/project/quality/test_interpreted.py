@@ -12,9 +12,10 @@ PYTHON_MAKEFILE = (
     "RUN := uv run --project app\n"
     "dev:\n\t./run\n"
     "check: format-check lint\n\t$(RUN) mypy --strict app\n"
-    "check-all: check\n"
+    "\t$(RUN) vulture .\ncheck-all: check\n"
     "format-check:\n\t@$(RUN) ruff format {format_mode} app\n"
     "lint:\n\tcd app && $(RUN) ruff check .\n"
+    "audit:\n\tuv run pip-audit\n"
 )
 JAVASCRIPT_MAKEFILE = "dev:\n\tnpm start\ncheck:\n\tnpm run verify\n\tpnpm typecheck\ncheck-all: check\n"
 

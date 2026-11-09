@@ -7,14 +7,14 @@ PYTHON_PROJECT = (
     '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\ndev = ["ruff>=0.6", "mypy>=1.0"]\n'
 )
 PYTHON_MAKEFILE = (
-    "dev:\n\t./run\ncheck:\n\truff check .\n\truff format --check .\n\tmypy --strict .\ncheck-all: check\n"
+    "dev:\n\t./run\ncheck:\n\truff check .\n\truff format --check .\n\tmypy --strict .\n\tvulture .\ncheck-all: check\n"
 )
 PACKAGE = json.dumps(
     {
         "engines": {"node": ">=22"},
         "dependencies": {"react": "19"},
         "devDependencies": {"eslint": "9", "prettier": "3", "typescript": "5"},
-        "scripts": {"check": "eslint . && prettier --check . && tsc --noEmit"},
+        "scripts": {"check": "eslint . && prettier --check . && tsc --noEmit && knip"},
     }
 )
 JAVASCRIPT_MAKEFILE = "dev:\n\tnpm start\ncheck:\n\tnpm run check\ncheck-all: check\n"

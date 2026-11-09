@@ -18,6 +18,7 @@ class Makefile:
     path: str
     rules: dict[str, Rule]
     variables: dict[str, str]
+    has_conditionals: bool = False
 
     def expand(self, text: str) -> str:
         for _ in range(EXPANSION_DEPTH_LIMIT):
@@ -57,6 +58,7 @@ def merge_rules(rules: dict[str, Rule], additions: dict[str, Rule]) -> None:
         if existing is not addition:
             existing.prerequisites.extend(addition.prerequisites)
             existing.recipe.extend(addition.recipe)
+            existing.ignores_failures |= addition.ignores_failures
 
 
 def is_followable_include(reader: SourceReader, name: str) -> bool:
@@ -67,6 +69,7 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
     rules: dict[str, Rule] = {}
     variables = dict(DEFAULT_VARIABLES)
     pending, visited = [path], set()
+    has_conditionals = False
     while pending:
         current = pending.pop(0)
         text = None if current in visited else reader.text(current)
@@ -74,7 +77,8 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
         if text is None:
             continue
         syntax = parse_makefile(text, current)
+        has_conditionals |= syntax.has_conditionals
         merge_rules(rules, syntax.rules)
         variables.update(syntax.variables)
         pending.extend(name for name in syntax.includes if is_followable_include(reader, name))
-    return Makefile(path, rules, variables) if path in reader.checked else None
+    return Makefile(path, rules, variables, has_conditionals) if path in reader.checked else None

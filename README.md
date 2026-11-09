@@ -87,6 +87,10 @@ The rules live in [src/pristine/rules/](src/pristine/rules/README.md), one file 
 
 `pristine project` recognizes Python, JavaScript/TypeScript, Go, and Rust repositories. For Go it reads `go.mod` and accepts the native toolchain (`gofmt`, `go vet`, `go test`, `go build`) plus golangci-lint and staticcheck. For Rust it reads `Cargo.toml` and accepts `cargo fmt`, `cargo clippy`, `cargo check`, `cargo test`, and `cargo build`.
 
+Dead-code checking belongs in `make check`. Supported capabilities include Vulture, Pylint with `--enable=unreachable`, Ruff with F401 and F841, Knip with unused-code issue types enabled, TypeScript with `noUnusedLocals` and `noUnusedParameters`, Go compilation of `./...`, and Rust compilation or Clippy with `-D warnings`. Native lint and compiler checks are limited checks for unused locals, imports, or private code, not whole-project unused-function detection. Knip JSON/JSONC filters and Vulture source paths are inspected; dynamic or conditional configurations require review.
+
+Recognized vulnerability audit commands include `pip-audit`, `npm audit`, `pnpm audit`, `bun audit`, `govulncheck`, and `cargo audit`. Project inspection never runs them or fetches vulnerability databases. An unverified audit mechanism produces a TL-4 warning, not a claim that audits are absent or dependencies are vulnerable. Network audits stay outside `make check`; regular audit targets may stay outside `check-all` under TL-4. A local Cargo audit with `--no-fetch --no-update-index --file <local-lockfile>` must reach `check-all` or its fast gate.
+
 ## Languages
 
 Parsing uses [tree-sitter](https://tree-sitter.github.io/). Every language with a grammar gets the shared checks: file and function size, nesting, comments, if/else dispatch chains, asset and directory layout, test location, and secrets.

@@ -14,6 +14,8 @@ MAKE_REDIRECTING_OPTIONS = ("-C", "--directory", "-f", "--file", "--makefile")
 GUARD_PREFIX_ARGUMENTS = ("test", "-z")
 GUARD_WORD_COUNT = len(GUARD_PREFIX_ARGUMENTS) + 1
 GUARDED_COMMAND = re.compile(r"^\"?\$\$\((.+)\)\"?$")
+PYTHON_INTERPRETERS = frozenset({"python", "python3"})
+MODULE_PROGRAMS = {"pip_audit": "pip-audit"}
 
 
 def words_of(command: str) -> list[str]:
@@ -42,10 +44,13 @@ def command_segments(command: str) -> list[list[str]]:
 def call_words(words: list[str]) -> list[tuple[str, list[str]]]:
     name = program_name(words[0])
     calls = [(name, words[1:])]
-    if name in WRAPPERS:
+    if name in PYTHON_INTERPRETERS and words[1:2] == ["-m"] and words[2:]:
+        module = MODULE_PROGRAMS.get(words[2], program_name(words[2]))
+        calls.append((module, words[3:]))
+    elif name in WRAPPERS:
         child = wrapper_child(name, words[1:])
         if child is not None:
-            calls.append((program_name(child[0]), child[1:]))
+            calls.extend(call_words(child))
     return calls
 
 
@@ -56,6 +61,11 @@ def program_name(word: str) -> str:
 def program_calls(command: str, programs: frozenset[str]) -> Iterator[tuple[str, list[str]]]:
     for words in command_segments(command):
         yield from ((name, arguments) for name, arguments in call_words(words) if name in programs)
+
+
+def verifiable_command(command: str) -> bool:
+    words = words_of(command)
+    return not any(word in {"||", "|", "if", "then", "else", "fi", "for", "while"} or "$" in word for word in words)
 
 
 def guarded_program_calls(command: str, programs: frozenset[str]) -> Iterator[tuple[str, list[str]]]:

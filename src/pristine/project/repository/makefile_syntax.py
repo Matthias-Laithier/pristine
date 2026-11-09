@@ -41,6 +41,7 @@ class Rule:
     line: int
     prerequisites: list[str] = field(default_factory=list)
     recipe: list[str] = field(default_factory=list)
+    ignores_failures: bool = False
 
 
 @dataclass
@@ -51,6 +52,7 @@ class MakefileSyntax:
     includes: list[str] = field(default_factory=list)
     current_rules: list[Rule] = field(default_factory=list)
     inside_define: bool = False
+    has_conditionals: bool = False
 
     def read(self, line_number: int, line: str) -> None:
         if self.inside_define:
@@ -60,7 +62,10 @@ class MakefileSyntax:
             self.add_recipe_line(line)
             return
         statement = line.split(COMMENT, 1)[0].strip()
-        if not statement or statement.split()[0] in CONDITIONAL_DIRECTIVES:
+        if not statement:
+            return
+        if statement.split()[0] in CONDITIONAL_DIRECTIVES:
+            self.has_conditionals = True
             return
         self.current_rules = []
         self.read_statement(line_number, statement)
@@ -95,6 +100,7 @@ class MakefileSyntax:
         command = line.lstrip(RECIPE_FLAGS)
         for rule in self.current_rules:
             rule.recipe.append(command)
+            rule.ignores_failures |= line.lstrip("@+ \t").startswith("-")
 
 
 def is_plain_target(name: str) -> bool:

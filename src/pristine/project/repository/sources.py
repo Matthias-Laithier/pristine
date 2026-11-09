@@ -26,3 +26,7 @@ class SourceReader:
     def is_local_file(self, relative: str) -> bool:
         candidate = (self.root / relative).resolve()
         return candidate.is_relative_to(self.root.resolve()) and candidate.is_file()
+
+    def is_local_path(self, relative: str) -> bool:
+        candidate = (self.root / relative).resolve()
+        return candidate.is_relative_to(self.root.resolve()) and candidate.exists()

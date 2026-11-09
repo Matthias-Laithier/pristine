@@ -1,120 +1,123 @@
-from collections.abc import Callable, Iterable
-from dataclasses import dataclass
-from fnmatch import fnmatchcase
-
-from pristine.project.commands.scripts import with_package_scripts
-from pristine.project.commands.shell import guarded_program_calls, program_calls
+from pristine.project.commands.gates import FastGate, fast_gate
+from pristine.project.commands.shell import program_calls, program_name, verifiable_command, words_of
+from pristine.project.repository.configuration import REQUIREMENTS, Requirement, is_configured
 from pristine.project.repository.loading import Project
-from pristine.project.repository.makefile import FAST_GATE, reach
-from pristine.project.repository.makefile_syntax import Rule
-from pristine.project.repository.manifests import Manifest
-from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role, Tool
-from pristine.reports.findings import Finding, Severity
+from pristine.project.repository.tools import TOOLS, Ecosystem, Role, Tool
+from pristine.project.strictness.linting.unused_ruff import unused_ruff_shortfall
+from pristine.project.strictness.strictness import UnverifiedConfigError
+from pristine.project.strictness.typescript_strictness import TYPESCRIPT_PROBES, unused_typescript_shortfall
+from pristine.reports.findings import Finding, FindingKind, Severity
 
 RULE_ID = "TL-3"
 FIRST_LINE = 1
-TYPESCRIPT_CONFIG = "tsconfig.json"
-TYPESCRIPT_PACKAGE = "typescript"
-TOOL_NAMES = frozenset(TOOLS_BY_NAME)
 RUN_DESCRIPTIONS = {
     Role.FORMATTER: "the formatter in check mode, verifying formatting without rewriting files",
     Role.LINTER: "the linter",
     Role.TYPE_CHECKER: "the type checker",
+    Role.DEAD_CODE: "an applicable dead-code checker (including limited native unused-code checks)",
 }
 
-type Invocation = tuple[str, Role]
 
-
-@dataclass(frozen=True)
-class Requirement:
-    ecosystem: Ecosystem
-    role: Role
-    applies: Callable[[Project, list[Manifest]], bool]
-
-
-@dataclass(frozen=True)
-class FastGate:
-    rule: Rule
-    commands: tuple[str, ...]
-    invocations: frozenset[Invocation]
-
-
-def every_project(_: Project, __: list[Manifest]) -> bool:
-    return True
-
-
-def is_typescript(project: Project, manifests: list[Manifest]) -> bool:
-    declared = any(TYPESCRIPT_PACKAGE in manifest.dependencies for manifest in manifests)
-    return declared or bool(project.files_named((TYPESCRIPT_CONFIG,))) or TYPESCRIPT_CONFIG in project.entries
-
-
-REQUIREMENTS = (
-    Requirement(Ecosystem.PYTHON, Role.FORMATTER, every_project),
-    Requirement(Ecosystem.PYTHON, Role.LINTER, every_project),
-    Requirement(Ecosystem.PYTHON, Role.TYPE_CHECKER, every_project),
-    Requirement(Ecosystem.JAVASCRIPT, Role.FORMATTER, every_project),
-    Requirement(Ecosystem.JAVASCRIPT, Role.LINTER, every_project),
-    Requirement(Ecosystem.JAVASCRIPT, Role.TYPE_CHECKER, is_typescript),
-    Requirement(Ecosystem.GO, Role.FORMATTER, every_project),
-    Requirement(Ecosystem.GO, Role.LINTER, every_project),
-    Requirement(Ecosystem.GO, Role.TYPE_CHECKER, every_project),
-    Requirement(Ecosystem.RUST, Role.FORMATTER, every_project),
-    Requirement(Ecosystem.RUST, Role.LINTER, every_project),
-    Requirement(Ecosystem.RUST, Role.TYPE_CHECKER, every_project),
-)
-
-
-def invocations(commands: Iterable[str]) -> frozenset[Invocation]:
-    normal_calls = [
-        (name, tuple(arguments)) for command in commands for name, arguments in program_calls(command, TOOL_NAMES)
-    ]
-    guarded_calls = {
-        (name, tuple(arguments))
-        for command in commands
-        for name, arguments in guarded_program_calls(command, TOOL_NAMES)
-    }
-    calls = normal_calls + [*guarded_calls]
-    return frozenset(
-        (name, role)
-        for name, arguments in calls
-        for role, test in TOOLS_BY_NAME[name].checks.items()
-        if test(list(arguments))
-        and (
-            role is not Role.FORMATTER
-            or TOOLS_BY_NAME[name].ecosystem is not Ecosystem.GO
-            or (name, arguments) in guarded_calls
+def uncertain_gate(project: Project, candidates: list[Tool], gate: FastGate) -> bool:
+    names = {tool.name for tool in candidates}
+    names |= {"npm", "pnpm", "yarn", "bun", "make", "gmake"}
+    if any(tool.ecosystem is Ecosystem.JAVASCRIPT for tool in candidates):
+        names |= set(TYPESCRIPT_PROBES)
+    return (
+        gate.ignores_failures
+        or bool(project.makefile and project.makefile.has_conditionals)
+        or any(
+            not verifiable_command(command) and names & {program_name(word) for word in words_of(command)}
+            for command in gate.commands
         )
     )
 
 
-def fast_gate(project: Project) -> FastGate | None:
-    makefile = project.makefile
-    if makefile is None or FAST_GATE not in makefile.rules:
+def uncertain_dead_code(project: Project, requirement: Requirement, gate: FastGate | None) -> Finding | None:
+    if requirement.role is not Role.DEAD_CODE or gate is None:
         return None
-    javascript = project.root_manifest(Ecosystem.JAVASCRIPT)
-    commands = with_package_scripts(reach(makefile, FAST_GATE).commands, javascript.scripts if javascript else {})
-    return FastGate(makefile.rules[FAST_GATE], tuple(commands), invocations(commands))
+    candidates = [tool for tool in TOOLS if tool.ecosystem is requirement.ecosystem and requirement.role in tool.checks]
+    if not uncertain_gate(project, candidates, gate):
+        return None
+    message = "cannot verify dead-code checking in make check: conditional, dynamic, piped or failure-suppressing commands require review"
+    return Finding(
+        project.shown(gate.rule.path), gate.rule.line, RULE_ID, Severity.WARNING, message, FindingKind.VERIFICATION
+    )
 
 
-def declares(manifest: Manifest, tool: Tool) -> bool:
-    return bool(tool.packages & manifest.dependencies or manifest.settings.keys() & set(tool.settings_keys))
-
-
-def is_configured(tool: Tool, manifests: list[Manifest], file_names: frozenset[str]) -> bool:
-    has_config_file = any(fnmatchcase(name, pattern) for name in file_names for pattern in tool.config_files)
-    return has_config_file or any(declares(manifest, tool) for manifest in manifests)
+def native_dead_code(project: Project, gate: FastGate, ecosystem: Ecosystem) -> list[Finding]:
+    names = frozenset({"ruff"}) if ecosystem is Ecosystem.PYTHON else frozenset(TYPESCRIPT_PROBES)
+    check = unused_ruff_shortfall if ecosystem is Ecosystem.PYTHON else unused_typescript_shortfall
+    calls = [arguments for command in gate.commands for _, arguments in program_calls(command, names)]
+    try:
+        shortfall = check(project, calls)
+    except UnverifiedConfigError as error:
+        return [
+            Finding(
+                project.shown(error.path),
+                FIRST_LINE,
+                RULE_ID,
+                Severity.WARNING,
+                f"cannot verify native {ecosystem} dead-code checking: {error.reason}",
+                FindingKind.VERIFICATION,
+            )
+        ]
+    if shortfall is None:
+        return []
+    return [
+        Finding(
+            project.shown(gate.rule.path),
+            gate.rule.line,
+            RULE_ID,
+            Severity.ERROR,
+            f"make check does not enforce dead-code checking; {shortfall.fix}",
+        )
+    ]
 
 
 def unmet(project: Project, requirement: Requirement, gate: FastGate | None) -> list[Finding]:
     manifest = project.root_manifest(requirement.ecosystem)
     manifests = project.manifests[requirement.ecosystem]
-    if manifest is None or not requirement.applies(project, manifests):
+    if (
+        manifest is None
+        or not requirement.applies(project, manifests)
+        or (requirement.role is Role.DEAD_CODE and gate is None)
+    ):
         return []
     candidates = [tool for tool in TOOLS if tool.ecosystem is requirement.ecosystem and requirement.role in tool.checks]
+    uncertainty = uncertain_dead_code(project, requirement, gate)
+    if uncertainty:
+        return [uncertainty]
     if gate and any((tool.name, requirement.role) in gate.invocations for tool in candidates):
         return []
-    file_names = project.file_names
-    configured = [tool.name for tool in candidates if is_configured(tool, manifests, file_names)]
+    if (
+        gate
+        and requirement.role is Role.DEAD_CODE
+        and requirement.ecosystem is Ecosystem.JAVASCRIPT
+        and any((name, Role.TYPE_CHECKER) in gate.invocations for name in TYPESCRIPT_PROBES)
+    ):
+        return native_dead_code(project, gate, requirement.ecosystem)
+    if (
+        gate
+        and requirement.role is Role.DEAD_CODE
+        and requirement.ecosystem is Ecosystem.PYTHON
+        and ("ruff", Role.LINTER) in gate.invocations
+    ):
+        return native_dead_code(project, gate, requirement.ecosystem)
+    return missing_tool(project, requirement, candidates, gate)
+
+
+def missing_tool(
+    project: Project, requirement: Requirement, candidates: list[Tool], gate: FastGate | None
+) -> list[Finding]:
+    manifest = project.root_manifest(requirement.ecosystem)
+    if manifest is None:
+        return []
+    configured = [
+        tool.name
+        for tool in candidates
+        if is_configured(tool, project.manifests[requirement.ecosystem], project.file_names)
+    ]
     if not configured:
         names = ", ".join(tool.name for tool in candidates)
         message = (

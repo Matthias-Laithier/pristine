@@ -1,4 +1,5 @@
-from pristine.project.automation import RULE_ID, is_configured, is_typescript
+from pristine.project.repository.configuration import QUALITY_RULE_ID as RULE_ID
+from pristine.project.repository.configuration import is_configured, is_typescript
 from pristine.project.repository.loading import Project
 from pristine.project.repository.manifests import array, table
 from pristine.project.repository.tools import TOOLS_BY_NAME

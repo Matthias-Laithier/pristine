@@ -3,9 +3,7 @@ import pytest
 from tests.project.conftest import RunProject, rule_findings
 
 GO_MOD = "module example.com/app\n\ngo 1.24\n"
-GO_MAKEFILE = (
-    'dev:\n\tgo run ./cmd/app\ncheck:\n\ttest -z "$$(gofmt -l .)"\n\tgo vet ./...\n\tgo test ./...\ncheck-all: check\n'
-)
+GO_MAKEFILE = 'dev:\n\tgo run ./cmd/app\ncheck:\n\ttest -z "$$(gofmt -l .)"\n\tgo vet ./...\n\tgo test ./...\ncheck-all: check\naudit:\n\tgovulncheck ./...\n'
 GO_FORMAT_RECIPE = 'test -z "$$(gofmt -l .)"'
 GO_WITHOUT_TOOLS_MAKEFILE = "dev:\n\tgo run .\ncheck:\n\tgo run .\ncheck-all: check\n"
 GOFMT_NOT_RUN = (
@@ -20,7 +18,7 @@ CARGO_TOML = '[package]\nname = "app"\nrust-version = "1.84"\n'
 RUST_MAKEFILE = (
     "dev:\n\tcargo run\n"
     "check:\n\tcargo fmt -- --check\n\tcargo clippy -- -D warnings\n\tcargo check\n"
-    "check-all: check\n"
+    "check-all: check\naudit:\n\tcargo audit\n"
 )
 
 
@@ -63,6 +61,11 @@ def test_go_project_without_tools(run_project: RunProject) -> None:
         GOFMT_NOT_RUN,
         ("error", "make check does not run the linter (configured: go)", 3),
         ("error", "make check does not run the type checker (configured: go)", 3),
+        (
+            "error",
+            "make check does not run an applicable dead-code checker (including limited native unused-code checks) (configured: go)",
+            3,
+        ),
     ]
 
 
@@ -78,6 +81,7 @@ def test_rust_project_without_lint_and_formatting(run_project: RunProject) -> No
     assert [message.split(";")[0] for _, message, _ in rule_findings(report, "TL-3")] == [
         "make check does not run the formatter in check mode, verifying formatting without rewriting files (configured: cargo)",
         "make check does not run the linter (configured: cargo)",
+        "make check does not run an applicable dead-code checker (including limited native unused-code checks) (configured: cargo)",
     ]
 
 
@@ -88,5 +92,6 @@ def test_rust_clippy_must_deny_warnings(run_project: RunProject) -> None:
     }
     _, report = run_project(files)
     assert [message for _, message, _ in rule_findings(report, "TL-3")] == [
-        "make check does not run the linter (configured: cargo)"
+        "make check does not run the linter (configured: cargo)",
+        "make check does not run an applicable dead-code checker (including limited native unused-code checks) (configured: cargo)",
     ]

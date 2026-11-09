@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from pristine.project import automation
+from pristine.project.commands.gates import Invocation, fast_gate, invocations
 from pristine.project.repository.loading import Project
 from pristine.project.repository.makefile import COMPLETE_GATE, FAST_GATE, reach
-from pristine.project.repository.tools import Ecosystem
+from pristine.project.repository.tools import Ecosystem, Role
 from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "TL-2"
@@ -15,7 +15,7 @@ class DeclaredChecks:
     path: str
     line: int
     source: str
-    invocations: frozenset[automation.Invocation]
+    invocations: frozenset[Invocation]
 
 
 def complete_gate_runs_fast_gate(project: Project) -> list[Finding]:
@@ -47,7 +47,7 @@ def declared_checks(project: Project) -> list[DeclaredChecks]:
             project.shown(rule.path),
             rule.line,
             f"Makefile target '{name}'",
-            automation.invocations(makefile.expand(line) for line in rule.recipe),
+            invocations(makefile.expand(line) for line in rule.recipe),
         )
         for name, rule in makefile.rules.items()
     )
@@ -59,7 +59,7 @@ def declared_checks(project: Project) -> list[DeclaredChecks]:
             project.shown(manifest.path),
             FIRST_LINE,
             f"package script '{name}'",
-            automation.invocations((body,)),
+            invocations((body,)),
         )
         for name, body in scripts.items()
     )
@@ -67,7 +67,7 @@ def declared_checks(project: Project) -> list[DeclaredChecks]:
 
 
 def omitted_checks(project: Project) -> list[Finding]:
-    gate = automation.fast_gate(project)
+    gate = fast_gate(project)
     if gate is None:
         return []
     findings = [
@@ -80,6 +80,7 @@ def omitted_checks(project: Project) -> list[Finding]:
         )
         for declared in declared_checks(project)
         for name, role in sorted(declared.invocations - gate.invocations, key=lambda item: (item[0], item[1].value))
+        if role is not Role.VULNERABILITY_AUDIT
     ]
     return findings
 

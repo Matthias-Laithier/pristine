@@ -83,7 +83,7 @@ def test_a_protocol_mismatch_loses_only_the_active_file(mismatch: str) -> None:
 
 
 def test_a_worker_that_cannot_launch_marks_every_path_unchecked(monkeypatch: MonkeyPatch) -> None:
-    def fail_to_launch(*args: object, **kwargs: object) -> None:
+    def fail_to_launch(*_args: object, **_kwargs: object) -> None:
         raise PermissionError("launch refused")
 
     monkeypatch.setattr(subprocess, "Popen", fail_to_launch)
