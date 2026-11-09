@@ -96,6 +96,8 @@ Tests replay reviewed native responses and fake download/process boundaries. Liv
 
 Text and JSON include source evidence, full counts, verification problems, an explicit coverage statement, and the same mandatory rule-reading and review guidance as the other reports. JSON has `scope`, `verification_status`, `summary`, `findings`, `sources`, `problems`, and `next_step`. `--max N` requires a positive integer and caps only findings; `summary.omitted` counts the rest, while all source evidence, problems, and totals remain visible. A complete scan with no findings says no known advisory matches, not proof of security; absent fixed-version evidence is reported explicitly.
 
+Text shows each source once with its full overview, then groups advisory details under exact ecosystem/package/version headings. Scope and fixed-release caveats appear once. Counts name native advisory records, not distinct vulnerabilities inferred from aliases; `--max` caps only advisory rows.
+
 Audit exits are 0 for complete verification with dependency evidence and no vulnerability findings, 1 for vulnerability findings with complete verification, 2 for invalid command usage, and 3 for incomplete verification. Exit 3 takes priority over 1: missing scanners, failed lookups, unsupported inputs, invalid scanner output, absent dependency evidence, and native exit statuses that contradict the findings never become clean. The command does not replace `pristine check`, `pristine project`, or the agent's full-rule review, and their reports and exits are unchanged.
 
 ## How it works

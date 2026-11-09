@@ -89,7 +89,12 @@ def test_audit_caps_only_findings_and_keeps_full_counts(
     else:
         assert "... 3 findings omitted" in output
         assert "summary: 4 advisory records, 2 packages, 1 sources, 0 verification failures" in output
-        assert "advisory-reported fixed releases (not upgrade recommendations):" in output
+        assert "/fixtures/vulnerable/uv.lock (lockfile)\n  2 packages; 4 advisory records" in output
+        assert "  PyPI protobuf@4.25.5\n    - PYSEC-2026-1805;" in output
+        assert output.count("/fixtures/vulnerable/uv.lock") == 1
+        assert output.count("protobuf@4.25.5") == 1
+        assert output.count("not upgrade recommendations") == 1
+        assert "fixed releases: 5.29.6, 6.33.5" in output
 
 
 @pytest.mark.parametrize("json_output", [False, True])
@@ -176,4 +181,4 @@ def test_audit_marks_absent_fixed_versions_as_not_reported(
     document["results"] = [source]
     native_scanner(json.dumps(document), 1, None, "/fixtures/vulnerable/uv.lock")
     assert main(["audit", "uv.lock"]) == 1
-    assert capsys.readouterr().out.count("fixed versions: not reported") == 4
+    assert capsys.readouterr().out.count("fixed releases: not reported") == 4

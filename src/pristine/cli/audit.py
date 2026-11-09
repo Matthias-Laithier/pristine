@@ -1,14 +1,19 @@
 import json
+from collections import Counter
 from dataclasses import asdict
 
 from pristine.audit.models import AuditReport, DependencyFinding
-from pristine.cli.rendering import NEXT_STEP
+from pristine.cli.rendering import NEXT_STEP, counted
 
 __all__ = ["render_json", "render_text"]
 
 SCOPE = (
     "Native-extracted PyPI package/version known-advisory matches only; no installed-dependency, package-origin, "
     "full-project, or exploitability assurance. Fixed versions are contextual advisory releases, not upgrade recommendations."
+)
+TEXT_SCOPE = (
+    "Scope: known-advisory matches in native uv.lock/PyPI records; no installed/origin/project/exploitability assurance.\n"
+    "Fixed releases are advisory context, not upgrade recommendations."
 )
 
 
@@ -30,11 +35,7 @@ def render_json(report: AuditReport, limit: int | None) -> str:
 
 def render_text(report: AuditReport, limit: int | None) -> str:
     shown = report.findings[:limit]
-    lines = ["Dependency audit", SCOPE]
-    lines.extend(
-        f"source: {source.path} ({source.source_type}), {source.package_count} packages" for source in report.sources
-    )
-    lines.extend(_finding_line(finding) for finding in shown)
+    lines = ["Dependency audit", TEXT_SCOPE, *_source_sections(report, shown)]
     omitted = len(report.findings) - len(shown)
     if omitted:
         lines.append(f"... {omitted} findings omitted; raise --max or remove --max to see them all")
@@ -52,10 +53,35 @@ def _finding_line(finding: DependencyFinding) -> str:
     details = [finding.advisory_id]
     if finding.aliases:
         details.append("aliases: " + ", ".join(finding.aliases))
-    if finding.fixed_versions:
-        details.append(
-            "advisory-reported fixed releases (not upgrade recommendations): " + ", ".join(finding.fixed_versions)
+    details.append("fixed releases: " + (", ".join(finding.fixed_versions) or "not reported"))
+    return "    - " + "; ".join(details)
+
+
+def _source_sections(report: AuditReport, shown: tuple[DependencyFinding, ...]) -> list[str]:
+    packages: Counter[tuple[str, str]] = Counter()
+    for source in report.sources:
+        packages[source.path, source.source_type] += source.package_count
+    records: Counter[tuple[str, str]] = Counter(
+        (finding.source_path, finding.source_type) for finding in report.findings
+    )
+    lines: list[str] = []
+    for (path, source_type), package_count in (dict.fromkeys(records, 0) | dict(packages)).items():
+        lines += [
+            "",
+            f"{path} ({source_type})",
+            f"  {counted(package_count, 'package')}; {counted(records[path, source_type], 'advisory record')}",
+        ]
+        lines += _package_sections(
+            [finding for finding in shown if (finding.source_path, finding.source_type) == (path, source_type)]
         )
-    else:
-        details.append("fixed versions: not reported")
-    return f"{finding.source_path}: {finding.ecosystem} {finding.package}@{finding.version}: " + "; ".join(details)
+    return lines
+
+
+def _package_sections(shown: list[DependencyFinding]) -> list[str]:
+    groups: dict[tuple[str, str, str], list[DependencyFinding]] = {}
+    for finding in shown:
+        groups.setdefault((finding.ecosystem, finding.package, finding.version), []).append(finding)
+    lines: list[str] = []
+    for (ecosystem, package, version), findings in groups.items():
+        lines += [f"  {ecosystem} {package}@{version}", *(_finding_line(finding) for finding in findings)]
+    return lines
