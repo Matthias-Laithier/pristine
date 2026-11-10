@@ -9,6 +9,7 @@ from pristine.reports.outcome_lines import decoded_outcome
 from pristine.reports.outcomes import Checked, Outcome
 
 PROCESS_STOP_SECONDS = 5
+EXIT_STATUS_WAIT_SECONDS = 1
 READ_CHUNK_BYTES = 65536
 LOST_FILE_REASON = "the parser crashed or timed out on this file"
 UNREPORTED_FILE_REASON = "the worker finished without reporting this file"
@@ -105,7 +106,10 @@ class WorkerProcess:
         return stdout.fileno()
 
     def exit_failure_reason(self) -> str:
-        return_code = self.process.poll()
+        try:
+            return_code = self.process.wait(timeout=EXIT_STATUS_WAIT_SECONDS)
+        except subprocess.TimeoutExpired:
+            return_code = None
         if return_code == 0:
             return f"{UNREPORTED_FILE_REASON}: worker exit status 0"
         if return_code is None:
