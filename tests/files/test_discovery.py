@@ -55,3 +55,48 @@ def test_explicit_duplicate_inputs_are_deduplicated(tmp_path: Path, monkeypatch:
     monkeypatch.chdir(tmp_path)
     Path("app.py").write_text("value = 1\n")
     assert discover_files([Path("app.py"), Path("app.py")], []) == ["app.py"]
+
+
+def test_fallback_filters_descendants_but_not_explicit_roots(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    for name in (
+        "src/app.py",
+        "src/.hidden/ignored.py",
+        "src/.hidden-file",
+        "src/vendor/ignored.py",
+        "src/__pycache__/ignored.py",
+        "files/vendor",
+        "files/node_modules",
+        "files/__pycache__",
+    ):
+        path = Path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("content")
+
+    assert discover_files([Path(".")], []) == ["files/__pycache__", "files/node_modules", "files/vendor", "src/app.py"]
+    assert discover_files([Path("src/.hidden"), Path("src/vendor"), Path("src/__pycache__")], []) == [
+        "src/.hidden/ignored.py",
+        "src/__pycache__/ignored.py",
+        "src/vendor/ignored.py",
+    ]
+    assert discover_files([Path("src/.hidden-file"), Path("src/vendor/ignored.py")], []) == [
+        "src/.hidden-file",
+        "src/vendor/ignored.py",
+    ]
+
+
+def test_fallback_symlink_files_and_explicit_directory_symlink(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    Path("project").mkdir()
+    Path("outside").mkdir()
+    Path("outside/target.py").write_text("content")
+    Path("outside/other.py").write_text("content")
+    Path(".hidden.py").write_text("content")
+    Path("project/file-link").symlink_to(Path("../outside/target.py"))
+    Path("project/hidden-link").symlink_to(Path("../.hidden.py"))
+    Path("project/broken-link").symlink_to(Path("../missing"))
+    Path("project/directory-link").symlink_to(Path("../outside"), target_is_directory=True)
+
+    assert discover_files([Path("project"), Path("project/file-link")], []) == [".hidden.py", "outside/target.py"]
+    assert discover_files([Path("project/directory-link")], []) == ["outside/other.py", "outside/target.py"]
+    assert discover_files([Path("project/broken-link")], []) == []
