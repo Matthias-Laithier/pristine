@@ -118,7 +118,13 @@ def test_fallback_does_not_scan_hidden_vendored_or_cache_directories(
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("content")
 
-    with patch("os.scandir", wraps=os.scandir) as scandir:
+    with patch("os.scandir", wraps=os.scandir) as scandir, patch("os.listdir", wraps=os.listdir) as listdir:
         assert discover_files([Path(".")], []) == ["src/app.py"]
 
-    assert {Path(call.args[0]) for call in scandir.call_args_list} == {Path("."), Path("src")}
+    scanned = {
+        Path(os.fsdecode((call.args[0] if call.args else call.kwargs.get("path")) or ".")).resolve()
+        for call in scandir.call_args_list + listdir.call_args_list
+    }
+    excluded = [Path("src/.hidden").resolve(), Path("src/vendor").resolve(), Path("src/__pycache__").resolve()]
+    assert scanned
+    assert not any(path.is_relative_to(directory) for path in scanned for directory in excluded)
