@@ -3,7 +3,7 @@ from pathlib import Path
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
@@ -130,13 +130,11 @@ def check_export_contract(parsed: ParsedFile) -> list[Finding]:
     return [finding for check in LANGUAGE_CHECKS.get(parsed.language, ()) for finding in check(parsed)]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python: a package __init__.py that re-exports names without __all__, and __all__ entries that are "
-            "undefined or private. JS/TS: export * from a relative module in an index file. Tests are exempt."
-        ),
-        run=check_export_contract,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python: a package __init__.py that re-exports names without __all__, and __all__ entries that are "
+        "undefined or private. JS/TS: export * from a relative module in an index file. Tests are exempt."
+    ),
+    run=check_export_contract,
 )

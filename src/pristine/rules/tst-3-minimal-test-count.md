@@ -8,6 +8,8 @@ The fast suite behind `make check` runs in seconds. Slow tests belong behind `ma
 
 Coverage is a floor and never a target. A coverage report finds behavior with no test at all. It says nothing about the quality of the tests that exist. Quotas breed shallow tests: constant checks, type checks, fragment asserts. Use coverage to find holes, never as a score.
 
+A fixed bug in shipped behavior gets one regression test, written first and watched failing before the fix. A finding from review that no user or caller could hit is no bug, and it earns no test. If an automated test is technically impossible, leave the strongest available check and record why in the place [CR-3](cr-3-no-comments-except-machine-read-text.md) gives for a reason.
+
 When behavior is removed, its tests are deleted with it. Editing the assertions of a test for dead behavior until it turns green is how suites rot.
 
 Tests are code. Every rule of [the coding rules](README.md) applies to them, [CR-1](cr-1-code-file-size.md) included.

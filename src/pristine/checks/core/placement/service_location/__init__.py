@@ -1,6 +1,6 @@
 from pathlib import PurePath
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.clients.tables import client_table, library_names
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -51,13 +51,11 @@ def check_service_location(parsed: ParsedFile) -> list[Finding]:
     return [Finding(parsed.path, min(client.line for client in clients), RULE_ID, Severity.WARNING, message)]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Files importing an external-system client library (HTTP, cloud SDK, database, broker, LLM, mail) outside "
-            "a services/ folder. Tests, composition roots, and type-only imports are exempt."
-        ),
-        run=check_service_location,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Files importing an external-system client library (HTTP, cloud SDK, database, broker, LLM, mail) outside "
+        "a services/ folder. Tests, composition roots, and type-only imports are exempt."
+    ),
+    run=check_service_location,
 )

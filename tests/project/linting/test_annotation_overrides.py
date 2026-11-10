@@ -39,7 +39,7 @@ def test_uncertain_annotation_gate_context_is_a_verification_gap(run_project: Ru
 def test_ruff_inheritance_preserves_annotation_rule_selection(run_project: RunProject) -> None:
     files = {
         "pyproject.toml": PYTHON_PROJECT + '[tool.ruff]\nextend = "config/base.toml"\n',
-        "config/base.toml": '[lint]\nextend-select = ["ANN", "S", "ASYNC", "DTZ", "G", "T20"]\n',
+        "config/base.toml": '[lint]\nextend-select = ["ANN", "S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]\n',
         "Makefile": ANNOTATIONS_MAKEFILE,
     }
     assert annotation_findings(files, run_project) == []

@@ -21,7 +21,7 @@ JAVASCRIPT_MAKEFILE = "dev:\n\tnpm start\ncheck:\n\tnpm run check\ncheck-all: ch
 ANY_RULE = "@typescript-eslint/no-explicit-any"
 STRICT_PRESET = "plugin:@typescript-eslint/strict-type-checked"
 REACT_PRESETS = ["plugin:react-hooks/recommended", "plugin:jsx-a11y/recommended"]
-ANNOTATIONS = '[tool.ruff.lint]\nextend-select = ["S", "ASYNC", "DTZ", "G", "T20", "ANN"]\n'
+ANNOTATIONS = '[tool.ruff.lint]\nextend-select = ["S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA", "ANN"]\n'
 ANNOTATIONS_MAKEFILE = (
     "dev:\n\t./run\ncheck:\n\truff check .\n\truff format --check .\n\tty check .\ncheck-all: check\n"
 )

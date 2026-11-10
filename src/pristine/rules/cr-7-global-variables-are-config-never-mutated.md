@@ -4,9 +4,11 @@ Treat global variables as config. A global is initialized once and never written
 
 A value that must change while the program runs is state. State needs an owner: a class or module that owns the value and exposes methods to change it (see [CO-5](co-5-functions-where-possible-classes-where-needed.md)). Pass that owner explicitly to the code that needs it.
 
-The exceptions are caches, plugin registries, and stable service instances.
-- Caches and registries may grow only behind an encapsulated mechanism: `functools.lru_cache` for caches, a registration decorator whose module owns the registry dict. Consumers never receive direct write access.
+The exceptions are caches and stable service instances.
+- A cache may grow only behind an encapsulated mechanism such as `functools.lru_cache`. Consumers never receive direct write access.
 - A service may manage internal operational state such as connection pooling, token caching, or retries. Its identity, configuration, and application state stay fixed. Consumers call the service. They never replace it, reconfigure it, or use it as a state container.
+
+A registry is no exception. It is config: a literal in its owning module that lists every entry and is never written after import (see [CR-14](cr-14-value-dispatch-through-a-registry.md)).
 
 When you take an exception, the name carries the owner and the lifecycle, such as a private module-level `_rate_cache` that only its own module fills. A decision record holds anything more (see [CR-3](cr-3-no-comments-except-machine-read-text.md)).
 

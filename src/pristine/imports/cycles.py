@@ -2,7 +2,7 @@ from collections import deque
 from collections.abc import Iterator
 from dataclasses import dataclass
 
-from pristine.imports.registry import ImportEdge
+from pristine.imports.edges import ImportEdge
 
 type DependencyGraph = dict[str, list[str]]
 

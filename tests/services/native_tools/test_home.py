@@ -13,7 +13,7 @@ class ResolvedTool:
 
 def test_relative_home_never_places_cache_in_the_working_project(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(Path, "home", lambda: Path("relative-home"))
-    monkeypatch.setattr(resolver, "NativeToolResolver", lambda *args: ResolvedTool())
+    monkeypatch.setattr(resolver, "NativeToolResolver", lambda *_args: ResolvedTool())
     with pytest.raises(NativeToolUnavailable):
         resolve_tool("osv-scanner")
 

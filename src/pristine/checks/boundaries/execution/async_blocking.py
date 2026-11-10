@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
@@ -53,13 +53,11 @@ def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
     return sorted((finding for group in findings for finding in group), key=lambda finding: finding.line)
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python blocking calls made directly in an async def: time.sleep, requests, urlopen, subprocess, "
-            "smtplib, socket.create_connection, and psycopg2.connect. Calls offloaded to a thread are exempt."
-        ),
-        run=check_async_blocking,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python blocking calls made directly in an async def: time.sleep, requests, urlopen, subprocess, "
+        "smtplib, socket.create_connection, and psycopg2.connect. Calls offloaded to a thread are exempt."
+    ),
+    run=check_async_blocking,
 )

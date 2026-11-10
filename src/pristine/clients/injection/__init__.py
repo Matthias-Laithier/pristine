@@ -37,5 +37,5 @@ def called_injections(injections: Iterable[InjectedClient], callee_paths: Callee
             yield injected.entry_point, injected.line
 
 
-def no_injected_clients(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
+def no_injected_clients(_source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
     yield from ()

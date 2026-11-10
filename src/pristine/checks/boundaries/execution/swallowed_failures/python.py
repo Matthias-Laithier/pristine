@@ -2,13 +2,12 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.swallowed_failures import (
+from pristine.checks.boundaries.execution.swallowed_failures.handlers import (
     NARROW_HINT,
     PROPAGATE_HINT,
     HandlerScope,
     asserts_failure,
     body_text,
-    detects,
     is_expected,
     logged_default,
     normalized,
@@ -68,7 +67,6 @@ def logged_verdict(names: frozenset[str], block: Node, scope: HandlerScope) -> t
     return Severity.WARNING, f"only logs, then does '{result}', which hides the failure; {NARROW_HINT}"
 
 
-@detects("python")
 def python_swallows(parsed: ParsedFile) -> Iterator[Finding]:
     scope = python_scope(parsed, returned_values(LOGGED_DEFAULTS))
     for clause in (node for node in all_nodes(parsed) if node.type == "except_clause"):

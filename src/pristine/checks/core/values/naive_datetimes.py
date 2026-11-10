@@ -1,6 +1,6 @@
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import BoundedCall, calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -71,13 +71,11 @@ def check_naive_datetimes(parsed: ParsedFile) -> list[Finding]:
     return findings
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python naive datetimes for instants: datetime.utcnow, utcfromtimestamp, today, and now or "
-            "fromtimestamp without a timezone. date.today is allowed."
-        ),
-        run=check_naive_datetimes,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python naive datetimes for instants: datetime.utcnow, utcfromtimestamp, today, and now or "
+        "fromtimestamp without a timezone. date.today is allowed."
+    ),
+    run=check_naive_datetimes,
 )

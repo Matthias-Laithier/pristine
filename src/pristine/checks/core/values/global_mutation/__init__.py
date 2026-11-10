@@ -2,10 +2,10 @@ lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.lazy_initialization import is_lazy_initialization
 from pristine.checks.core.values.global_mutation.module_globals import binds_locally, module_globals
-from pristine.checks.core.values.global_mutation.ownership import owned_collections
+from pristine.checks.core.values.global_mutation.ownership import is_registration, owned_collections
 from pristine.checks.core.values.global_mutation.scopes import SCOPE_KINDS
 from pristine.checks.core.values.global_mutation.writes import Mutation, find_mutation
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
 
@@ -14,6 +14,7 @@ TEST_HOOKS = frozenset({"beforeEach", "beforeAll", "afterEach", "afterAll"})
 FIXTURE_MARKER = "fixture"
 LAZY_OPERATORS = frozenset({"??=", "||="})
 FIX_HINT = "give the state an owner passed to its consumers and keep module-level values as read-only config"
+REGISTRY_HINT = "write the registry as a dict literal in its owning module, listing every entry"
 
 
 def enclosing_scopes(node: Node) -> list[Node]:
@@ -61,7 +62,8 @@ def is_reportable(mutation: Mutation, owned: set[str]) -> bool:
 
 def mutation_finding(path: str, mutation: Mutation) -> Finding:
     scope_name = function_name(enclosing_scopes(mutation.node)[0])
-    message = f"function '{scope_name}' {mutation.action} module-level '{mutation.name}'; {FIX_HINT}"
+    hint = REGISTRY_HINT if is_registration(mutation) else FIX_HINT
+    message = f"function '{scope_name}' {mutation.action} module-level '{mutation.name}'; {hint}"
     return Finding(path, line_of(mutation.node), RULE_ID, Severity.ERROR, message)
 
 
@@ -89,15 +91,13 @@ def check_global_mutation(parsed: ParsedFile) -> list[Finding]:
     return sorted(findings, key=lambda finding: finding.line)
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Module-level state written from functions: Python 'global' and in-place writes to module-level "
-            "collections; JS/TS reassignment of top-level let/var and writes to top-level array, object, Map, "
-            "or Set literals. A collection that a function reads before writing it (a memo), stores a parameter "
-            "into and hands back (a registration decorator or a subscription), or that test setup resets is allowed."
-        ),
-        run=check_global_mutation,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Module-level state written from functions: Python 'global' and in-place writes to module-level "
+        "collections; JS/TS reassignment of top-level let/var and writes to top-level array, object, Map, "
+        "or Set literals. A collection that a function reads before writing it (a memo) or that test setup resets "
+        "is allowed. A registry filled by a function that stores a parameter and hands it back is reported."
+    ),
+    run=check_global_mutation,
 )

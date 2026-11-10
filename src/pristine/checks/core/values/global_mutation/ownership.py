@@ -16,6 +16,7 @@ LOOKUP_METHODS = frozenset({"get", "has"})
 MEMBERSHIP_OPERATORS = frozenset({"in", "not in"})
 PARAMETER_FIELDS = ("name", "pattern")
 PARAMETER_HOLDERS = frozenset({"typed_parameter", "list_splat_pattern", "dictionary_splat_pattern"})
+REGISTRATION_KINDS = frozenset({"identifier"})
 
 
 def is_lookup(node: Node, name: str) -> bool:
@@ -63,20 +64,27 @@ def returned_values(scope: Node) -> list[Node]:
     return [node.named_children[0] for node in returns if node.named_children]
 
 
-def hands_back(value: Node, parameter: str) -> bool:
+def hands_back(value: Node, parameter: str, kinds: frozenset[str]) -> bool:
     if value.type == "identifier":
-        return node_text(value) == parameter
-    return value.type in ANONYMOUS_FUNCTION_KINDS and parameter in names_in(value)
+        return "identifier" in kinds and node_text(value) == parameter
+    return value.type in kinds and parameter in names_in(value)
 
 
-def registers(scope: Node, mutation: Mutation) -> bool:
+def stores_and_returns(scope: Node, mutation: Mutation, kinds: frozenset[str]) -> bool:
     stored = names_in(mutation.node) & parameter_names(scope)
     values = returned_values(scope)
-    return any(hands_back(value, parameter) for parameter in stored for value in values)
+    return any(hands_back(value, parameter, kinds) for parameter in stored for value in values)
+
+
+def is_registration(mutation: Mutation) -> bool:
+    scope = scope_of(mutation.node)
+    return scope is not None and stores_and_returns(scope, mutation, REGISTRATION_KINDS)
 
 
 def is_owned_write(mutation: Mutation, scope: Node) -> bool:
-    return mutation.action != REBIND_ACTION and (memoizes(scope, mutation) or registers(scope, mutation))
+    return mutation.action != REBIND_ACTION and (
+        memoizes(scope, mutation) or stores_and_returns(scope, mutation, ANONYMOUS_FUNCTION_KINDS)
+    )
 
 
 def owned_collections(mutations: list[Mutation]) -> set[str]:

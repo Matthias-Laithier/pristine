@@ -2,7 +2,7 @@ from collections import Counter
 
 lazy from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.swallowed_failures import HandlerScope, callee_text, normalized
+from pristine.checks.boundaries.execution.swallowed_failures.handlers import HandlerScope, callee_text, normalized
 from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text, root_of
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_scopes import all_parameter_names

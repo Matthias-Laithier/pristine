@@ -1,4 +1,4 @@
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile
 
@@ -14,10 +14,8 @@ def check_file_size(parsed: ParsedFile) -> list[Finding]:
     return [Finding(parsed.path, 1, RULE_ID, Severity.ERROR, message)]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=f"Code file length in lines, all lines counted (hard limit {FILE_LINE_LIMIT}).",
-        run=check_file_size,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=f"Code file length in lines, all lines counted (hard limit {FILE_LINE_LIMIT}).",
+    run=check_file_size,
 )

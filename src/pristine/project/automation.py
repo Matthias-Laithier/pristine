@@ -20,6 +20,7 @@ RUN_DESCRIPTIONS = {
     Role.FORMATTER: "the formatter in check mode, verifying formatting without rewriting files",
     Role.LINTER: "the linter",
     Role.TYPE_CHECKER: "the type checker",
+    Role.ARCHITECTURE: "the architecture contract checker",
 }
 
 type Invocation = tuple[str, Role]
@@ -48,6 +49,11 @@ def is_typescript(project: Project, manifests: list[Manifest]) -> bool:
     return declared or bool(project.files_named((TYPESCRIPT_CONFIG,))) or TYPESCRIPT_CONFIG in project.entries
 
 
+def has_architecture_contract(project: Project, manifests: list[Manifest]) -> bool:
+    checkers = [tool for tool in TOOLS if Role.ARCHITECTURE in tool.checks]
+    return any(is_configured(tool, manifests, project.file_names) for tool in checkers)
+
+
 REQUIREMENTS = (
     Requirement(Ecosystem.PYTHON, Role.FORMATTER, every_project),
     Requirement(Ecosystem.PYTHON, Role.LINTER, every_project),
@@ -55,6 +61,8 @@ REQUIREMENTS = (
     Requirement(Ecosystem.JAVASCRIPT, Role.FORMATTER, every_project),
     Requirement(Ecosystem.JAVASCRIPT, Role.LINTER, every_project),
     Requirement(Ecosystem.JAVASCRIPT, Role.TYPE_CHECKER, is_typescript),
+    Requirement(Ecosystem.PYTHON, Role.ARCHITECTURE, has_architecture_contract),
+    Requirement(Ecosystem.JAVASCRIPT, Role.ARCHITECTURE, has_architecture_contract),
     Requirement(Ecosystem.GO, Role.FORMATTER, every_project),
     Requirement(Ecosystem.GO, Role.LINTER, every_project),
     Requirement(Ecosystem.GO, Role.TYPE_CHECKER, every_project),

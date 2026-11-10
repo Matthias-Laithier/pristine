@@ -85,7 +85,7 @@ def test_edit_committed_on_the_current_branch_is_reported(
     ],
 )
 def test_migration_layouts(
-    run_pristine: RunPristine, seed_repository: SeedRepository, name: str, contents: tuple[str, str], reported: bool
+    run_pristine: RunPristine, seed_repository: SeedRepository, name: str, contents: tuple[str, str], *, reported: bool
 ) -> None:
     original, edited = contents
     seed_repository({name: original})

@@ -4,7 +4,7 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.clients.libraries import PYTHON_MODEL_CLIENTS
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -29,7 +29,7 @@ IDENTIFIER_TOKEN = re.compile(r"[\w.:@/-]+")
 FIX = "read it from a typed configuration field, so a model switch reaches every caller and evals judge it"
 
 
-def is_model_identifier(node: Node, is_client_call: bool) -> bool:
+def is_model_identifier(node: Node, *, is_client_call: bool) -> bool:
     text = (node_text(node) or "").strip("'\"")
     if not is_constant_string(node) or IDENTIFIER_TOKEN.fullmatch(text) is None:
         return False
@@ -92,10 +92,10 @@ def is_client_call(callee: str, bindings: dict[str, str], clients: set[str]) -> 
 
 
 def hardcoded_settings(
-    keywords: dict[str, Node], literals: dict[str, Node], is_client: bool
+    keywords: dict[str, Node], literals: dict[str, Node], *, is_client: bool
 ) -> Iterator[tuple[str, Node]]:
     model = keywords.get(MODEL_KEYWORD)
-    names_model = model is not None and is_model_identifier(resolved(model, literals), is_client)
+    names_model = model is not None and is_model_identifier(resolved(model, literals), is_client_call=is_client)
     if model is not None and names_model:
         yield MODEL_KEYWORD, model
     for name, neutral in NEUTRAL_SAMPLING.items():
@@ -121,21 +121,19 @@ def check_model_settings_literals(parsed: ParsedFile) -> list[Finding]:
     findings = []
     for _, callee, arguments in calls_of(parsed, "call"):
         is_client = is_client_call(callee, bindings, clients)
-        settings = hardcoded_settings(keyword_values(arguments), literals, is_client)
+        settings = hardcoded_settings(keyword_values(arguments), literals, is_client=is_client)
         findings.extend(setting_finding(parsed, name, value, literals) for name, value in settings)
     return sorted(findings, key=lambda finding: finding.line)
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python calls passing a literal model identifier or a literal temperature or top_p, directly or "
-            "through a same-module literal constant. Any literal model counts on a call to a model SDK client "
-            "(openai, anthropic, mistralai, google.generativeai, cohere) resolved through imports, assignments, "
-            "annotations, and with-statements; elsewhere, a literal naming a known model family or a vendor-prefixed "
-            "model marks the call. Temperature 0, top_p 1, tests, and shebang scripts are exempt."
-        ),
-        run=check_model_settings_literals,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python calls passing a literal model identifier or a literal temperature or top_p, directly or "
+        "through a same-module literal constant. Any literal model counts on a call to a model SDK client "
+        "(openai, anthropic, mistralai, google.generativeai, cohere) resolved through imports, assignments, "
+        "annotations, and with-statements; elsewhere, a literal naming a known model family or a vendor-prefixed "
+        "model marks the call. Temperature 0, top_p 1, tests, and shebang scripts are exempt."
+    ),
+    run=check_model_settings_literals,
 )

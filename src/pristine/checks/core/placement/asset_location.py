@@ -1,7 +1,7 @@
 import re
 from pathlib import PurePosixPath
 
-from pristine.checks.registry import PathCheck, register_path_check
+from pristine.checks.definitions import PathCheck
 from pristine.files.path_roles import VENDORED_DIRECTORIES, holds_test_material
 from pristine.reports.findings import Finding, Severity
 
@@ -83,14 +83,12 @@ def check_asset_location(paths: list[str]) -> list[Finding]:
     return [finding for path in paths if (finding := asset_finding(path, documented_folders)) is not None]
 
 
-register_path_check(
-    PathCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Images, icons, fonts, audio, and video outside an assets/ folder, or loose at the root of assets/. "
-            "Framework locations (public/, static/, Android res/, *.xcassets, Next.js app icons), documentation, "
-            "test fixtures, and dot folders such as .github/ are exempt."
-        ),
-        run=check_asset_location,
-    )
+CHECK = PathCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Images, icons, fonts, audio, and video outside an assets/ folder, or loose at the root of assets/. "
+        "Framework locations (public/, static/, Android res/, *.xcassets, Next.js app icons), documentation, "
+        "test fixtures, and dot folders such as .github/ are exempt."
+    ),
+    run=check_asset_location,
 )

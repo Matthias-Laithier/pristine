@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 lazy from tree_sitter import Node
 
 from pristine.checks.core.placement.global_placement.type_expressions import is_type_expression
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.nodes import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
@@ -133,14 +133,12 @@ def check_global_placement(parsed: ParsedFile) -> list[Finding]:
     return findings
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Module-level variables and constants defined below the first function or class. A value that reads "
-            "an earlier definition, __all__, and type aliases (TypeAlias annotations, typing generics, unions, "
-            "TypeVar, NewType, TypedDict and pydantic create_model calls) are allowed."
-        ),
-        run=check_global_placement,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Module-level variables and constants defined below the first function or class. A value that reads "
+        "an earlier definition, __all__, and type aliases (TypeAlias annotations, typing generics, unions, "
+        "TypeVar, NewType, TypedDict and pydantic create_model calls) are allowed."
+    ),
+    run=check_global_placement,
 )

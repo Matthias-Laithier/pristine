@@ -1,14 +1,19 @@
 import pytest
 
 from tests.project.conftest import RunProject
-from tests.project.linting.lint_cases import ANNOTATIONS, PYTHON_PROJECT, annotation_findings, with_python_lint_config
-from tests.project.linting.lint_cases import ANNOTATIONS_MAKEFILE as MAKEFILE
+from tests.project.linting.lint_cases import (
+    ANNOTATIONS,
+    ANNOTATIONS_MAKEFILE,
+    PYTHON_PROJECT,
+    annotation_findings,
+    with_python_lint_config,
+)
 
 
 @pytest.mark.parametrize("checker", ["ty", "pyrefly", "pyright", "basedpyright"])
 def test_inference_alone_does_not_enforce_annotations(run_project: RunProject, checker: str) -> None:
     files = with_python_lint_config('[tool.ruff.lint]\nselect = ["ALL"]\nignore = ["ANN"]\n')
-    files["Makefile"] = MAKEFILE.replace("ty check", f"{checker} check")
+    files["Makefile"] = ANNOTATIONS_MAKEFILE.replace("ty check", f"{checker} check")
     assert annotation_findings(files, run_project) == [("error", "rule")]
 
 
@@ -21,7 +26,7 @@ def test_inference_alone_does_not_enforce_annotations(run_project: RunProject, c
     ],
 )
 def test_ruff_can_enforce_annotations_without_any_type_rule(run_project: RunProject, config: str) -> None:
-    files = {"pyproject.toml": PYTHON_PROJECT + config, "Makefile": MAKEFILE}
+    files = {"pyproject.toml": PYTHON_PROJECT + config, "Makefile": ANNOTATIONS_MAKEFILE}
     assert annotation_findings(files, run_project) == []
 
 
@@ -40,7 +45,7 @@ def test_ruff_can_enforce_annotations_without_any_type_rule(run_project: RunProj
     ],
 )
 def test_ruff_annotation_disables_are_not_certified(run_project: RunProject, extra: str) -> None:
-    files = {"pyproject.toml": PYTHON_PROJECT + ANNOTATIONS + extra, "Makefile": MAKEFILE}
+    files = {"pyproject.toml": PYTHON_PROJECT + ANNOTATIONS + extra, "Makefile": ANNOTATIONS_MAKEFILE}
     assert annotation_findings(files, run_project) == [("error", "rule")]
 
 
@@ -48,7 +53,7 @@ def test_ruff_annotation_disables_are_not_certified(run_project: RunProject, ext
 def test_ruff_gate_overrides_are_not_certified(run_project: RunProject, options: str) -> None:
     files = {
         "pyproject.toml": PYTHON_PROJECT + ANNOTATIONS,
-        "Makefile": MAKEFILE.replace("ruff check .", f"ruff check {options} ."),
+        "Makefile": ANNOTATIONS_MAKEFILE.replace("ruff check .", f"ruff check {options} ."),
     }
     assert annotation_findings(files, run_project) == [("error", "rule")]
 
@@ -61,12 +66,15 @@ def test_ruff_gate_overrides_are_not_certified(run_project: RunProject, options:
     ],
 )
 def test_partial_annotation_exclusions_are_verification_gaps(run_project: RunProject, extra: str) -> None:
-    files = {"pyproject.toml": PYTHON_PROJECT + ANNOTATIONS + extra, "Makefile": MAKEFILE}
+    files = {"pyproject.toml": PYTHON_PROJECT + ANNOTATIONS + extra, "Makefile": ANNOTATIONS_MAKEFILE}
     assert annotation_findings(files, run_project) == [("warning", "verification")]
 
 
 def test_missing_gate_annotation_capability_is_reported(run_project: RunProject) -> None:
-    files = {"pyproject.toml": PYTHON_PROJECT + ANNOTATIONS, "Makefile": MAKEFILE.replace("\truff check .\n", "")}
+    files = {
+        "pyproject.toml": PYTHON_PROJECT + ANNOTATIONS,
+        "Makefile": ANNOTATIONS_MAKEFILE.replace("\truff check .\n", ""),
+    }
     assert annotation_findings(files, run_project) == [("error", "rule")]
 
 

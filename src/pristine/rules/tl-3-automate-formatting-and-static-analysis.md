@@ -8,7 +8,11 @@ The type checker runs in its strict mode: `strict = true` for mypy, `typeCheckin
 
 The linter enables the rule sets that enforce the detail of a rule better than pristine does:
 - Python with ruff: `S` for security, backing [BS-3](bs-3-bound-every-external-call.md) and [BS-10](bs-10-untrusted-values-never-change-the-structure-of-a-query-command-markup-or-path.md). `ASYNC` for [BS-13](bs-13-async-code-never-blocks-the-event-loop.md). `DTZ` for the datetimes of [CR-22](cr-22-instants-are-aware-utc-money-is-exact-quantities-name-their-unit.md). `G` for the logging format and `T20` for `print`, both backing [BS-15](bs-15-log-diagnosable-events-never-personal-data.md).
-- TypeScript: the `strict-type-checked` configuration of typescript-eslint, which includes `no-floating-promises` and `no-explicit-any`, plus `react-hooks` and `jsx-a11y` in React projects.
+- Python with ruff: `FBT` for boolean mode flags and `PLR0913` for long parameter lists, backing [CR-17](cr-17-keep-function-signatures-cohesive.md). `BLE` for blind exception handling, backing [BS-4](bs-4-do-not-swallow-failures.md). `ARG` for unused parameters and `ERA` for commented-out code, backing [CR-11](cr-11-every-change-includes-cleanup.md).
+- TypeScript: the `strict-type-checked` configuration of typescript-eslint, which includes `no-floating-promises`, `no-explicit-any`, and `no-unnecessary-condition`, plus `max-params` for [CR-17](cr-17-keep-function-signatures-cohesive.md), and `react-hooks` and `jsx-a11y` in React projects. knip reports unused files, exports, and dependencies, backing [CR-11](cr-11-every-change-includes-cleanup.md).
+- The type checker flags checks the types already prove: `reportUnnecessaryIsInstance`, `reportUnnecessaryComparison`, and `reportUnnecessaryCast` in pyright, and `warn_unreachable` in mypy. A guard against a case the types exclude is dead code that hides the real contract.
+
+A project with more than one layer or domain declares its dependency directions as a contract, checked by `make check`: import-linter or Tach for Python, dependency-cruiser or eslint-plugin-boundaries for TypeScript. The contract encodes [CO-10](co-10-dependencies-point-toward-domain-policy.md) and [CO-9](co-9-keep-side-effects-at-the-edges.md) for that project: which layers exist, which may import which, and which domains stay independent. Write a fix into each contract message, such as `broken_contract_guidance` in import-linter or `comment` in dependency-cruiser, so the agent that breaks the contract learns where the code belongs.
 
 [CR-21](cr-21-never-escape-the-type-checker.md) owns the escape hatches that silence the checker. This rule owns configuring and running the checker and the linter.
 
@@ -47,7 +51,7 @@ test:
 
 ```toml
 [tool.ruff.lint]
-extend-select = ["S", "ASYNC", "DTZ", "G", "T20"]
+extend-select = ["S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]
 
 [tool.mypy]
 strict = true

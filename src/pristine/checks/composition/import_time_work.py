@@ -5,7 +5,7 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
@@ -140,10 +140,8 @@ def check_import_time_work(parsed: ParsedFile) -> list[Finding]:
     return list(findings.values())
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary="Module-level env, file, network, process, signal, dotenv, and output work outside main guards.",
-        run=check_import_time_work,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary="Module-level env, file, network, process, signal, dotenv, and output work outside main guards.",
+    run=check_import_time_work,
 )

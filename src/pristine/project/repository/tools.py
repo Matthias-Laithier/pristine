@@ -18,6 +18,7 @@ class Role(StrEnum):
     FORMATTER = "formatter"
     LINTER = "linter"
     TYPE_CHECKER = "type checker"
+    ARCHITECTURE = "architecture contract checker"
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,15 @@ TOOLS = (
     python_tool("ty", {Role.TYPE_CHECKER: subcommand("check")}, ("ty.toml",)),
     python_tool("pyrefly", {Role.TYPE_CHECKER: subcommand("check")}, ("pyrefly.toml",)),
     Tool(
+        "lint-imports",
+        Ecosystem.PYTHON,
+        {Role.ARCHITECTURE: any_arguments},
+        (".importlinter",),
+        frozenset({"import-linter"}),
+        ("importlinter",),
+    ),
+    python_tool("tach", {Role.ARCHITECTURE: subcommand("check")}, ("tach.toml",)),
+    Tool(
         "prettier",
         Ecosystem.JAVASCRIPT,
         {Role.FORMATTER: option("--check", "-c", "--list-different", "-l")},
@@ -125,6 +135,9 @@ TOOLS = (
     javascript_tool("oxlint", {Role.LINTER: any_arguments}, ".oxlintrc*", "oxlint.config.*"),
     Tool("tsc", Ecosystem.JAVASCRIPT, {Role.TYPE_CHECKER: any_arguments}, packages=frozenset({"typescript"})),
     javascript_tool("vue-tsc", {Role.TYPE_CHECKER: any_arguments}),
+    javascript_tool(
+        "depcruise", {Role.ARCHITECTURE: any_arguments}, ".dependency-cruiser.*", package="dependency-cruiser"
+    ),
     javascript_tool("tsgo", {Role.TYPE_CHECKER: any_arguments}, package="@typescript/native-preview"),
     native_tool("gofmt", Ecosystem.GO, {Role.FORMATTER: non_writing}, "go.mod"),
     native_tool("gofumpt", Ecosystem.GO, {Role.FORMATTER: non_writing}),

@@ -4,7 +4,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.nodes import COMMENT_KINDS, IF_KINDS
@@ -37,8 +37,13 @@ LABEL_FIELD = "value"
 LABEL_KINDS = frozenset({"switch_label", "constant_pattern", "when_condition", "case_pattern"})
 LABEL_WRAPPER_KINDS = LABEL_KINDS | frozenset({"union_pattern", "expression_list"})
 GUARD_KINDS = frozenset({"when_clause", "guard", "if_clause"})
-CHAIN_FIX = "replace it with a registry dict of handlers filled by a registration decorator, raising on unknown values"
-SWITCH_FIX = "prefer a registry dict of handlers with a registration decorator, unless an exhaustive match is clearer"
+CHAIN_FIX = (
+    "replace it with a dict literal mapping each value to its handler, owned by this module, raising on unknown values"
+)
+SWITCH_FIX = (
+    "prefer a dict literal mapping each value to its handler, owned by this module, raising on unknown values, "
+    "unless an exhaustive match is clearer"
+)
 
 
 def is_constant(node: Node) -> bool:
@@ -139,10 +144,8 @@ def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
     return [finding for finding in chains + switches if finding is not None]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=f"Dispatch on {DISPATCH_CASE_MINIMUM}+ constants: if/else-if chain (error), switch or match (warning).",
-        run=check_dispatch_chains,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=f"Dispatch on {DISPATCH_CASE_MINIMUM}+ constants: if/else-if chain (error), switch or match (warning).",
+    run=check_dispatch_chains,
 )

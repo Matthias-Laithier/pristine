@@ -1,4 +1,4 @@
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Limit
 from pristine.syntax.parsing import FunctionSpan, ParsedFile
 
@@ -27,10 +27,8 @@ def check_function_size(parsed: ParsedFile) -> list[Finding]:
     return findings
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=f"Function and method length, blank lines excluded ({FUNCTION_LINE_LIMIT.describe()}).",
-        run=check_function_size,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=f"Function and method length, blank lines excluded ({FUNCTION_LINE_LIMIT.describe()}).",
+    run=check_function_size,
 )

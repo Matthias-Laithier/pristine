@@ -1,10 +1,10 @@
 import posixpath
 
 from pristine.imports.cycles import cyclic_components, dependency_graph
+from pristine.imports.edges import ImportEdge, SourceFile
 from pristine.imports.python_modules import PACKAGE_INIT, ModuleIndex, PythonModule, dotted_prefixes, python_module
 from pristine.imports.python_scan import candidate_imports
 from pristine.imports.python_statements import PythonImport, python_imports
-from pristine.imports.registry import ImportEdge, SourceFile, reads_imports
 
 
 def module_edges(index: ModuleIndex, imports: dict[PythonModule, list[PythonImport]]) -> list[ImportEdge]:
@@ -23,7 +23,6 @@ def python_modules(paths: list[str], candidates: list[PythonImport]) -> list[Pyt
     return [module for module in modules if module is not None]
 
 
-@reads_imports(".py")
 def read_python_edges(files: list[SourceFile]) -> list[ImportEdge]:
     texts = {file.path: file.text for file in files}
     candidates = {path: list(candidate_imports(text)) for path, text in texts.items()}

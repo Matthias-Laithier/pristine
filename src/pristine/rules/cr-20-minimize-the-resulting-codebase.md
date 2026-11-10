@@ -5,7 +5,7 @@ Maintain the smallest clear implementation of the project's present requirements
 Count everything the project must maintain: production code, tests, configuration, documentation, assets, dependencies, and custom generators. Moving machinery to another file, package, or repository does not remove its cost. Prefer fewer maintained lines and fewer independently maintained mechanisms. Never reduce the line count through compressed formatting or hidden coupling.
 
 ## Before implementation
-1. Identify the concrete behavior and guarantees the task requires. Inspect the existing paths, callers, tests, and owning units under [CR-16](cr-16-inspect-before-implementing.md).
+1. Identify the concrete behavior and guarantees the task requires. Inspect the existing paths, callers, tests, and owning units under [CR-2](cr-2-do-not-reinvent.md).
 2. Find the smallest solution by removing unnecessary machinery, simplifying the existing path, or extending its owner. Use existing library and platform capabilities under [CR-2](cr-2-do-not-reinvent.md). Add a parallel mechanism only when reuse would conflate distinct responsibilities or violate a required contract.
 3. Before introducing an abstraction, a layer, a dependency, a configuration option, a fallback, a compatibility path, or a stored representation, identify which present requirement would fail without it and why the smaller alternative falls short.
 
@@ -19,7 +19,7 @@ Challenge the mechanisms the change introduces as well as existing ones. A worki
 Keep the pass within the affected system. Investigate unknown usage and external consumers before deleting. Never remove supported behavior or meaningful tests to meet a size target. Preserve [TST-3](tst-3-minimal-test-count.md): sufficient protection for every distinct behavior and failure mode.
 
 ## Constraints and justified growth
-Choose among implementations that satisfy the user's instructions, the project rules, and every applicable rule of [the coding rules](README.md). This rule relaxes nothing on correctness, security, boundary validation, failure handling, resource ownership, supported contracts, or required verification. Structure required by another rule is a constraint. [CR-14](cr-14-value-dispatch-through-a-registry.md) stays mandatory: minimize the surrounding machinery and keep its required registry and registration mechanism.
+Choose among implementations that satisfy the user's instructions, the project rules, and every applicable rule of [the coding rules](README.md). This rule relaxes nothing on correctness, security, boundary validation, failure handling, resource ownership, supported contracts, or required verification. Structure required by another rule is a constraint. [CR-14](cr-14-value-dispatch-through-a-registry.md) stays mandatory: minimize the surrounding machinery and keep its required registry literal.
 
 Growth is allowed when a smaller implementation would fail a concrete present requirement or one of these constraints. Name that requirement or cite the governing rule, identify the smaller alternative, and explain its specific shortfall. Generic claims about flexibility, scalability, or maintainability are insufficient. There is no net-negative line quota and no permission to offset growth with unrelated deletion.
 

@@ -2,8 +2,6 @@ from collections.abc import Callable
 
 lazy from tree_sitter import Node
 
-from pristine.registration import registering
-from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
@@ -44,7 +42,6 @@ BINDING_KINDS = frozenset({"identifier", "shorthand_property_identifier_pattern"
 
 type Globals = dict[str, frozenset[str]]
 type GlobalsCollector = Callable[[ParsedFile], Globals]
-_COLLECTORS: dict[str, GlobalsCollector] = {}
 
 
 def is_python_collection(value: Node | None, imports: dict[str, str]) -> bool:
@@ -54,7 +51,6 @@ def is_python_collection(value: Node | None, imports: dict[str, str]) -> bool:
     return value is not None and value.type in PYTHON_LITERALS
 
 
-@registering(_COLLECTORS, "python")
 def python_globals(parsed: ParsedFile) -> Globals:
     imports = import_bindings(parsed)
     assignments = [statement for statement in module_statements(parsed.root) if statement.type == "assignment"]
@@ -86,7 +82,6 @@ def is_named_binding(declarator: Node) -> bool:
     return name is not None and name.type == "identifier"
 
 
-@registering(_COLLECTORS, *SCRIPT_LANGUAGES)
 def js_globals(parsed: ParsedFile) -> Globals:
     declarations = [statement for statement in module_statements(parsed.root) if statement.type in JS_DECLARATION_KINDS]
     declared = [
@@ -96,6 +91,14 @@ def js_globals(parsed: ParsedFile) -> Globals:
         if declarator.type == "variable_declarator" and is_named_binding(declarator)
     ]
     return {name: kinds for name, kinds in declared if kinds}
+
+
+_COLLECTORS: dict[str, GlobalsCollector] = {
+    "python": python_globals,
+    "javascript": js_globals,
+    "typescript": js_globals,
+    "tsx": js_globals,
+}
 
 
 def module_globals(language: str, parsed: ParsedFile) -> Globals | None:

@@ -4,12 +4,16 @@ from tests.project.conftest import RunProject
 from tests.project.linting.lint_cases import lint_messages, with_python_lint_config
 
 
+def shortfall(missing: str) -> str:
+    return (
+        f"Ruff does not enable the required rule sets ({missing}); select or extend-select the S, ASYNC, DTZ, G, "
+        'T20, FBT, BLE, ARG, and ERA rule sets (or "ALL")'
+    )
+
+
 def test_ruff_requires_all_required_rule_sets(run_project: RunProject) -> None:
     assert lint_messages(with_python_lint_config('[tool.ruff.lint]\nselect = ["S"]\n'), run_project) == [
-        (
-            "Ruff does not enable the required rule sets (ASYNC, DTZ, G, T20); select or extend-select "
-            'the S, ASYNC, DTZ, G, and T20 rule sets (or "ALL")'
-        )
+        shortfall("ASYNC, DTZ, G, T20, FBT, BLE, ARG, ERA")
     ]
 
 
@@ -18,7 +22,7 @@ def test_ruff_accepts_all_targeted_ignores_and_inheritance(run_project: RunProje
         **with_python_lint_config(
             '[tool.ruff]\nextend = "./ruff-base.toml"\n[tool.ruff.lint]\nextend-select = ["S"]\n'
         ),
-        "ruff-base.toml": 'extend = "./ruff-defaults.toml"\n[lint]\nextend-select = ["ASYNC", "DTZ", "G", "T20"]\n[lint.per-file-ignores]\n"tests/**" = ["S101"]\n',
+        "ruff-base.toml": 'extend = "./ruff-defaults.toml"\n[lint]\nextend-select = ["ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]\n[lint.per-file-ignores]\n"tests/**" = ["S101"]\n',
         "ruff-defaults.toml": '[lint]\nextend-select = ["S"]\n',
     }
     assert lint_messages(files, run_project) == []
@@ -33,21 +37,13 @@ def test_ruff_accumulates_inherited_extended_per_file_ignores(run_project: RunPr
         ),
         "config/ruff.toml": '[lint]\nselect = ["ALL"]\n[lint.extend-per-file-ignores]\n"*" = ["S"]\n',
     }
-    shortfall = (
-        "Ruff does not enable the required rule sets (S); select or extend-select the S, ASYNC, DTZ, G, "
-        'and T20 rule sets (or "ALL")'
-    )
-    assert [message for message in lint_messages(files, run_project) if message == shortfall] == [shortfall]
+    expected = shortfall("S")
+    assert [message for message in lint_messages(files, run_project) if message == expected] == [expected]
 
 
 def test_ruff_global_ignore_disables_all_selection(run_project: RunProject) -> None:
     files = with_python_lint_config('[tool.ruff.lint]\nextend-select = ["ALL"]\nignore = ["S"]\n')
-    assert lint_messages(files, run_project) == [
-        (
-            "Ruff does not enable the required rule sets (S); select or extend-select the S, ASYNC, DTZ, G, "
-            'and T20 rule sets (or "ALL")'
-        )
-    ]
+    assert lint_messages(files, run_project) == [shortfall("S")]
 
 
 def test_ruff_dynamic_config_is_explicitly_unverifiable(run_project: RunProject) -> None:
@@ -78,12 +74,7 @@ def test_ruff_dynamic_config_is_explicitly_unverifiable(run_project: RunProject)
                 '[tool.ruff]\nextend = "./ruff-base.toml"\n',
                 {"ruff-base.toml": '[lint]\nselect = ["ALL"]\nignore = ["S"]\n'},
             ),
-            [
-                (
-                    "Ruff does not enable the required rule sets (S); select or extend-select the S, ASYNC, DTZ, G, "
-                    'and T20 rule sets (or "ALL")'
-                )
-            ],
+            [shortfall("S")],
         ),
         (
             with_python_lint_config(
@@ -95,14 +86,11 @@ def test_ruff_dynamic_config_is_explicitly_unverifiable(run_project: RunProject)
         (
             with_python_lint_config(
                 '[tool.ruff]\nextend = "./ruff-base.toml"\n[tool.ruff.lint]\nselect = ["S"]\n',
-                {"ruff-base.toml": '[lint]\nselect = ["S"]\nextend-select = ["ASYNC", "DTZ", "G", "T20"]\n'},
+                {
+                    "ruff-base.toml": '[lint]\nselect = ["S"]\nextend-select = ["ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]\n'
+                },
             ),
-            [
-                (
-                    "Ruff does not enable the required rule sets (ASYNC, DTZ, G, T20); select or extend-select "
-                    'the S, ASYNC, DTZ, G, and T20 rule sets (or "ALL")'
-                )
-            ],
+            [shortfall("ASYNC, DTZ, G, T20, FBT, BLE, ARG, ERA")],
         ),
         (
             with_python_lint_config(
@@ -113,36 +101,23 @@ def test_ruff_dynamic_config_is_explicitly_unverifiable(run_project: RunProject)
         ),
         (
             with_python_lint_config('[tool.ruff.lint]\nselect = ["ALL"]\nignore = ["ALL"]\n'),
-            [
-                (
-                    "Ruff does not enable the required rule sets (S, ASYNC, DTZ, G, T20); select or extend-select "
-                    'the S, ASYNC, DTZ, G, and T20 rule sets (or "ALL")'
-                )
-            ],
+            [shortfall("S, ASYNC, DTZ, G, T20, FBT, BLE, ARG, ERA")],
         ),
         (
-            with_python_lint_config('[tool.ruff.lint]\nselect = ["S", "ASYNC", "DTZ", "G", "T20"]\nignore = ["ALL"]\n'),
+            with_python_lint_config(
+                '[tool.ruff.lint]\nselect = ["S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]\nignore = ["ALL"]\n'
+            ),
             [],
         ),
         (
             with_python_lint_config('[tool.ruff.lint]\nextend-select = ["ALL"]\nextend-ignore = ["S"]\n'),
-            [
-                (
-                    "Ruff does not enable the required rule sets (S); select or extend-select the S, ASYNC, DTZ, G, "
-                    'and T20 rule sets (or "ALL")'
-                )
-            ],
+            [shortfall("S")],
         ),
         (
             with_python_lint_config(
-                '[tool.ruff.lint]\nselect = ["S", "ASYNC", "DTZ", "G", "T20"]\nper-file-ignores = {"*" = ["S"]}\n'
+                '[tool.ruff.lint]\nselect = ["S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]\nper-file-ignores = {"*" = ["S"]}\n'
             ),
-            [
-                (
-                    "Ruff does not enable the required rule sets (S); select or extend-select the S, ASYNC, DTZ, G, "
-                    'and T20 rule sets (or "ALL")'
-                )
-            ],
+            [shortfall("S")],
         ),
     ],
 )

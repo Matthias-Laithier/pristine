@@ -44,8 +44,7 @@ def standalone_directive(words: list[str]) -> GoDirective | None:
 
 def parse_go_mod(text: str) -> tuple[frozenset[str], bool, bool | None]:
     block: str | None = None
-    requirements: dict[str, str] = {}
-    replaces: list[tuple[str, ...]] = []
+    directives: list[GoDirective] = []
     pins_runtime = False
     for line in text.splitlines():
         words = go_words(line)
@@ -53,8 +52,14 @@ def parse_go_mod(text: str) -> tuple[frozenset[str], bool, bool | None]:
             continue
         directive, block = inline_directive(words, block)
         if directive is not None:
-            store_directive(requirements, replaces, directive)
+            directives.append(directive)
         pins_runtime = pins_runtime or pins_go_runtime(words, block)
+    replaces = [directive.words for directive in directives if directive.kind == "replace"]
+    requirements = {
+        directive.words[0]: directive.words[1]
+        for directive in directives
+        if directive.kind != "replace" and len(directive.words) >= MINIMUM_REQUIREMENT_WORD_COUNT
+    }
     return frozenset(requirements), pins_runtime, needs_go_sum(requirements, replaces)
 
 
@@ -74,17 +79,6 @@ def inline_directive(words: list[str], block: str | None) -> tuple[GoDirective |
 
 def pins_go_runtime(words: list[str], block: str | None) -> bool:
     return block is None and words[0] == "go" and len(words) > 1
-
-
-def store_directive(
-    requirements: dict[str, str],
-    replaces: list[tuple[str, ...]],
-    directive: GoDirective,
-) -> None:
-    if directive.kind == "replace":
-        replaces.append(directive.words)
-    elif len(directive.words) >= MINIMUM_REQUIREMENT_WORD_COUNT:
-        requirements[directive.words[0]] = directive.words[1]
 
 
 def is_local_go_path(path: str) -> bool:

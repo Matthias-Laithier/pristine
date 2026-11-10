@@ -5,7 +5,7 @@ from pathlib import PurePath
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.scattered_settings.composition_roots import is_composition_root, is_within
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
@@ -120,16 +120,14 @@ def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
     return [Finding(parsed.path, line, RULE_ID, Severity.WARNING, message) for line in lines]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python reads of a named setting (os.environ[...], os.environ.get, os.getenv) inside functions, keyed by "
-            "a string literal or a same-module string constant. Modules defining a pydantic-settings BaseSettings "
-            "subclass, tests, pytest hooks, process variables such as PATH or HOME, and composition roots are exempt: "
-            "modules with a __main__ guard or a shebang, __main__.py and the modules it imports, the modules that "
-            "pyproject.toml scripts name, and modules defining invoke or nox tasks."
-        ),
-        run=check_scattered_settings,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python reads of a named setting (os.environ[...], os.environ.get, os.getenv) inside functions, keyed by "
+        "a string literal or a same-module string constant. Modules defining a pydantic-settings BaseSettings "
+        "subclass, tests, pytest hooks, process variables such as PATH or HOME, and composition roots are exempt: "
+        "modules with a __main__ guard or a shebang, __main__.py and the modules it imports, the modules that "
+        "pyproject.toml scripts name, and modules defining invoke or nox tasks."
+    ),
+    run=check_scattered_settings,
 )

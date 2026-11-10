@@ -10,7 +10,7 @@ from pristine.checks.boundaries.execution.unbounded_fan_out.fanned_collections i
     unbounded_collection,
 )
 from pristine.checks.boundaries.execution.unbounded_fan_out.limiters import Limiters, holds_limiter, limiters_of
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of, calls_of
@@ -120,18 +120,16 @@ def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
     return sorted(findings.values(), key=lambda finding: finding.line)
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python asyncio.gather over a spread comprehension or map, and TaskGroup spawns in a loop, that start "
-            "work per item of an awaited load, where neither the fanned coroutine nor the loop body holds an "
-            "asyncio or anyio semaphore or limiter with async with. A load is the awaited result of an imported "
-            "function or of a method on another object than the method's own receiver, or a collection derived "
-            "from one, and every assignment of the iterated name must be a load. Parameters, functions and methods "
-            "of the same file, fields and items of a loaded record, slices, literals, loads that pass a size, "
-            "tests, and durable workflow modules are exempt."
-        ),
-        run=check_unbounded_fan_out,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python asyncio.gather over a spread comprehension or map, and TaskGroup spawns in a loop, that start "
+        "work per item of an awaited load, where neither the fanned coroutine nor the loop body holds an "
+        "asyncio or anyio semaphore or limiter with async with. A load is the awaited result of an imported "
+        "function or of a method on another object than the method's own receiver, or a collection derived "
+        "from one, and every assignment of the iterated name must be a load. Parameters, functions and methods "
+        "of the same file, fields and items of a loaded record, slices, literals, loads that pass a size, "
+        "tests, and durable workflow modules are exempt."
+    ),
+    run=check_unbounded_fan_out,
 )

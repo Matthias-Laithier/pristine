@@ -2,7 +2,7 @@ import re
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -82,14 +82,12 @@ def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
     ]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python test modules (test paths that define test functions or classes, and conftest.py) reading or "
-            "writing a single-underscore private attribute of an object other than self or cls. Mock and monkeypatch targets, mock* and fake* variables, and framework privates such as "
-            "_meta, _asdict, _replace, _fields, sys._getframe, and os._exit are exempt."
-        ),
-        run=check_private_access_in_tests,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python test modules (test paths that define test functions or classes, and conftest.py) reading or "
+        "writing a single-underscore private attribute of an object other than self or cls. Mock and monkeypatch targets, mock* and fake* variables, and framework privates such as "
+        "_meta, _asdict, _replace, _fields, sys._getframe, and os._exit are exempt."
+    ),
+    run=check_private_access_in_tests,
 )

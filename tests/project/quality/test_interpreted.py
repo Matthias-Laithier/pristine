@@ -6,7 +6,7 @@ from tests.project.quality_manifests import ESLINT_CONFIG, PACKAGE
 PYPROJECT = (
     '[project]\nname = "app"\nrequires-python = ">=3.13"\n\n[dependency-groups]\n'
     'dev = ["ruff>=0.6", "MyPy[reports]==1.0"]\n\n[tool.ruff.lint]\n'
-    'extend-select = ["S", "ASYNC", "DTZ", "G", "T20"]\n'
+    'extend-select = ["S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA"]\n'
 )
 PYTHON_MAKEFILE = (
     "RUN := uv run --project app\n"
@@ -86,3 +86,15 @@ def test_invalid_manifest_is_listed_as_unchecked(run_project: RunProject) -> Non
     _, report = run_project({"Makefile": JAVASCRIPT_MAKEFILE, "package.json": "{"})
     assert rule_findings(report, "TL-3") == []
     assert [entry["reason"].split(":")[0] for entry in report["unchecked"]] == ["invalid package.json"]
+
+
+def test_configured_architecture_contract_must_run_in_make_check(run_project: RunProject) -> None:
+    pyproject = PYPROJECT + '\n[tool.importlinter]\nroot_package = "app"\n'
+    makefile = PYTHON_MAKEFILE.format(format_mode="--check")
+    _, report = run_project({"pyproject.toml": pyproject, "Makefile": makefile})
+    assert rule_findings(report, "TL-3") == [
+        ("error", "make check does not run the architecture contract checker (configured: lint-imports)", 4)
+    ]
+    makefile = makefile.replace("check-all: check\n", "\t$(RUN) lint-imports\ncheck-all: check\n")
+    exit_code, report = run_project({"pyproject.toml": pyproject, "Makefile": makefile})
+    assert (exit_code, report["findings"]) == (0, [])

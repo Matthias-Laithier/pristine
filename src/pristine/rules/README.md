@@ -11,31 +11,34 @@ When instructions conflict, the higher one wins:
 These rules are the default when the project is silent. They never override the project or the user.
 
 ## Before coding
-1. Run `pristine guide` and read this hub.
-2. Read every rule in full with `pristine rule all` before every coding task. Reading the index or only selected rules does not satisfy this requirement.
-3. Read long output in chunks, through the final rule. Request rules by chapter or ID when the output would otherwise be truncated. Every rule must be read.
+1. Run `pristine guide` and read it in full. It prints this hub and the rule index. The index gives the full statement of every review rule, the rules no tool checks, and one line for every checked rule.
+2. Read in full, with `pristine rule <ID>`, every review rule the change touches. A change that crosses a trust boundary, a transaction, a queue, or an authorization decision touches the Boundary Safety rules of that concern.
+3. Checked rules need no reading up front. `pristine check` and `pristine project` report each violation with its rule ID and the fix. Read a checked rule in full with `pristine rule <ID>` when a finding cites it or when its one-line summary leaves the requirement unclear.
 
 ## While coding
-Apply the rules while writing the code. When a decision genuinely conflicts with a rule, never pick a side silently. Cite the rule ID and state the conflict in the response.
+Apply the rules while writing the code. Run `pristine check` on the files you change as you go, so findings arrive while the code is fresh. When a decision genuinely conflicts with a rule, never pick a side silently. Cite the rule ID and state the conflict in the response.
 
 ## Self-check before finishing
 1. Run `pristine check` on the directories the task touched, or on the repository root, so checks that span files, such as import cycles, see the unchanged files too. Fix every finding in the code the task wrote or changed, or keep it as a deliberate break.
 2. Run `pristine project` on the repository root.
 3. Handle findings in code the task did not change. Fix them when they sit in a unit the task rewrote, as CR-11 requires. Otherwise leave them and count them per rule ID.
-4. Review your change against every rule, including checked rules. Assess each rule's full requirement and exceptions. A rule outside the scope of the change is inapplicable. An automated result never replaces this review.
-5. Complete the CR-20 subtraction pass and growth account.
+4. Review your change against every review rule it touches. A rule outside the scope of the change is inapplicable.
+5. Run `pristine growth` and complete the CR-20 subtraction pass.
 6. Report three things: every deliberate break with its rule ID and reason, the pre-existing findings counted per rule ID, and the CR-20 growth account.
 
+A dedicated reviewer, when the workflow has one, reads every rule in full with `pristine rule all` and reviews the complete change against all of them.
+
 ## Automated checks
-Automated checks cover only mechanical parts of the rules. Many rules have no automated check, and a checked rule may be checked only in part. The checks favor precision over recall. A clean report does not establish full rule compliance. Reading every rule in full before coding and reviewing the change against every rule before finishing are mandatory.
+Automated checks cover the mechanical part of the checked rules. A checked rule may be checked only in part, and the checks favor precision over recall. A clean report never establishes compliance with the review rules.
 - `pristine check <paths>` checks files and directories. `--exclude <glob>` skips paths, and `--json` prints a structured report. A path that does not exist is listed as missing, so a list of changed files may include deleted ones.
 - On a big repository, `--max N` prints only the first N findings. The summary and its `by rule:` line still count every finding per rule ID.
 - `--jobs N` caps the worker processes. The default is half the CPU cores.
 - `pristine project [root]` checks the repository root against the Tooling chapter: the Makefile contract, the check gates, the code-quality tools, and the lockfile.
-- `pristine rules` lists every rule and how it is checked: by `pristine check`, by `pristine project`, or by the agent's own review. That list is the authority on coverage. `--help` on each command documents the rest.
-- Each finding gives the file, the line, the rule ID, and a severity. An error breaks a hard limit or a strict rule. A warning passes a target.
+- `pristine growth [base]` counts the maintained lines added and removed against a git base, split into code, tests, and other files, for the CR-20 growth account.
+- `pristine rules` lists every rule and how it is checked: by `pristine check`, by `pristine project`, or by review. That list is the authority on coverage. `--help` on each command documents the rest.
+- Each finding gives the file, the line, the rule ID, a severity, and the fix. An error breaks a hard limit or a strict rule. A warning passes a target.
 - An error exits with code 1, and warnings alone exit with code 0. Both still need a fix or a reported reason.
-- Files without a grammar are listed as unchecked. Automated inspection of a file never establishes compliance with every rule.
+- Files without a grammar are listed as unchecked.
 - The tool reads no project configuration. When the project's own rules set other limits, the project wins, and the agent reports the difference.
 
 ## Chapters
@@ -58,13 +61,13 @@ How code is written and organized.
 - CR-13 Nesting Depth
 - CR-14 Value Dispatch Through a Registry
 - CR-15 Group Files by Cohesive Responsibility
-- CR-16 Inspect Before Implementing
 - CR-17 Keep Function Signatures Cohesive
 - CR-18 Name Domain-Significant Values
 - CR-19 Keep One Level of Abstraction per Function
 - CR-20 Minimize the Resulting Codebase
 - CR-21 Never Escape the Type Checker
 - CR-22 Instants Are Aware UTC, Money Is Exact, Quantities Name Their Unit
+- CR-23 Code Is Greppable
 
 ### Boundary Safety (BS)
 How code guards trust boundaries, failure paths, and shared resources: input validation, injection, authorization, idempotency, async blocking, load bounds, and logging.
@@ -88,7 +91,6 @@ How code guards trust boundaries, failure paths, and shared resources: input val
 How code is designed for composition.
 - CO-1 Favor Composition Over Inheritance
 - CO-2 Small, Focused Units
-- CO-3 Design for Combination Over Modification
 - CO-4 Clear Interfaces
 - CO-5 Functions Where Possible, Classes Where Needed
 - CO-6 Wrap External Clients in Singleton Services
@@ -107,7 +109,6 @@ What to test and how to keep the suite minimal.
 - TST-2 Pin the Boundaries
 - TST-3 Minimal Test Count
 - TST-4 Tests Live in a Dedicated `tests` Folder
-- TST-5 Every Bug Gets a Regression Test
 - TST-6 Tests Are Deterministic
 - TST-7 Expected Results Come From an Independent Oracle
 - TST-8 Model Quality Is Measured by Evals, Code by Deterministic Tests

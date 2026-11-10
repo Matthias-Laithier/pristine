@@ -2,11 +2,10 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.swallowed_failures import (
+from pristine.checks.boundaries.execution.swallowed_failures.handlers import (
     PROPAGATE_HINT,
     asserts_failure,
     body_text,
-    detects,
     is_expected,
     normalized,
     swallow,
@@ -27,7 +26,6 @@ def is_silent_catch(clause: Node) -> bool:
     return is_empty and not any(is_expected(name) for name in names) and not asserts_failure(clause, frozenset(names))
 
 
-@detects("java", "csharp", "kotlin")
 def typed_catch_swallows(parsed: ParsedFile) -> Iterator[Finding]:
     for clause in (node for node in all_nodes(parsed) if node.type in TYPED_CATCH_KINDS and is_silent_catch(node)):
         yield swallow(parsed, clause, Severity.WARNING, f"empty catch block hides the failure; {PROPAGATE_HINT}")

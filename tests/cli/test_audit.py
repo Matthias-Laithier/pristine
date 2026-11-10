@@ -86,7 +86,7 @@ def test_audit_text_caps_only_findings_and_keeps_full_counts(
 
 @pytest.mark.parametrize("json_output", [False, True])
 def test_audit_clean_evidence_still_limits_certainty_and_requires_rule_review(
-    native_scanner: NativeScanner, capsys: pytest.CaptureFixture[str], json_output: bool
+    native_scanner: NativeScanner, capsys: pytest.CaptureFixture[str], *, json_output: bool
 ) -> None:
     native_scanner(native_output("clean"), 0, None, "/fixtures/clean/uv.lock")
     assert main(["audit", "uv.lock", *(["--json"] if json_output else [])]) == 0
@@ -108,9 +108,7 @@ def test_audit_clean_evidence_still_limits_certainty_and_requires_rule_review(
         assert "not upgrade recommendations" in json_text(document["scope"])
     else:
         assert "No known advisory matches; not proof of security." in output
-    assert "read every rule in full with 'pristine rule all' before coding" in output
-    assert "review your change against every rule, including checked rules" in output
-    assert "A clean report does not establish full rule compliance." in output
+    assert "review your change against every review rule it touches" in output
 
 
 @pytest.mark.parametrize(
@@ -143,7 +141,7 @@ def test_audit_gaps_and_exit_contradictions_are_incomplete_without_losing_findin
     assert len(json_list(document["findings"])) == (1 if sample == "vulnerable" else 0)
     if sample == "duplicate":
         assert document["problems"] == ["native source evidence does not match the requested lockfile"]
-    assert "review your change against every rule, including checked rules" in output
+    assert "review your change against every review rule it touches" in output
 
 
 def test_audit_text_failure_retains_findings_without_claiming_a_clean_scan(

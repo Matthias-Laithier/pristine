@@ -9,10 +9,10 @@ from pristine.project.strictness.strictness import UnverifiedConfigError
 from pristine.reports.findings import Finding, FindingKind, Severity
 
 RUFF = TOOLS_BY_NAME["ruff"]
-REQUIRED_RULES = ("S", "ASYNC", "DTZ", "G", "T20")
+REQUIRED_RULES = ("S", "ASYNC", "DTZ", "G", "T20", "FBT", "BLE", "ARG", "ERA")
 ALL_RULES = "ALL"
 FIRST_LINE = 1
-RUFF_FIX = 'select or extend-select the S, ASYNC, DTZ, G, and T20 rule sets (or "ALL")'
+RUFF_FIX = 'select or extend-select the S, ASYNC, DTZ, G, T20, FBT, BLE, ARG, and ERA rule sets (or "ALL")'
 UNIVERSAL_PER_FILE_PATTERNS = ("*", "**", "**/*.py")
 
 

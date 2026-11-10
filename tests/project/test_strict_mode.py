@@ -62,7 +62,7 @@ def test_strict_flag_in_the_gate_passes(run_project: RunProject) -> None:
         ("basedpyright", {"pyrightconfig.json": '{"typeCheckingMode": "basic"}'}, True),
     ],
 )
-def test_pyright_modes(run_project: RunProject, checker: str, config: dict[str, str], lax: bool) -> None:
+def test_pyright_modes(run_project: RunProject, checker: str, config: dict[str, str], *, lax: bool) -> None:
     files = {"pyproject.toml": PYPROJECT.format(checker=checker), **config}
     expected = [("error", f'{checker} does not type-check in strict mode; set typeCheckingMode to "strict"')]
     assert strict_findings(files, run_project) == (expected if lax else [])

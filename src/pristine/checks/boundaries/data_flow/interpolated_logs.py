@@ -2,7 +2,7 @@ import re
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.nodes import COMMENT_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -53,13 +53,11 @@ def check_interpolated_logs(parsed: ParsedFile) -> list[Finding]:
     ]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python logging calls whose message is built by an f-string, %-formatting, str.format, or string "
-            "concatenation, on logger, log, and logging."
-        ),
-        run=check_interpolated_logs,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python logging calls whose message is built by an f-string, %-formatting, str.format, or string "
+        "concatenation, on logger, log, and logging."
+    ),
+    run=check_interpolated_logs,
 )

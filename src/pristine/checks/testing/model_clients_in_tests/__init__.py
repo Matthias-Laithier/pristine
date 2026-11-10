@@ -4,7 +4,7 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.checks.testing.model_clients_in_tests.live_clients import LiveClient, key_label
 from pristine.checks.testing.model_clients_in_tests.python_keys import python_live_clients
 from pristine.checks.testing.model_clients_in_tests.script_keys import script_live_clients
@@ -47,14 +47,12 @@ def check_model_clients_in_tests(parsed: ParsedFile) -> list[Finding]:
     return [Finding(parsed.path, live[0].line, RULE_ID, Severity.WARNING, message)]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Test files constructing a real LLM SDK client (Python openai, anthropic, mistralai Mistral, "
-            "google.generativeai, cohere; JS/TS openai, @anthropic-ai/sdk, @mistralai/mistralai) whose API key "
-            "argument reads the environment, with a model API in use. Evals and type-only imports are exempt."
-        ),
-        run=check_model_clients_in_tests,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Test files constructing a real LLM SDK client (Python openai, anthropic, mistralai Mistral, "
+        "google.generativeai, cohere; JS/TS openai, @anthropic-ai/sdk, @mistralai/mistralai) whose API key "
+        "argument reads the environment, with a model API in use. Evals and type-only imports are exempt."
+    ),
+    run=check_model_clients_in_tests,
 )

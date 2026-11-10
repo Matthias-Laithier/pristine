@@ -146,9 +146,8 @@ def test_clean_report_has_no_triage_work(run_pristine: RunPristine, capsys: pyte
         "files: 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n"
         "verification: complete, 0 failures\n\n"
         "Required agent review\n"
-        "  - read every rule in full with 'pristine rule all' before coding.\n"
-        "  - Before finishing, review your change against every rule, including checked rules.\n"
-        "  - Automated checks cover only mechanical parts.\n"
-        "  - A clean report does not establish full rule compliance.\n"
-        "  - Fix every finding or report it by rule ID as a deliberate break with its reason.\n"
+        "  - fix every finding or report it by rule ID as a deliberate break with its reason.\n"
+        "  - Read a rule in full with 'pristine rule <ID>' when a finding cites it.\n"
+        "  - Before finishing, review your change against every review rule it touches, listed in 'pristine guide'.\n"
+        "  - Checks cover only the mechanical part of the checked rules.\n"
     )

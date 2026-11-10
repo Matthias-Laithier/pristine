@@ -3,9 +3,7 @@ from collections.abc import Callable, Iterator
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.unbounded_fan_out.sizes import passes_size
-from pristine.registration import registering
 from pristine.syntax.calls import callee_of
-from pristine.syntax.nodes import COMPREHENSION_KINDS
 from pristine.syntax.parsing import all_nodes, node_text
 from pristine.syntax.python_calls import import_bindings, imported_names, qualified_callee
 from pristine.syntax.python_scopes import (
@@ -20,8 +18,6 @@ TRANSPARENT_WRAPPERS = frozenset({"enumerate", "sorted", "reversed", "list", "tu
 LOOP_CLAUSE_KINDS = frozenset({"for_statement", "for_in_clause"})
 MAPPING_VIEWS = frozenset({"items", "keys", "values"})
 GATHER = "asyncio.gather"
-
-_DATA_RULES: dict[str, Callable[[Node], bool]] = {}
 
 
 def collection_of(iterable: Node) -> Node:
@@ -56,7 +52,6 @@ def is_data(node: Node | None) -> bool:
     return node is not None and rule is not None and rule(collection_of(node))
 
 
-@registering(_DATA_RULES, "await")
 def is_awaited_load(node: Node) -> bool:
     awaited = node.named_children[0] if node.named_children else None
     if awaited is None or awaited.type != "call":
@@ -86,7 +81,6 @@ def is_gathered_data(gather: Node) -> bool:
     return any(is_data(iterable) for loop in loops for iterable in loop_iterables(loop))
 
 
-@registering(_DATA_RULES, "call")
 def is_mapping_view(node: Node) -> bool:
     function = node.child_by_field_name("function")
     if function is None or function.type != "attribute":
@@ -96,13 +90,11 @@ def is_mapping_view(node: Node) -> bool:
     )
 
 
-@registering(_DATA_RULES, *COMPREHENSION_KINDS)
 def is_derived_collection(node: Node) -> bool:
     clauses = (clause for clause in node.named_children if clause.type == "for_in_clause")
     return any(is_data(clause.child_by_field_name("right")) for clause in clauses)
 
 
-@registering(_DATA_RULES, "identifier")
 def is_data_name(node: Node) -> bool:
     name = node_text(node) or ""
     for function in enclosing_functions(node):
@@ -112,6 +104,17 @@ def is_data_name(node: Node) -> bool:
         if earlier:
             return all(map(is_data, earlier))
     return False
+
+
+_DATA_RULES: dict[str, Callable[[Node], bool]] = {
+    "await": is_awaited_load,
+    "call": is_mapping_view,
+    "list_comprehension": is_derived_collection,
+    "set_comprehension": is_derived_collection,
+    "dictionary_comprehension": is_derived_collection,
+    "generator_expression": is_derived_collection,
+    "identifier": is_data_name,
+}
 
 
 def unbounded_collection(loop: Node) -> Node | None:

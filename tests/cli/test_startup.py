@@ -7,7 +7,11 @@ from tests.conftest import run_cli
     ("arguments", "expected_stdout", "expected_stderr"),
     [
         (("--version",), "pristine ", ""),
-        (("--help",), "usage: pristine [-h] [--version] {check,project,audit,guide,rule,rules} ...\n", ""),
+        (
+            ("--help",),
+            "usage: pristine [-h] [--version]\n                {check,project,audit,growth,guide,rule,rules} ...\n",
+            "",
+        ),
         (("rule", "CR-20"), "# CR-20 Minimize the Resulting Codebase\n", ""),
         (("guide",), "# Coding rules\n", ""),
         (("rules",), "BS-1 Validate Untrusted Input at the Boundary (check): ", ""),

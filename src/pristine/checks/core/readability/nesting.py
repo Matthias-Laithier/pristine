@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Limit
 from pristine.syntax.nodes import (
     ANONYMOUS_FUNCTION_KINDS,
@@ -112,13 +112,11 @@ def check_nesting(parsed: ParsedFile) -> list[Finding]:
     return findings
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            f"Control-flow nesting depth per function ({NESTING_LIMIT.describe()}); else-if adds no level, "
-            "a comprehension or lambda adds one."
-        ),
-        run=check_nesting,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        f"Control-flow nesting depth per function ({NESTING_LIMIT.describe()}); else-if adds no level, "
+        "a comprehension or lambda adds one."
+    ),
+    run=check_nesting,
 )

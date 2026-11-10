@@ -1,7 +1,7 @@
 import os
 from pathlib import PurePosixPath
 
-from pristine.checks.registry import PathCheck, register_path_check
+from pristine.checks.definitions import PathCheck
 from pristine.files.path_roles import PYTEST_CONFTEST, is_test_file, is_test_folder
 from pristine.reports.findings import Finding, Severity
 
@@ -70,13 +70,11 @@ def check_test_location(paths: list[str]) -> list[Finding]:
     return [finding for path in paths if (finding := location_finding(path)) is not None]
 
 
-register_path_check(
-    PathCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Test files (test_*.py, *_test.py/js/ts/rb, *.test.js/ts, *.spec.js/ts, *_spec.rb, anything in __tests__) "
-            "outside a dedicated test folder such as tests/, test/, or spec/. Go and Rust tests are exempt."
-        ),
-        run=check_test_location,
-    )
+CHECK = PathCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Test files (test_*.py, *_test.py/js/ts/rb, *.test.js/ts, *.spec.js/ts, *_spec.rb, anything in __tests__) "
+        "outside a dedicated test folder such as tests/, test/, or spec/. Go and Rust tests are exempt."
+    ),
+    run=check_test_location,
 )

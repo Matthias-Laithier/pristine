@@ -25,29 +25,28 @@ def test_guide_prints_the_hub_with_links_as_plain_text(capsys: pytest.CaptureFix
     assert ".md)" not in output
 
 
-def test_guide_ends_with_a_rule_index_of_statements(capsys: pytest.CaptureFixture[str]) -> None:
+def test_guide_index_states_review_rules_and_summarizes_checked_ones(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["guide"]) == 0
     index = capsys.readouterr().out.partition("\n## Rule index\n")[2]
-    statement = (RULES_SOURCE / "cr-13-nesting-depth.md").read_text(encoding="utf-8").splitlines()[2]
-    assert f"\n- CR-13 Nesting Depth (check): {statement}\n" in index
-    assert "\n- CR-20 Minimize the Resulting Codebase (review): " in index
+    statement = (RULES_SOURCE / "cr-20-minimize-the-resulting-codebase.md").read_text(encoding="utf-8").splitlines()[2]
+    summary = next(check.summary for check in file_checks() if check.rule_id == "CR-13")
+    assert f"\n- CR-20 Minimize the Resulting Codebase (review): {statement}\n" in index
+    assert f"\n- CR-13 Nesting Depth (check): {summary}\n" in index
 
 
 @pytest.mark.parametrize("command", ["guide", "rules"])
-def test_rule_guidance_requires_full_reading_and_review(capsys: pytest.CaptureFixture[str], command: str) -> None:
+def test_rule_guidance_requires_targeted_reading_and_review(capsys: pytest.CaptureFixture[str], command: str) -> None:
     assert main([command]) == 0
     output = capsys.readouterr().out.lower()
-    assert "read every rule in full" in output
-    assert "pristine rule all" in output
-    assert "review your change against every rule, including checked rules" in output
-    assert "only mechanical parts" in output
+    assert "pristine rule <id>" in output
+    assert "review rule" in output
 
 
 def test_rule_prints_each_rule_matched_case_insensitively(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["rule", "cr-14", "CR-12"]) == 0
     output = capsys.readouterr().out
     assert output.startswith("# CR-14 Value Dispatch Through a Registry\n")
-    assert "mechanism that CR-7 permits" in output
+    assert "registry form that CR-7 and CR-23 require" in output
     assert ".md)" not in output
     assert "\n# CR-12 Function Size\n" in output
 

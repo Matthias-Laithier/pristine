@@ -2,18 +2,16 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.swallowed_failures import (
+from pristine.checks.boundaries.execution.swallowed_failures.handlers import (
     NARROW_HINT,
     HandlerScope,
     body_text,
-    detects,
     logged_default,
     returned_values,
     swallow,
 )
 from pristine.checks.boundaries.execution.swallowed_failures.script_scope import script_scope
 from pristine.reports.findings import Finding, Severity
-from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, all_nodes
 
 SCRIPT_EMPTY_BODIES = frozenset(
@@ -32,7 +30,6 @@ def hidden_shape(body: Node, scope: HandlerScope) -> str | None:
     return None if result is None else f"only logs, then does '{result}'"
 
 
-@detects(*SCRIPT_LANGUAGES)
 def script_swallows(parsed: ParsedFile) -> Iterator[Finding]:
     scope = script_scope(parsed, returned_values(LOGGED_DEFAULTS))
     for clause in (node for node in all_nodes(parsed) if node.type == "catch_clause"):

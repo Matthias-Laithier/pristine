@@ -1,6 +1,3 @@
-from pathlib import Path
-
-import pristine.checks.registry
 from tests.conftest import RunPristine, rule_findings
 
 PYTHON_WRITES = (
@@ -119,10 +116,15 @@ def test_python_writes_to_module_state_are_errors(run_pristine: RunPristine) -> 
     assert rule_findings(report, "CR-7") == [(6, "error"), (7, "error"), (8, "error"), (11, "error")]
 
 
-def test_python_registries_fixtures_and_module_setup_are_allowed(run_pristine: RunPristine) -> None:
-    registry_source = Path(pristine.checks.registry.__file__).read_text()
-    _, report = run_pristine({"handlers.py": PYTHON_OWNED, "registry.py": registry_source})
-    assert rule_findings(report, "CR-7") == []
+def test_python_memos_fixtures_and_module_setup_are_allowed_and_registrations_are_errors(
+    run_pristine: RunPristine,
+) -> None:
+    _, report = run_pristine({"handlers.py": PYTHON_OWNED})
+    findings = [finding for finding in report["findings"] if finding["rule_id"] == "CR-7"]
+    assert [finding["line"] for finding in findings] == [8, 9]
+    assert all(
+        "write the registry as a dict literal in its owning module" in finding["message"] for finding in findings
+    )
 
 
 def test_private_cache_and_registration_names_alone_do_not_exempt(run_pristine: RunPristine) -> None:

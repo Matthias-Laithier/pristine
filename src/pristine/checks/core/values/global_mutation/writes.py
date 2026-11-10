@@ -4,8 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.checks.core.values.global_mutation.module_globals import PYTHON_COLLECTION, REBINDABLE, Globals
-from pristine.registration import registering
-from pristine.syntax.nodes import CALL_KINDS, SyntaxNode
+from pristine.syntax.nodes import SyntaxNode
 from pristine.syntax.parsing import node_text
 
 PYTHON_METHODS = frozenset({"append", "extend", "insert", "add", "update", "setdefault", "pop", "popitem"})
@@ -28,7 +27,6 @@ class Mutation:
 
 
 type MutationFinder = Callable[[Node, Globals], Mutation | None]
-_FINDERS: dict[str, MutationFinder] = {}
 
 
 def kinds_of(globals_kinds: Globals, node: Node | None) -> frozenset[str]:
@@ -52,17 +50,14 @@ def written_target(node: Node, target: Node | None, globals_kinds: Globals) -> M
     return None
 
 
-@registering(_FINDERS, "assignment", "augmented_assignment", "assignment_expression", "augmented_assignment_expression")
 def assigned(node: Node, globals_kinds: Globals) -> Mutation | None:
     return written_target(node, node.child_by_field_name("left"), globals_kinds)
 
 
-@registering(_FINDERS, "update_expression")
 def updated(node: Node, globals_kinds: Globals) -> Mutation | None:
     return written_target(node, node.child_by_field_name("argument"), globals_kinds)
 
 
-@registering(_FINDERS, "delete_statement", "unary_expression")
 def deleted(node: Node, globals_kinds: Globals) -> Mutation | None:
     if node.type == "unary_expression" and node_text(node.child_by_field_name("operator")) != "delete":
         return None
@@ -72,7 +67,6 @@ def deleted(node: Node, globals_kinds: Globals) -> Mutation | None:
     return next((mutation for mutation in found if mutation is not None), None)
 
 
-@registering(_FINDERS, *CALL_KINDS)
 def called(node: Node, globals_kinds: Globals) -> Mutation | None:
     callee = node.child_by_field_name("function")
     if callee is None or callee.type not in METHOD_CALLEE_KINDS:
@@ -82,6 +76,19 @@ def called(node: Node, globals_kinds: Globals) -> Mutation | None:
     if not any(method in METHODS_BY_KIND.get(kind, ()) for kind in kinds_of(globals_kinds, receiver)):
         return None
     return Mutation(node, node_text(receiver) or "", f"calls .{method}() on")
+
+
+_FINDERS: dict[str, MutationFinder] = {
+    "assignment": assigned,
+    "augmented_assignment": assigned,
+    "assignment_expression": assigned,
+    "augmented_assignment_expression": assigned,
+    "update_expression": updated,
+    "delete_statement": deleted,
+    "unary_expression": deleted,
+    "call": called,
+    "call_expression": called,
+}
 
 
 def find_mutation(node: Node, globals_kinds: Globals) -> Mutation | None:

@@ -1,4 +1,4 @@
-from pristine.checks.registry import PathCheck, register_path_check
+from pristine.checks.definitions import PathCheck
 from pristine.reports.findings import Finding, FindingKind, Severity
 lazy from pristine.services.gitleaks import Leak, SecretScanFailed, scan_paths
 
@@ -33,13 +33,11 @@ def check_secrets(paths: list[str]) -> list[Finding]:
     return [leak_finding(leak) for leak in leaks]
 
 
-register_path_check(
-    PathCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Secrets in every discovered file, skipped data and lockfiles included, detected by gitleaks with its "
-            "default rules or the project's .gitleaks.toml; a scan that cannot run is reported as a warning."
-        ),
-        run=check_secrets,
-    )
+CHECK = PathCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Secrets in every discovered file, skipped data and lockfiles included, detected by gitleaks with its "
+        "default rules or the project's .gitleaks.toml; a scan that cannot run is reported as a warning."
+    ),
+    run=check_secrets,
 )

@@ -52,7 +52,7 @@ def test_absent_tool_provisions_once_and_reuses_verified_cache_offline(native_bo
 
 @pytest.mark.parametrize("path_alias", [False, True], ids=["absent-tool", "path-alias"])
 def test_corrupt_cache_is_not_executed_or_replaced_even_through_a_path_alias(
-    native_boundary: NativeBoundary, path_alias: bool
+    native_boundary: NativeBoundary, *, path_alias: bool
 ) -> None:
     native_boundary.root.mkdir(mode=0o700)
     cached = native_boundary.root / FIXTURE_DIGEST

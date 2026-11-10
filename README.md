@@ -25,10 +25,11 @@ uv tool install --python 3.15 git+https://github.com/Matthias-Laithier/pristine
 ```
 
 ```sh
-pristine guide            # print the rules hub and the rule index
-pristine rule all         # read every rule in full before coding, in chunks if needed
+pristine guide            # print the hub and the rule index, read before coding
+pristine rule CR-20       # read one rule in full
 pristine check src tests  # check files and directories against the rules
 pristine project          # check the repository root against the Tooling chapter
+pristine growth           # count the lines a change adds and removes, for CR-20
 ```
 
 Given this `reminders.py`:
@@ -62,14 +63,13 @@ by rule: BS-4 1, CR-13 1
 verification: complete, 0 failures
 
 Required agent review
-  - read every rule in full with 'pristine rule all' before coding.
-  - Before finishing, review your change against every rule, including checked rules.
-  - Automated checks cover only mechanical parts.
-  - A clean report does not establish full rule compliance.
-  - Fix every finding or report it by rule ID as a deliberate break with its reason.
+  - fix every finding or report it by rule ID as a deliberate break with its reason.
+  - Read a rule in full with 'pristine rule <ID>' when a finding cites it.
+  - Before finishing, review your change against every review rule it touches, listed in 'pristine guide'.
+  - Checks cover only the mechanical part of the checked rules.
 ```
 
-`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. Both formats include the reading and review obligation, through `next_step` in JSON. `verification_status` describes mechanical verification only. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
+`pristine rule CR-13` prints one rule in full, and `pristine rules` lists every rule with how it is checked. The exit code is 1 when a check finds an error, or 3 when verification is incomplete. `pristine check` returns the full report after the run finishes: text by default, or JSON with `--json`. Both formats include the review obligation, through `next_step` in JSON. `verification_status` describes mechanical verification only. `--jobs N` caps the worker processes, with half the CPU cores as the default. `--max N` limits printed findings while the summary still counts them all; without it, every finding prints.
 
 Text groups findings into spaced file sections, ranked by the number of distinct code rules, then by path alphabetically. Each full path appears once as a heading, followed by nonzero error and warning totals and `fix`/`verify` rule IDs. Finding bullets use `line N` under that heading, or `file` for file-wide findings and findings without a source line. Verification bullets also say `verify`; they do not count as violated code rules. Mechanical totals and the mandatory agent review checklist follow. With `--max`, text caps finding bullets but keeps every file's overview and full counts. JSON keeps the original full paths and lines, in path/line/rule order, and adds a ranked `triage` array: each entry has `path`, `distinct_rules`, the total `findings` count, and `fix` and `verify` maps of rule IDs to counts. Those maps cover the full report, not just printed findings.
 
@@ -94,24 +94,26 @@ Online lookup requires network access and sends package identities to OSV. Resul
 
 Tests replay reviewed native responses and fake download/process boundaries. Live advisory queries and first-use release downloads stay outside `make check` and CI tests.
 
-Text and JSON include source evidence, full counts, verification problems, an explicit coverage statement, and the same mandatory rule-reading and review guidance as the other reports. JSON has `scope`, `verification_status`, `summary`, `findings`, `sources`, `problems`, and `next_step`. `--max N` requires a positive integer and caps only findings; `summary.omitted` counts the rest, while all source evidence, problems, and totals remain visible. A complete scan with no findings says no known advisory matches, not proof of security; absent fixed-version evidence is reported explicitly.
+Text and JSON include source evidence, full counts, verification problems, an explicit coverage statement, and the same review guidance as the other reports. JSON has `scope`, `verification_status`, `summary`, `findings`, `sources`, `problems`, and `next_step`. `--max N` requires a positive integer and caps only findings; `summary.omitted` counts the rest, while all source evidence, problems, and totals remain visible. A complete scan with no findings says no known advisory matches, not proof of security; absent fixed-version evidence is reported explicitly.
 
 Text shows each source once with its full overview, then groups advisory details under exact ecosystem/package/version headings. Scope and fixed-release caveats appear once. Counts name native advisory records, not distinct vulnerabilities inferred from aliases; `--max` caps only advisory rows.
 
-Audit exits are 0 for complete verification with dependency evidence and no vulnerability findings, 1 for vulnerability findings with complete verification, 2 for invalid command usage, and 3 for incomplete verification. Exit 3 takes priority over 1: missing scanners, failed lookups, unsupported inputs, invalid scanner output, absent dependency evidence, and native exit statuses that contradict the findings never become clean. The command does not replace `pristine check`, `pristine project`, or the agent's full-rule review, and their reports and exits are unchanged.
+Audit exits are 0 for complete verification with dependency evidence and no vulnerability findings, 1 for vulnerability findings with complete verification, 2 for invalid command usage, and 3 for incomplete verification. Exit 3 takes priority over 1: missing scanners, failed lookups, unsupported inputs, invalid scanner output, absent dependency evidence, and native exit statuses that contradict the findings never become clean. The command does not replace `pristine check`, `pristine project`, or the agent's review, and their reports and exits are unchanged.
 
 ## How it works
 
-Before coding, the agent runs `pristine guide` and reads every rule in full with `pristine rule all`. It reads long output in chunks through the final rule, or requests every chapter separately. The guide's index does not replace reading the full rules.
+Rules come in two kinds. A checked rule is enforced by `pristine check` or `pristine project`, whose findings name the rule and the fix, so an agent reads it only when a finding cites it. A review rule needs judgment, such as minimizing the codebase or naming, and no tool can check it. The guide prints the full statement of every review rule and one line per checked rule, about 4,500 words in total.
 
-Before finishing, the agent runs `pristine check` and `pristine project`, fixes the findings, and reviews its change against every rule, including checked rules. Each rule's full requirement and exceptions must be assessed. Rules outside the change's scope are inapplicable. The agent reports every deliberate break by rule ID.
+Before coding, the agent runs `pristine guide` and reads in full every review rule its change touches. While coding, it runs `pristine check` on the files it changes. Before finishing, it runs `pristine check`, `pristine project`, and `pristine growth`, fixes the findings, reviews its change against the review rules it touches, and reports every deliberate break by rule ID with the CR-20 growth account.
 
-Automated checks cover only mechanical parts of the rules. They favor precision over recall. A checked rule may be checked only in part. A clean report does not establish full rule compliance. The CLI communicates the reading and review obligation. It cannot verify that an agent fulfilled it.
+A dedicated reviewer, when the workflow has one, reads every rule with `pristine rule all` and reviews the complete change.
+
+Automated checks favor precision over recall, and a checked rule may be checked only in part. The CLI states the review obligation. It cannot verify that an agent fulfilled it.
 
 To set it up, add this line to the agent's instructions, such as `AGENTS.md` or `CLAUDE.md`:
 
 ```
-Before coding, run `pristine guide` and read every rule in full with `pristine rule all`, in chunks if needed. Before finishing, review your change against every rule, including checked rules. Automated checks cover only mechanical parts. A clean report does not establish full rule compliance.
+Before coding, run `pristine guide` and read in full every review rule your change touches. Run `pristine check` on the files you change as you go. Before finishing, run `pristine check`, `pristine project`, and `pristine growth`, and review your change against every review rule it touches.
 ```
 
 ## Rules

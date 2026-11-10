@@ -36,7 +36,7 @@ def test_supported_catalog_selects_only_fixed_official_release_assets(
         requested.append(download_url)
         raise OSError("fixture offline")
 
-    resolver = NativeToolResolver(tmp_path / "cache", system, machine, finder=lambda name: None, download=offline)
+    resolver = NativeToolResolver(tmp_path / "cache", system, machine, finder=lambda _name: None, download=offline)
     with pytest.raises(NativeToolUnavailable):
         resolver.resolve_tool(name)
     assert requested == ["https://github.com/" + url]

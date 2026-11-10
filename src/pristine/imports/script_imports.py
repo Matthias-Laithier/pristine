@@ -2,7 +2,7 @@ import posixpath
 import re
 from collections.abc import Iterator
 
-from pristine.imports.registry import ImportEdge, SourceFile, reads_imports
+from pristine.imports.edges import ImportEdge, SourceFile
 from pristine.syntax.match_groups import group_text
 
 SCRIPT_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")
@@ -70,7 +70,6 @@ def resolve_specifier(importer: str, specifier: str, known_paths: set[str]) -> s
     return next((path for path in candidate_paths(target) if path in known_paths), None)
 
 
-@reads_imports(*SCRIPT_SUFFIXES)
 def read_script_edges(files: list[SourceFile]) -> list[ImportEdge]:
     known_paths = {file.path for file in files}
     edges = []

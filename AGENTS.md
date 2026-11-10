@@ -2,15 +2,15 @@
 
 This guide is for agents that change this repository. [README.md](README.md) covers installation and usage.
 
-Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README.md). Before coding, run `pristine guide` and read every rule in full with `pristine rule all`. Read long output in chunks through the final rule. Before finishing, review the change against every rule, including checked rules. Automated checks cover only mechanical parts. A clean report does not establish full rule compliance.
+Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README.md). Before coding, run `pristine guide` and read in full every review rule the change touches. Before finishing, run `make check`, review the change against every review rule it touches, and give the growth account from `pristine growth`. A change to a rule document is reviewed against every rule with `pristine rule all`.
 
 ## Architecture
 
 ### Checks
 - Checks live in `src/pristine/checks/`, one module or package per rule, grouped by rule chapter: `core/` for CR, `boundaries/` for BS, `composition/` for CO, and `testing/` for TST. A chapter that outgrows 8 checks splits by topic, such as `core/readability/`, `core/placement/`, and `core/values/`, or `boundaries/data_flow/` and `boundaries/execution/`.
-- Each check registers itself through [checks/registry.py](src/pristine/checks/registry.py). The registry imports every module of the `checks` package and its subpackages on first use, so a new check is a new module and nothing else.
-- A file check, registered with `register_file_check`, receives one parsed file and returns its findings. It runs on every file with a grammar.
-- A path check, registered with `register_path_check`, receives the list of discovered paths and returns its findings. It runs once in the main process over every discovered file and never parses with tree-sitter.
+- Each check module defines a `CHECK` constant, a `FileCheck` or `PathCheck` from [checks/definitions.py](src/pristine/checks/definitions.py). [checks/registry.py](src/pristine/checks/registry.py) imports every check module explicitly and lists their checks in two tuple literals sorted by rule ID, so the registry is the full list of checks.
+- A file check receives one parsed file and returns its findings. It runs on every file with a grammar.
+- A path check receives the list of discovered paths and returns its findings. It runs once in the main process over every discovered file and never parses with tree-sitter.
 - Checks share helpers through neutral modules. A check never imports the internals of another check.
 
 ### Worker isolation
@@ -22,7 +22,7 @@ Code changes follow the rules in [src/pristine/rules/](src/pristine/rules/README
 ### Report
 - A report holds the findings, the unchecked, skipped, and missing paths, and the finding counts per rule ID.
 - A path that does not exist is reported as missing and never aborts the run.
-- The text and JSON renderers print the same report. `--max N` caps the printed findings. The summary and the per-rule counts still cover every finding. Both formats always include the mandatory full-rule reading and review guidance, through `next_step` in JSON. Complete verification describes the mechanical checks only.
+- The text and JSON renderers print the same report. `--max N` caps the printed findings. The summary and the per-rule counts still cover every finding. Both formats always include the review guidance, through `next_step` in JSON. Complete verification describes the mechanical checks only.
 
 ### Packages
 Each package of `src/pristine/` owns one responsibility, and no directory holds more than 8 code files.
@@ -34,16 +34,16 @@ Each package of `src/pristine/` owns one responsibility, and no directory holds 
 - `catalog/` reads the rule documents and builds the guide and the rule listing.
 - `services/` wraps every external dependency: git, gitleaks, the tree-sitter grammars, and the worker processes.
 - `project/` implements `pristine project`: it loads a repository root and checks it against the Tooling chapter, TL-1 to TL-4. Its root holds one module per check beside `inspection.py`. `repository/` loads the root, its Makefile, manifests, and the known tools, `commands/` parses shell commands and package scripts, and `strictness/` reads the strict settings of the type checkers.
-- `registration.py` and `package_modules.py` stay at the package root. They are the registration mechanism that the check, import-reader, and detector registries share, so they belong to none of those packages.
 - `clients/` holds the external-system client libraries per language and the import readers that find them, shared by CR-8 and TST-8.
-- `imports/` reads import edges for the import-cycle check, CO-8. Each reader registers itself for the file suffixes it handles, through the same auto-discovery as the checks.
-- `rules/` holds the rule documents. They ship inside the package. `pristine guide` prints the hub followed by a rule index built from each rule's title and statement. `pristine rule` prints rules selected by ID, by chapter prefix, or with `all`. Both print links between rule files as their plain label.
+- `imports/` reads import edges for the import-cycle check, CO-8. The check maps each file suffix to its reader in a dict literal.
+- `growth/` implements `pristine growth`: it counts the lines added and removed against a git base, split into code, tests, other maintained files, and generated files.
+- `rules/` holds the rule documents. They ship inside the package. `pristine guide` prints the hub followed by a rule index: the statement of each review rule and the check summary of each checked rule. `pristine rule` prints rules selected by ID, by chapter prefix, or with `all`. Both print links between rule files as their plain label.
 
 ### Parsing
 Parsing uses tree-sitter grammars from `tree-sitter-language-pack`, downloaded on first use of each language into the user cache. The tests parse with real grammars, so their first run needs network access to download the grammar of every language they cover.
 
 ## Adding a check
-1. Add a module to the chapter folder of `src/pristine/checks/` that registers a file check or a path check for one rule ID.
+1. Add a module to the chapter folder of `src/pristine/checks/` that defines a `CHECK` constant for one rule ID, then import it in `checks/registry.py` and add it to the tuple of its kind, in rule ID order.
 2. Test it through the `run_pristine` fixture of [tests/conftest.py](tests/conftest.py), which writes files to a temporary directory and runs `pristine check` on them. Tests live in `tests/checks/`, mirroring the folder of the check, such as `tests/checks/boundaries/data_flow/test_injection.py`.
 3. Validate it on real code. Run it on several real repositories and inspect every finding by hand.
 4. Favor reliability over recall. A check reports only what it judges with certainty. A false positive costs more than a missed finding, since agents act on every finding. Leave the uncertain cases to the agent's own review.
@@ -93,7 +93,7 @@ When the maintainer gives a rule or a thought, determine its scope first. A requ
 - IDs are stable for life. A rule keeps its ID when its file moves. IDs are never renumbered and never reused.
 - Prefixes are unique across all chapters. Before creating a chapter, check its initials against every existing prefix. On a collision, pick an unambiguous alternative, such as TST for Testing when T is taken.
 - The title names the rule.
-- The first paragraph of a rule file is its statement. `pristine guide` prints every statement in its rule index. The index helps navigation, and agents must still read every rule in full. The statement stands alone: it gives the requirement and its scope specifically enough to judge relevance without the rest of the file. The one-line description of a chapter meets the same bar.
+- The first paragraph of a rule file is its statement. `pristine guide` prints every statement in its rule index. The index prints the statement of every review rule, so agents decide from it which rules to read in full. The statement stands alone: it gives the requirement and its scope specifically enough to judge relevance without the rest of the file. The one-line description of a chapter meets the same bar.
 - Agents cite rule IDs to report compliance or violations when writing or reviewing code.
 
 ### Examples in rule files

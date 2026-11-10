@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
-from pristine.registration import registering
 from pristine.syntax.nodes import SyntaxNode
 from pristine.syntax.parsing import node_text
 
@@ -16,9 +15,6 @@ class BuiltString:
     method: str
     template: SyntaxNode
     values: list[SyntaxNode]
-
-
-_READERS: dict[str, Callable[[Node], BuiltString | None]] = {}
 
 
 def built_string(node: Node) -> BuiltString | None:
@@ -37,13 +33,11 @@ def is_constant_string(node: Node) -> bool:
     return node.type in STRING_KINDS and not interpolations(node)
 
 
-@registering(_READERS, *STRING_KINDS)
 def interpolated_string(node: Node) -> BuiltString | None:
     values = interpolations(node)
     return BuiltString("an f-string", node, values) if values else None
 
 
-@registering(_READERS, "call")
 def format_call(node: Node) -> BuiltString | None:
     function = node.child_by_field_name("function")
     arguments = node.child_by_field_name("arguments")
@@ -56,7 +50,6 @@ def format_call(node: Node) -> BuiltString | None:
     return BuiltString("str.format", receiver, values)
 
 
-@registering(_READERS, "binary_operator")
 def operator_string(node: Node) -> BuiltString | None:
     left, right = node.child_by_field_name("left"), node.child_by_field_name("right")
     operator = node_text(node.child_by_field_name("operator"))
@@ -71,6 +64,14 @@ def operator_string(node: Node) -> BuiltString | None:
         return None
     values = [inner for piece in pieces for inner in interpolations(piece) or [piece]]
     return BuiltString("string concatenation", pieces[0], values)
+
+
+_READERS: dict[str, Callable[[Node], BuiltString | None]] = {
+    "string": interpolated_string,
+    "concatenated_string": interpolated_string,
+    "call": format_call,
+    "binary_operator": operator_string,
+}
 
 
 def operands(node: Node) -> list[Node]:

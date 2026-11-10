@@ -4,7 +4,7 @@ Favor composition. Use inheritance only when the subtype can replace the parent 
 
 The exception is a framework that explicitly defines inheritance as its extension mechanism.
 
-This rule owns object relationships. [CO-3](co-3-design-for-combination-over-modification.md) owns adding behavior variants to stable units.
+Add a behavior variant by wrapping or combining units, such as a storage that encrypts and then delegates to another storage. Never modify or subclass a stable unit only to create the variant. Bug fixes and intended changes to the contract belong in the unit that owns the behavior.
 
 ## Bad
 

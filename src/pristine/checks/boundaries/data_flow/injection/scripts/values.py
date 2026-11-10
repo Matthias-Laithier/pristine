@@ -5,7 +5,6 @@ lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import is_constant_reference
 from pristine.checks.boundaries.data_flow.injection.scripts.escaping import is_escaping_api
-from pristine.registration import registering
 from pristine.syntax.parsing import module_statements, node_text
 from pristine.syntax.python_scopes import module_root
 
@@ -22,15 +21,12 @@ MAP_METHOD = "map"
 TEXT_KINDS = frozenset({"string_fragment", "escape_sequence"})
 ROOT_CACHE_SIZE = 8
 
-_TRUST_RULES: dict[str, Callable[[Node], bool]] = {}
-
 
 def is_trusted(node: Node) -> bool:
     rule = _TRUST_RULES.get(node.type)
     return node.type in LITERAL_KINDS or (rule is not None and rule(node))
 
 
-@registering(_TRUST_RULES, "identifier", "member_expression")
 def is_constant_name(node: Node) -> bool:
     text = node_text(node) or ""
     return is_constant_reference(text) or text in module_literal_names(module_root(node)) or is_trusted_constant(node)
@@ -86,12 +82,10 @@ def module_literal_names(root: Node) -> frozenset[str]:
     return frozenset(node_text(declarator.child_by_field_name("name")) or "" for declarator in literals)
 
 
-@registering(_TRUST_RULES, "call_expression")
 def is_escaping_call(node: Node) -> bool:
     return is_escaping_api(node) or is_literal_join(node)
 
 
-@registering(_TRUST_RULES, "array")
 def is_literal_array(node: Node) -> bool:
     return all(map(is_trusted, node.named_children))
 
@@ -125,10 +119,21 @@ def is_literal_sequence(node: Node) -> bool:
     return method == MAP_METHOD and len(bodies) == 1 and bodies[0] is not None and is_trusted(bodies[0])
 
 
-@registering(_TRUST_RULES, *COMPOSITE_KINDS)
 def is_literal_composite(node: Node) -> bool:
     parts = [child for child in node.named_children if child.type not in TEXT_KINDS]
     return all(map(is_trusted, parts))
+
+
+_TRUST_RULES: dict[str, Callable[[Node], bool]] = {
+    "identifier": is_constant_name,
+    "member_expression": is_constant_name,
+    "call_expression": is_escaping_call,
+    "array": is_literal_array,
+    "parenthesized_expression": is_literal_composite,
+    "binary_expression": is_literal_composite,
+    "template_substitution": is_literal_composite,
+    "template_string": is_literal_composite,
+}
 
 
 def is_built(node: Node) -> bool:

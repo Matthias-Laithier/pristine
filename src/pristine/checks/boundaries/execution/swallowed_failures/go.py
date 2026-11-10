@@ -3,9 +3,8 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.boundaries.execution.swallowed_failures import (
+from pristine.checks.boundaries.execution.swallowed_failures.handlers import (
     PROPAGATE_HINT,
-    detects,
     normalized,
     statements_of,
     swallow,
@@ -70,7 +69,6 @@ def dropped_error(node: Node) -> str | None:
     return None if name is None else f"'_ = {name}' drops the error"
 
 
-@detects("go")
 def go_swallows(parsed: ParsedFile) -> Iterator[Finding]:
     for node in all_nodes(parsed):
         message = dropped_error(node)

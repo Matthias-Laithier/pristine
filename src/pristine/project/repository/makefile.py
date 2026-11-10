@@ -52,13 +52,16 @@ def reach(makefile: Makefile, target: str) -> Reach:
     return Reach(frozenset(reached), tuple(commands))
 
 
-def merge_rules(rules: dict[str, Rule], additions: dict[str, Rule]) -> None:
-    for name, addition in additions.items():
-        existing = rules.setdefault(name, addition)
-        if existing is not addition:
-            existing.prerequisites.extend(addition.prerequisites)
-            existing.recipe.extend(addition.recipe)
-            existing.ignored_error_commands.extend(addition.ignored_error_commands)
+def merged_rule(existing: Rule | None, addition: Rule) -> Rule:
+    if existing is None:
+        return addition
+    return Rule(
+        existing.path,
+        existing.line,
+        [*existing.prerequisites, *addition.prerequisites],
+        [*existing.recipe, *addition.recipe],
+        [*existing.ignored_error_commands, *addition.ignored_error_commands],
+    )
 
 
 def is_followable_include(reader: SourceReader, name: str) -> bool:
@@ -77,7 +80,7 @@ def load_makefile(reader: SourceReader, path: str) -> Makefile | None:
         if text is None:
             continue
         syntax = parse_makefile(text, current)
-        merge_rules(rules, syntax.rules)
+        rules |= {name: merged_rule(rules.get(name), addition) for name, addition in syntax.rules.items()}
         variables.update(syntax.variables)
         special_targets.update(syntax.special_targets)
         pending.extend(name for name in syntax.includes if is_followable_include(reader, name))

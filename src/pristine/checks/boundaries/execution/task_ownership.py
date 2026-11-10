@@ -3,7 +3,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
@@ -131,13 +131,11 @@ def check_task_ownership(parsed: ParsedFile) -> list[Finding]:
     return sorted(findings, key=lambda finding: finding.line)
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python asyncio tasks created and dropped as a bare statement, and except clauses that catch "
-            "CancelledError, or BaseException in an async def, without re-raising it."
-        ),
-        run=check_task_ownership,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python asyncio tasks created and dropped as a bare statement, and except clauses that catch "
+        "CancelledError, or BaseException in an async def, without re-raising it."
+    ),
+    run=check_task_ownership,
 )

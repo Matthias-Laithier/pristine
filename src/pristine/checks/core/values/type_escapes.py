@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
@@ -129,14 +129,12 @@ def check_type_escapes(parsed: ParsedFile) -> list[Finding]:
     return [Finding(parsed.path, escape.line, RULE_ID, escape.severity, escape.message) for escape in escapes]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Type checker escape hatches: Python Any in annotations and bare type: ignore or pyright: ignore "
-            "(error), typing.cast (warning); TypeScript any, @ts-ignore, and @ts-nocheck (error), and non-null "
-            "assertions and double assertions through unknown (warning). Declaration files are skipped."
-        ),
-        run=check_type_escapes,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Type checker escape hatches: Python Any in annotations and bare type: ignore or pyright: ignore "
+        "(error), typing.cast (warning); TypeScript any, @ts-ignore, and @ts-nocheck (error), and non-null "
+        "assertions and double assertions through unknown (warning). Declaration files are skipped."
+    ),
+    run=check_type_escapes,
 )

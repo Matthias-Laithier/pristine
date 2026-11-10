@@ -3,7 +3,7 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
@@ -110,7 +110,7 @@ def is_used_as_namespace(root: Node, node: Node, name: str) -> bool:
     return not is_named_in_text and all(is_namespace_access(found) for found in references)
 
 
-def is_exempt(name: str, extended: set[str], in_tests: bool) -> bool:
+def is_exempt(name: str, extended: set[str], *, in_tests: bool) -> bool:
     is_test_class = in_tests and TEST_CLASS_NAME.fullmatch(name) is not None
     return is_test_class or name in extended
 
@@ -125,7 +125,7 @@ def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
         name = node_text(node.child_by_field_name("name")) or ""
         if (
             node.type == "class_definition"
-            and not is_exempt(name, extended, in_tests)
+            and not is_exempt(name, extended, in_tests=in_tests)
             and is_stateless(node)
             and is_used_as_namespace(parsed.root, node, name)
         ):
@@ -134,13 +134,11 @@ def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
     return findings
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python module-level classes that only group static or class methods, with one public method or "
-            "private helpers, no bases, decorators, attributes, or instances."
-        ),
-        run=check_stateless_classes,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python module-level classes that only group static or class methods, with one public method or "
+        "private helpers, no bases, decorators, attributes, or instances."
+    ),
+    run=check_stateless_classes,
 )

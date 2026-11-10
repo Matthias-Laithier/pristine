@@ -18,14 +18,15 @@ PROJECT_RULE_SUMMARIES = {
 
 REVIEW = "review"
 RULES_NEXT_STEP = (
-    "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
-    "against every rule, including checked rules. Automated checks cover only mechanical parts. "
-    "Rules marked (review) have no automated check. A clean report does not establish full rule compliance."
+    "next: read in full, with 'pristine rule <ID>', every review rule your change touches. Rules marked (check) "
+    "or (project) report their violations with the fix. Before finishing, review your change against every "
+    "review rule it touches."
 )
 INDEX_HEADING = (
     "## Rule index\n"
-    "Each entry gives a rule ID, its title, how it is checked, and its statement. Read every rule in full with "
-    "`pristine rule all`. The index does not replace the full rules."
+    "Each entry gives a rule ID, its title, and how it is checked. A review rule gives its statement: read it in "
+    "full with `pristine rule <ID>` when your change touches it. A checked rule gives what its check detects: "
+    "`pristine check` and `pristine project` report each violation with its fix."
 )
 
 
@@ -65,7 +66,8 @@ def render_rules_text() -> str:
 
 
 def render_index_entry(entry: dict[str, str | None]) -> str:
-    return f"- {entry['rule_id']} {entry['title']} ({entry['checked_by']}): {entry['statement']}"
+    text = entry["statement"] if entry["checked_by"] == REVIEW else entry["summary"]
+    return f"- {entry['rule_id']} {entry['title']} ({entry['checked_by']}): {text}"
 
 
 def render_guide() -> str:

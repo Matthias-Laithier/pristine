@@ -1,10 +1,10 @@
 # CR-14 Value Dispatch Through a Registry
 
-When one expression is compared against 3 or more constant values, each with its own work, that is dispatch, and an if/elif chain for it is forbidden. Write it as a registry: a dict owned by its module, populated through a registration decorator, with one entry per case. When the language has no first-class functions or module-level registration, use its native dispatch structure: a dispatch dict where that is idiomatic, an exhaustive match where the compiler proves coverage. Two branches are no dispatch, and a plain `if/else` stays.
+When one expression is compared against 3 or more constant values, each with its own work, that is dispatch, and an if/elif chain for it is forbidden. Write it as a registry: one dict literal in its owning module that maps each value to its handler and lists every case. When the language has no first-class functions, use its native dispatch structure, such as an exhaustive match where the compiler proves coverage. Two branches are no dispatch, and a plain `if/else` stays.
 
-A value chain hides a table inside control flow. The reader must evaluate every condition to learn what exists, adding a case means editing a function that already works, and nothing lists the supported values. A registry states the same fact as data. Listing the registry gives the manifest of cases, and a new case is a new definition plus one registration, with no edit to the dispatcher.
+A value chain hides a table inside control flow. The reader must evaluate every condition to learn what exists, adding a case means editing a function that already works, and nothing lists the supported values. A registry states the same fact as data. The literal is the manifest of cases, and a new case is a new handler plus one entry, with no edit to the dispatcher.
 
-The registry here is deliberately light: one dict, one module, one registration decorator. It is the encapsulated registry mechanism that [CR-7](cr-7-global-variables-are-config-never-mutated.md) permits, and it is distinct from the extension point of [CO-7](co-7-make-extension-points-pluggable.md). Registration rejects duplicate keys, consumers cannot write to the registry directly, and decorators perform no external work, as [CO-13](co-13-imports-do-not-perform-external-work.md) requires. This rule owns how multi-case value dispatch is written. CO-7 owns when a family of implementations becomes a full extension point populated across modules.
+The registry is a constant written once, in one place. Registration decorators, registration calls from other modules, and discovery by importing every module of a package are forbidden. They scatter the table across files, so a reader or an agent that searches for a name or follows imports never sees the full list of cases, and the registry depends on import order. A literal shows every case and every handler in one read. It is the registry form that [CR-7](cr-7-global-variables-are-config-never-mutated.md) and [CR-23](cr-23-code-is-greppable.md) require, and it is distinct from the extension point of [CO-7](co-7-make-extension-points-pluggable.md). This rule owns how multi-case value dispatch is written. CO-7 owns when a family of implementations becomes an extension point.
 
 A value from outside the boundary can be unknown (see [BS-1](bs-1-validate-untrusted-input-at-the-boundary.md)). The dispatch site rejects the unknown case explicitly with a raise. A lookup that returns `None` and moves on swallows the failure (see [BS-4](bs-4-do-not-swallow-failures.md)).
 
@@ -37,43 +37,35 @@ One function forks on `event.type` against three constants. A fourth event type 
 ```python
 __all__ = ["UnsupportedPaymentEvent", "handle_payment_event"]
 
-_HANDLERS = {}
-
 
 class UnsupportedPaymentEvent(Exception):
     pass
 
 
-def handles(event_type):
-    def register(handler):
-        if event_type in _HANDLERS:
-            raise ValueError(f"duplicate event type: {event_type}")
-        _HANDLERS[event_type] = handler
-        return handler
-
-    return register
-
-
-@handles("payment.succeeded")
 def on_succeeded(event):
     mark_invoice_paid(event.invoice_id)
 
 
-@handles("payment.failed")
 def on_failed(event):
     schedule_retry(event.invoice_id)
 
 
-@handles("payment.refunded")
 def on_refunded(event):
     reopen_invoice(event.invoice_id)
 
 
+HANDLERS = {
+    "payment.succeeded": on_succeeded,
+    "payment.failed": on_failed,
+    "payment.refunded": on_refunded,
+}
+
+
 def handle_payment_event(event):
-    handler = _HANDLERS.get(event.type)
+    handler = HANDLERS.get(event.type)
     if handler is None:
         raise UnsupportedPaymentEvent(event.type)
     handler(event)
 ```
 
-The dispatcher never changes again: a fourth event type is one function plus one decorator. Each case owns a self-contained unit, the registry doubles as the manifest of supported types, and the unknown case still fails loudly at the boundary.
+The dispatcher never changes again: a fourth event type is one function plus one entry. The literal is the manifest of supported types, readable in one place, and the unknown case still fails loudly at the boundary.

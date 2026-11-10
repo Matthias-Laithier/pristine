@@ -8,10 +8,10 @@ from pristine.reports.triage import FileTriage, ranked_files
 _FILE_LEVEL_RULES = frozenset({"CR-1", "CR-9", "CR-15", "CO-14", "TL-1"})
 _FILE_LEVEL_FIRST_LINE_RULES = frozenset({"TL-3", "TL-4"})
 NEXT_STEP = (
-    "next: read every rule in full with 'pristine rule all' before coding. Before finishing, review your change "
-    "against every rule, including checked rules. Automated checks cover only mechanical parts. "
-    "A clean report does not establish full rule compliance. "
-    "Fix every finding or report it by rule ID as a deliberate break with its reason."
+    "next: fix every finding or report it by rule ID as a deliberate break with its reason. "
+    "Read a rule in full with 'pristine rule <ID>' when a finding cites it. "
+    "Before finishing, review your change against every review rule it touches, listed in 'pristine guide'. "
+    "Checks cover only the mechanical part of the checked rules."
 )
 
 

@@ -1,7 +1,7 @@
 from pristine.checks.core.readability.comments.directives import is_machine_read
 from pristine.checks.core.readability.comments.docstrings import machine_read_docstring_lines
 from pristine.checks.core.readability.comments.script_metadata import script_metadata_lines
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import CommentText, ParsedFile
 
@@ -34,16 +34,14 @@ def check_comments(parsed: ParsedFile) -> list[Finding]:
     ]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Every comment, doc comment, and docstring. Shebangs and comments that start with a toolchain directive, "
-            "such as noqa, type: ignore, eslint-disable, or //go:build, are allowed, and so are Python docstrings "
-            "of functions under a framework decorator that publishes them, such as an MCP tool or a FastAPI route, "
-            "module docstrings the module reads through __doc__, PEP 723 script metadata blocks, and JSDoc blocks "
-            "of only type tags in JavaScript."
-        ),
-        run=check_comments,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Every comment, doc comment, and docstring. Shebangs and comments that start with a toolchain directive, "
+        "such as noqa, type: ignore, eslint-disable, or //go:build, are allowed, and so are Python docstrings "
+        "of functions under a framework decorator that publishes them, such as an MCP tool or a FastAPI route, "
+        "module docstrings the module reads through __doc__, PEP 723 script metadata blocks, and JSDoc blocks "
+        "of only type tags in JavaScript."
+    ),
+    run=check_comments,
 )

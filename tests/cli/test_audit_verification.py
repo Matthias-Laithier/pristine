@@ -12,7 +12,7 @@ from tests.conftest import audit_recording, json_object, run_cli
 def test_light_commands_never_call_native_lookup_provision_or_download(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], arguments: tuple[str, ...]
 ) -> None:
-    def forbidden(*args: object, **kwargs: object) -> NoReturn:
+    def forbidden(*_args: object, **_kwargs: object) -> NoReturn:
         raise AssertionError("light command called a native boundary")
 
     for boundary in (
@@ -32,8 +32,7 @@ def test_audit_help_runs_without_parser_packages() -> None:
     assert (exit_code, stderr) == (0, "")
     output = " ".join(stdout.split())
     assert "usage: pristine audit [-h] [--json] [--max N] PATH" in output
-    assert "Read every rule in full with 'pristine rule all' before coding." in output
-    assert "Before finishing, review your change against every rule, including checked rules." in output
+    assert "Before finishing, review your change against every review rule it touches." in output
 
 
 @pytest.mark.parametrize(

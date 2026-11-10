@@ -6,7 +6,6 @@ Work at import time makes module loading depend on the environment and on import
 
 The exceptions:
 - Pure constants and deterministic construction from literals.
-- Registration decorators, when they only update a registry owned by the same package, reject duplicate keys, and perform no external work.
 - Framework-mandated declarations, when the framework explicitly treats import as configuration.
 
 ## Bad

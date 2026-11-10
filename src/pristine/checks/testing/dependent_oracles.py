@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -138,13 +138,11 @@ def check_dependent_oracles(parsed: ParsedFile) -> list[Finding]:
     ]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python test functions asserting == between two identical literals, or is between two identical names "
-            "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt."
-        ),
-        run=check_dependent_oracles,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python test functions asserting == between two identical literals, or is between two identical names "
+        "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt."
+    ),
+    run=check_dependent_oracles,
 )

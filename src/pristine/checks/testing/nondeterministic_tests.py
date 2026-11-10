@@ -2,7 +2,7 @@ import re
 
 lazy from tree_sitter import Node
 
-from pristine.checks.registry import FileCheck, register_file_check
+from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -81,7 +81,7 @@ def has_seed(call: Node) -> bool:
     return arguments is not None and arguments.named_child_count > 0
 
 
-def kind_of(qualified: str, seeded: bool) -> str | None:
+def kind_of(qualified: str, *, seeded: bool) -> str | None:
     is_random = qualified.partition(".")[0] == RANDOM_MODULE and "(" not in qualified
     unseeded = is_random and not seeded and qualified not in UNSEEDED_EXEMPT
     return CALL_KINDS.get(qualified, RANDOM_KIND if unseeded else None)
@@ -99,7 +99,7 @@ def nondeterministic_calls(parsed: ParsedFile) -> list[tuple[Node, str, str]]:
     calls = [(node, callee, qualified_name(callee, bindings, implicit_modules)) for node, callee in calls]
     seeded = any(qualified in SEEDING_CALLS and has_seed(node) for node, _, qualified in calls)
     exempt = exempt_kinds(parsed.text)
-    found = [(node, callee, kind_of(qualified, seeded)) for node, callee, qualified in calls]
+    found = [(node, callee, kind_of(qualified, seeded=seeded)) for node, callee, qualified in calls]
     return [
         (node, callee, kind)
         for node, callee, kind in found
@@ -122,14 +122,12 @@ def check_nondeterministic_tests(parsed: ParsedFile) -> list[Finding]:
     ]
 
 
-register_file_check(
-    FileCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Python test modules (test paths that define test functions or classes, and conftest.py) that sleep "
-            "directly in a test function outside loops, or call module-level random functions without a seed. "
-            "Files that patch sleep exempt sleeps, a zero sleep is a yield, and a seeded file exempts randomness."
-        ),
-        run=check_nondeterministic_tests,
-    )
+CHECK = FileCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Python test modules (test paths that define test functions or classes, and conftest.py) that sleep "
+        "directly in a test function outside loops, or call module-level random functions without a seed. "
+        "Files that patch sleep exempt sleeps, a zero sleep is a yield, and a seeded file exempts randomness."
+    ),
+    run=check_nondeterministic_tests,
 )

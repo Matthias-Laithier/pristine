@@ -114,7 +114,7 @@ def test_one_pipe_close_failure_still_closes_the_other_pipe(tmp_path: Path, monk
 
 @pytest.mark.parametrize("group_remains", [False, True])
 def test_zombie_only_permission_error_is_benign_only_after_group_disappears(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, group_remains: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, group_remains: bool
 ) -> None:
     child = NativeProcess()
     child.install(monkeypatch)

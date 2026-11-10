@@ -1,7 +1,7 @@
 import re
 from pathlib import Path, PurePath
 
-from pristine.checks.registry import PathCheck, register_path_check
+from pristine.checks.definitions import PathCheck
 from pristine.files.path_roles import is_test_path, is_vendored
 from pristine.reports.findings import Finding, Severity
 from pristine.services.git import edited_since_default_branch, repository_root
@@ -61,14 +61,12 @@ def check_edited_migrations(paths: list[str]) -> list[Finding]:
     ]
 
 
-register_path_check(
-    PathCheck(
-        rule_id=RULE_ID,
-        summary=(
-            "Migration files (Alembic versions/, Django and SQL numbered migrations/, Rails db/migrate/, Prisma "
-            "migration.sql) that exist on the origin default branch and whose content differs from it in the working "
-            "tree or on the current branch; whitespace-only edits and unknown git state are not reported."
-        ),
-        run=check_edited_migrations,
-    )
+CHECK = PathCheck(
+    rule_id=RULE_ID,
+    summary=(
+        "Migration files (Alembic versions/, Django and SQL numbered migrations/, Rails db/migrate/, Prisma "
+        "migration.sql) that exist on the origin default branch and whose content differs from it in the working "
+        "tree or on the current branch; whitespace-only edits and unknown git state are not reported."
+    ),
+    run=check_edited_migrations,
 )
