@@ -86,6 +86,11 @@ def test_python_import_bindings_resolve_aliases_nested_and_lazy_imports(run_pris
         (19, "error"),
         (20, "error"),
     ]
+    assert [
+        finding["message"] for finding in report["findings"] if finding["rule_id"] == RULE_ID and finding["line"] == 14
+    ] == [
+        "'net.get' runs without a timeout or deadline; pass timeout=<seconds> sized to the operation's latency budget"
+    ]
 
 
 def test_server_side_scripts_without_bound_are_warnings(run_pristine: RunPristine) -> None:

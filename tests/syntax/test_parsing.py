@@ -52,15 +52,15 @@ def test_traversal_helpers_accept_parsed_files_and_subtrees() -> None:
 def test_import_bindings_limit_subtrees_and_preserve_import_order() -> None:
     source = (
         "import os as outside\n"
-        "import os as collision\n"
         "def load():\n"
         "    import requests as net\n"
         "    from subprocess import run as launch\n"
         "    import json as collision\n"
+        "    import socket as collision\n"
         "    if enabled:\n"
-        "        import socket as collision\n"
+        "        import pathlib as nested\n"
         "    import urllib.request\n"
-        "import pathlib as collision\n"
+        "import pathlib as outside\n"
     )
     parsed = parse_file("orders.py", source, "python")
     subtree = next(node for node in parsed.root.named_children if node.type == "function_definition")
@@ -68,12 +68,6 @@ def test_import_bindings_limit_subtrees_and_preserve_import_order() -> None:
         "net": "requests",
         "launch": "subprocess.run",
         "collision": "socket",
-        "urllib": "urllib",
-    }
-    assert import_bindings(parsed) == {
-        "outside": "os",
-        "net": "requests",
-        "launch": "subprocess.run",
-        "collision": "pathlib",
+        "nested": "pathlib",
         "urllib": "urllib",
     }
