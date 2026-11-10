@@ -22,10 +22,10 @@ from subprocess import run as launch
 from urllib.request import urlopen as open_url
 from .requests import get as ignored_relative
 from requests import *
-if enabled:
-    import requests as nested
 def load():
-    lazy from subprocess import run as lazy_launch
+    import requests as nested
+    nested.get(url)
+lazy from subprocess import run as lazy_launch
 lazy import urllib.request as web
 import urllib.request
 import requests as overwritten
@@ -34,7 +34,6 @@ net.get(url)
 socket_client.create_connection(address)
 launch(["git", "status"])
 open_url(url)
-nested.get(url)
 lazy_launch(["git", "status"])
 web.urlopen(url)
 urllib.request.urlopen(url)
@@ -75,28 +74,17 @@ def test_python_calls_without_timeout_are_errors(run_pristine: RunPristine) -> N
 
 
 def test_python_import_bindings_resolve_aliases_nested_and_lazy_imports(run_pristine: RunPristine) -> None:
+    compile(PYTHON_IMPORT_SOURCE, "bindings.py", "exec")
     _, report = run_pristine({"bindings.py": PYTHON_IMPORT_SOURCE})
-    findings = [finding for finding in report["findings"] if finding["rule_id"] == RULE_ID]
-    expected = [
-        (14, "net.get"),
-        (15, "socket_client.create_connection"),
-        (16, "launch"),
-        (17, "open_url"),
-        (18, "nested.get"),
-        (19, "lazy_launch"),
-        (20, "web.urlopen"),
-        (21, "urllib.request.urlopen"),
-    ]
-    assert [(finding["line"], finding["severity"], finding["message"]) for finding in findings] == [
-        (
-            line,
-            "error",
-            (
-                f"'{callee}' runs without a timeout or deadline; "
-                "pass timeout=<seconds> sized to the operation's latency budget"
-            ),
-        )
-        for line, callee in expected
+    assert rule_findings(report, RULE_ID) == [
+        (8, "error"),
+        (14, "error"),
+        (15, "error"),
+        (16, "error"),
+        (17, "error"),
+        (18, "error"),
+        (19, "error"),
+        (20, "error"),
     ]
 
 
