@@ -1,4 +1,6 @@
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -41,6 +43,7 @@ def test_walked_files_leave_out_vendored_and_cache_directories_without_git(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", str(tmp_path / "no-git"))
     Path("app.py").write_text("value = 1\n")
     Path("node_modules/vendored.py").parent.mkdir(parents=True)
     Path("node_modules/vendored.py").write_text("vendored = 1\n")
@@ -55,3 +58,73 @@ def test_explicit_duplicate_inputs_are_deduplicated(tmp_path: Path, monkeypatch:
     monkeypatch.chdir(tmp_path)
     Path("app.py").write_text("value = 1\n")
     assert discover_files([Path("app.py"), Path("app.py")], []) == ["app.py"]
+
+
+def test_fallback_filters_descendants_but_not_explicit_roots(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", str(tmp_path / "no-git"))
+    for name in (
+        "src/app.py",
+        "src/.hidden/ignored.py",
+        "src/.hidden-file",
+        "src/vendor/ignored.py",
+        "src/__pycache__/ignored.py",
+        "files/vendor",
+        "files/node_modules",
+        "files/__pycache__",
+    ):
+        path = Path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("content")
+
+    assert discover_files([Path(".")], []) == ["files/__pycache__", "files/node_modules", "files/vendor", "src/app.py"]
+    assert discover_files([Path("src/.hidden"), Path("src/vendor"), Path("src/__pycache__")], []) == [
+        "src/.hidden/ignored.py",
+        "src/__pycache__/ignored.py",
+        "src/vendor/ignored.py",
+    ]
+    assert discover_files([Path("src/.hidden-file"), Path("src/vendor/ignored.py")], []) == [
+        "src/.hidden-file",
+        "src/vendor/ignored.py",
+    ]
+
+
+def test_fallback_symlink_files_and_explicit_directory_symlink(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", str(tmp_path / "no-git"))
+    Path("project").mkdir()
+    Path("outside").mkdir()
+    Path("outside/target.py").write_text("content")
+    Path("outside/other.py").write_text("content")
+    Path(".hidden.py").write_text("content")
+    Path("project/file-link").symlink_to(Path("../outside/target.py"))
+    Path("project/hidden-link").symlink_to(Path("../.hidden.py"))
+    Path("project/broken-link").symlink_to(Path("../missing"))
+    Path("project/directory-link").symlink_to(Path("../outside"), target_is_directory=True)
+
+    assert discover_files([Path("project")], []) == [".hidden.py", "outside/target.py"]
+    assert discover_files([Path("project/file-link")], []) == ["outside/target.py"]
+    assert discover_files([Path("project/directory-link")], []) == ["outside/other.py", "outside/target.py"]
+    assert discover_files([Path("project/broken-link")], []) == []
+
+
+def test_fallback_does_not_scan_hidden_vendored_or_cache_directories(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", str(tmp_path / "no-git"))
+    for name in ("src/app.py", "src/.hidden/ignored.py", "src/vendor/ignored.py", "src/__pycache__/ignored.py"):
+        path = Path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("content")
+
+    with patch("os.scandir", wraps=os.scandir) as scandir, patch("os.listdir", wraps=os.listdir) as listdir:
+        assert discover_files([Path(".")], []) == ["src/app.py"]
+
+    scanned = {
+        Path(os.fsdecode((call.args[0] if call.args else call.kwargs.get("path")) or ".")).resolve()
+        for call in scandir.call_args_list + listdir.call_args_list
+    }
+    excluded = [Path("src/.hidden").resolve(), Path("src/vendor").resolve(), Path("src/__pycache__").resolve()]
+    assert scanned
+    assert not any(path.is_relative_to(directory) for path in scanned for directory in excluded)

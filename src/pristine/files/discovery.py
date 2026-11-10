@@ -1,7 +1,7 @@
 import os
 from pathlib import Path, PurePath
 
-from pristine.files.path_roles import is_cache, is_vendored
+from pristine.files.path_roles import CACHE_DIRECTORIES, VENDORED_DIRECTORIES, is_cache, is_vendored
 from pristine.services.git import ls_files
 
 
@@ -18,14 +18,15 @@ def _listed_repository_files(directory: Path) -> list[Path] | None:
 
 
 def walked_files(directory: Path) -> list[Path]:
-    return [
-        path
-        for path in directory.rglob("*")
-        if path.is_file()
-        and not is_vendored(relative := path.relative_to(directory))
-        and not is_cache(relative)
-        and not any(part.startswith(".") for part in relative.parts)
-    ]
+    files: list[Path] = []
+    for base, directories, names in directory.walk():
+        directories[:] = [
+            name
+            for name in directories
+            if not name.startswith(".") and name not in VENDORED_DIRECTORIES and name not in CACHE_DIRECTORIES
+        ]
+        files.extend(path for name in names if not name.startswith(".") and (path := base / name).is_file())
+    return files
 
 
 def expand(path: Path) -> list[Path]:

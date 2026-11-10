@@ -1,5 +1,6 @@
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import all_nodes, parse_file
+from pristine.syntax.python_calls import import_bindings
 
 
 def test_native_lazy_imports_parse_without_rewriting_literals() -> None:
@@ -46,3 +47,27 @@ def test_traversal_helpers_accept_parsed_files_and_subtrees() -> None:
         (node.type, callee, [argument.type for argument in arguments])
         for node, callee, arguments in calls_of(parsed, "call")
     ] == [("call", "print", ["identifier"])]
+
+
+def test_import_bindings_limit_subtrees_and_preserve_import_order() -> None:
+    source = (
+        "import os as outside\n"
+        "def load():\n"
+        "    import requests as net\n"
+        "    from subprocess import run as launch\n"
+        "    import json as collision\n"
+        "    import socket as collision\n"
+        "    if enabled:\n"
+        "        import pathlib as nested\n"
+        "    import urllib.request\n"
+        "import pathlib as outside\n"
+    )
+    parsed = parse_file("orders.py", source, "python")
+    subtree = next(node for node in parsed.root.named_children if node.type == "function_definition")
+    assert import_bindings(subtree) == {
+        "net": "requests",
+        "launch": "subprocess.run",
+        "collision": "socket",
+        "nested": "pathlib",
+        "urllib": "urllib",
+    }

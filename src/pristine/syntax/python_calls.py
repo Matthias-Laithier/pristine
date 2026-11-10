@@ -27,6 +27,8 @@ EXTERNAL_CALLS = {
 def import_bindings(source: Node | ParsedFile) -> dict[str, str]:
     bindings = {}
     for node in all_nodes(source):
+        if node.type not in IMPORT_KINDS:
+            continue
         module = node.child_by_field_name("module_name")
         is_absolute_from = node.type == "import_from_statement" and module is not None and module.type == "dotted_name"
         prefix = f"{node_text(module)}." if is_absolute_from else ""
