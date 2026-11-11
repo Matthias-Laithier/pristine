@@ -19,7 +19,7 @@ from pristine.syntax.nodes import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
-RULE_ID = "BS-14"
+CHECK_ID = "SAFE-8"
 GATHER = "asyncio.gather"
 MAP = "map"
 TASK_GROUPS = frozenset({"asyncio.TaskGroup", "anyio.create_task_group"})
@@ -103,7 +103,7 @@ def is_bounded(call: Node, loop: Node, limiters: Limiters) -> bool:
 
 def fan_out_finding(parsed: ParsedFile, call: Node, collection: Node) -> Finding:
     message = f"'{callee_of(call)}' fans out over '{node_text(collection)}' with no concurrency bound; {FIX}"
-    return Finding(parsed.path, line_of(call), RULE_ID, Severity.WARNING, message)
+    return Finding(parsed.path, line_of(call), CHECK_ID, Severity.WARNING, message)
 
 
 def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
@@ -124,8 +124,8 @@ def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Bound Concurrent Fan-Out",
+    check_id=CHECK_ID,
+    title="Unbounded Concurrent Fan-Out",
     summary=(
         "Python asyncio.gather over a spread comprehension or map, and TaskGroup spawns in a loop, that start "
         "work per item of an awaited load, where neither the fanned coroutine nor the loop body holds an "

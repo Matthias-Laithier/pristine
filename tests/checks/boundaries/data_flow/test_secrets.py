@@ -14,8 +14,8 @@ def test_secret_in_skipped_data_file_is_reported_without_its_value(run_pristine:
     files = {"settings.json": f'{{\n  "token": "{FAKE_TOKEN}"\n}}\n', "ship.py": "def ship():\n    return 1\n"}
     exit_code, report = run_pristine(files)
     assert exit_code == 1
-    assert [finding["path"] for finding in report["findings"] if finding["rule_id"] == "BS-2"] == ["settings.json"]
-    assert rule_findings(report, "BS-2") == [(2, "error")]
+    assert [finding["path"] for finding in report["findings"] if finding["check_id"] == "SAFE-2"] == ["settings.json"]
+    assert rule_findings(report, "SAFE-2") == [(2, "error")]
     assert FAKE_TOKEN not in json.dumps(report)
 
 
@@ -37,7 +37,7 @@ def test_scan_that_cannot_run_is_one_warning(
     resolver = (lambda _: str(tools / "gitleaks")) if gitleaks_script is not None else unavailable_native_tool
     monkeypatch.setattr("pristine.services.gitleaks.resolve_tool", resolver)
     exit_code, report = run_pristine({"ship.py": "def ship():\n    return 1\n"})
-    findings = [finding for finding in report["findings"] if finding["rule_id"] == "BS-2"]
+    findings = [finding for finding in report["findings"] if finding["check_id"] == "SAFE-2"]
     assert exit_code == 3
     assert [(finding["path"], finding["line"], finding["severity"]) for finding in findings] == [(".", 0, "warning")]
     assert findings[0]["kind"] == "verification"
@@ -46,5 +46,5 @@ def test_scan_that_cannot_run_is_one_warning(
 
 def test_secret_finding_is_a_code_finding(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"settings.json": f'{{\n  "token": "{FAKE_TOKEN}"\n}}\n'})
-    finding = next(finding for finding in report["findings"] if finding["rule_id"] == "BS-2")
+    finding = next(finding for finding in report["findings"] if finding["check_id"] == "SAFE-2")
     assert "kind" not in finding

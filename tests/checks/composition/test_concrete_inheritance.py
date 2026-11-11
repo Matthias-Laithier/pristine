@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CO-1"
+CHECK_ID = "DEP-1"
 STORAGE = """class FileStorage:
     def __init__(self, root):
         self.root = root
@@ -34,15 +34,15 @@ KEPT = {
 
 def test_variant_of_a_concrete_class_is_a_warning(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"storage.py": STORAGE + VARIANT})
-    assert rule_findings(report, RULE_ID) == [(10, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(10, "warning")]
 
 
 @pytest.mark.parametrize("source", KEPT.values(), ids=KEPT.keys())
 def test_designed_extension_is_kept(run_pristine: RunPristine, source: str) -> None:
     _, report = run_pristine({"storage.py": source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_test_files_are_kept(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/storage.py": STORAGE + VARIANT})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

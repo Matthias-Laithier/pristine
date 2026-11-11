@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 
 from pristine.project.automation import (
-    RULE_ID,
+    CHECK_ID,
     FastGate,
     declares,
     every_project,
@@ -63,7 +63,7 @@ def probe_finding(project: Project, name: str, calls: Arguments) -> Finding | No
         return Finding(
             project.shown(error.path),
             FIRST_LINE,
-            RULE_ID,
+            CHECK_ID,
             Severity.WARNING,
             message,
             FindingKind.VERIFICATION,
@@ -71,7 +71,7 @@ def probe_finding(project: Project, name: str, calls: Arguments) -> Finding | No
     if shortfall is None:
         return None
     message = f"{probe.subject} does not type-check in strict mode; {shortfall.fix}"
-    return Finding(project.shown(shortfall.path), FIRST_LINE, RULE_ID, Severity.ERROR, message)
+    return Finding(project.shown(shortfall.path), FIRST_LINE, CHECK_ID, Severity.ERROR, message)
 
 
 def strict_type_checking(project: Project) -> list[Finding]:

@@ -55,7 +55,7 @@ def dropped_operations(parsed: ParsedFile) -> list[Finding]:
         Finding(
             parsed.path,
             line_of(call),
-            "BS-8",
+            "SAFE-5",
             Severity.ERROR,
             f"'{callee_of(call)}(...)' drops a known asynchronous operation; await, return, or retain and handle its promise",
         )

@@ -20,7 +20,7 @@ def strict_findings(files: dict[str, str], run_project: RunProject) -> list[tupl
     return [
         (finding["severity"], finding["message"])
         for finding in report["findings"]
-        if finding["rule_id"] == "TL-3" and "strict mode" in finding["message"]
+        if finding["check_id"] == "PROJ-3" and "strict mode" in finding["message"]
     ]
 
 
@@ -118,7 +118,7 @@ def test_unverifiable_config_is_a_verification_finding(run_project: RunProject) 
     finding = next(
         finding
         for finding in report["findings"]
-        if finding["rule_id"] == "TL-3" and "strict mode" in finding["message"]
+        if finding["check_id"] == "PROJ-3" and "strict mode" in finding["message"]
     )
     assert finding["kind"] == "verification"
     assert report["verification_status"] == "incomplete"

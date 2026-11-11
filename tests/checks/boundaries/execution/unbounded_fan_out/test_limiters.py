@@ -1,6 +1,6 @@
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-14"
+CHECK_ID = "SAFE-8"
 LIMITED_FAN_OUTS = """import asyncio
 
 import anyio
@@ -70,9 +70,9 @@ async def fetch_invoice_batch_page(client):
 
 def test_work_that_holds_a_semaphore_or_limiter_is_not_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": LIMITED_FAN_OUTS})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_a_limiter_the_work_never_holds_and_bounding_words_change_nothing(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": UNRELATED_LIMIT})
-    assert rule_findings(report, RULE_ID) == [(9, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(9, "warning")]

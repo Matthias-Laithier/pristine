@@ -6,7 +6,7 @@ from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile
 
-RULE_ID = "CR-8"
+CHECK_ID = "STR-6"
 SERVICES_DIRECTORY = "services"
 STORYBOOK_MARKER = ".stories."
 TYPE_DECLARATION_SUFFIX = ".d.ts"
@@ -47,12 +47,12 @@ def check_service_location(parsed: ParsedFile) -> list[Finding]:
         f"imports external-system client library {library_names(clients)} outside a services/ folder; "
         "wrap it in a service under services/ and build it in the composition root"
     )
-    return [Finding(parsed.path, min(client.line for client in clients), RULE_ID, Severity.WARNING, message)]
+    return [Finding(parsed.path, min(client.line for client in clients), CHECK_ID, Severity.WARNING, message)]
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Services Live in a Dedicated services Folder",
+    check_id=CHECK_ID,
+    title="Service Placement",
     summary=(
         "Files importing an external-system client library (HTTP, cloud SDK, database, broker, LLM, mail) outside "
         "a services/ folder. Tests, composition roots, and type-only imports are exempt."

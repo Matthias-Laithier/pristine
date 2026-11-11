@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CO-5"
+CHECK_ID = "DEP-2"
 NAMESPACE = """class PriceMath:
     \"\"\"Price helpers.\"\"\"
 
@@ -52,20 +52,20 @@ TEST_CLASS = "class TestNames:\n    @staticmethod\n    def test_full():\n       
 @pytest.mark.parametrize("source", FLAGGED)
 def test_namespace_class_is_a_warning(run_pristine: RunPristine, source: str) -> None:
     _, report = run_pristine({"names.py": source})
-    assert rule_findings(report, RULE_ID) == [(1, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(1, "warning")]
 
 
 @pytest.mark.parametrize("source", KEPT.values(), ids=KEPT.keys())
 def test_class_with_a_reason_is_kept(run_pristine: RunPristine, source: str) -> None:
     _, report = run_pristine({"names.py": source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_pytest_class_in_a_test_file_is_kept(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"test_names.py": TEST_CLASS})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_test_named_class_outside_tests_is_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"names.py": TEST_CLASS})
-    assert rule_findings(report, RULE_ID) == [(1, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(1, "warning")]

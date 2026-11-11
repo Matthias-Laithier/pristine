@@ -1,6 +1,6 @@
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-15"
+CHECK_ID = "SAFE-9"
 SOURCE = """import logging
 
 logger.info(f"order {order_id} shipped")
@@ -22,4 +22,4 @@ metrics.info(f"order {order_id} shipped")
 
 def test_interpolated_log_messages_are_warnings(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"orders.py": SOURCE})
-    assert rule_findings(report, RULE_ID) == [(line, "warning") for line in range(3, 10)]
+    assert rule_findings(report, CHECK_ID) == [(line, "warning") for line in range(3, 10)]

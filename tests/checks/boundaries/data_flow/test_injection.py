@@ -1,6 +1,6 @@
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-10"
+CHECK_ID = "SAFE-6"
 PYTHON_SQL_SOURCE = """from psycopg2.extensions import quote_ident
 from sqlalchemy import text
 cursor.execute(f"SELECT * FROM invoices WHERE id = {invoice_id}")
@@ -85,22 +85,22 @@ element.innerHTML = sanitize(comment.body);
 
 def test_python_sql_built_from_values(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": PYTHON_SQL_SOURCE})
-    assert [line for line, _ in rule_findings(report, RULE_ID)] == [3, 4, 5, 6, 11, 12]
+    assert [line for line, _ in rule_findings(report, CHECK_ID)] == [3, 4, 5, 6, 11, 12]
 
 
 def test_python_trust_comes_from_escaping_apis_and_data_flow_never_from_names(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"schemas.py": PYTHON_ESCAPING_SOURCE})
-    assert [line for line, _ in rule_findings(report, RULE_ID)] == [12, 13, 15, 18]
+    assert [line for line, _ in rule_findings(report, CHECK_ID)] == [12, 13, 15, 18]
 
 
 def test_python_shell_eval_and_deserialization(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"jobs.py": PYTHON_EXECUTION_SOURCE})
-    assert [line for line, _ in rule_findings(report, RULE_ID)] == [5, 8, 9, 11, 12, 14]
+    assert [line for line, _ in rule_findings(report, CHECK_ID)] == [5, 8, 9, 11, 12, 14]
 
 
 def test_script_markup_processes_and_raw_queries(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.tsx": SCRIPT_SOURCE})
-    assert rule_findings(report, RULE_ID) == [(line, "error") for line in (5, 10, 13, 15, 17, 18, 22, 23)]
+    assert rule_findings(report, CHECK_ID) == [(line, "error") for line in (5, 10, 13, 15, 17, 18, 22, 23)]
 
 
 def test_a_comprehension_reusing_its_loop_name_is_resolved_without_recursion(run_pristine: RunPristine) -> None:
@@ -111,4 +111,4 @@ def test_a_comprehension_reusing_its_loop_name_is_resolved_without_recursion(run
     )
     _, report = run_pristine({"billing.py": source})
     assert report["unchecked"] == []
-    assert rule_findings(report, "BS-10") == [(3, "error")]
+    assert rule_findings(report, "SAFE-6") == [(3, "error")]

@@ -1,6 +1,6 @@
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-13"
+CHECK_ID = "SAFE-7"
 SOURCE = """import asyncio
 import time as clock
 from subprocess import run
@@ -30,10 +30,10 @@ def refresh_rates_in_thread():
 
 def test_blocking_calls_in_async_functions_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"rates.py": SOURCE})
-    assert rule_findings(report, RULE_ID) == [(8, "error"), (9, "error"), (10, "error")]
+    assert rule_findings(report, CHECK_ID) == [(8, "error"), (9, "error"), (10, "error")]
 
 
 def test_unimported_names_are_not_resolved(run_pristine: RunPristine) -> None:
     source = "async def refresh_rates(requests):\n    requests.get(url)\n    sleep(1)\n"
     _, report = run_pristine({"rates.py": source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

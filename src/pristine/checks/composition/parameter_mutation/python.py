@@ -9,7 +9,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_scopes import FUNCTION_KIND, named_parameters, own_nodes
 
-RULE_ID = "CO-12"
+CHECK_ID = "SAFE-11"
 RECEIVER_NAMES = frozenset({"self", "cls"})
 TEST_FUNCTION_PREFIX = "test_"
 PRIVATE_PREFIX = "_"
@@ -156,7 +156,7 @@ def mutation_findings(path: str, definition: Node, callbacks: set[str]) -> list[
         return []
     mutations = sorted(first_mutations(definition).items(), key=lambda item: item[1].start_byte)
     return [
-        Finding(path, line_of(node), RULE_ID, Severity.WARNING, MESSAGE.format(function=function, parameter=name))
+        Finding(path, line_of(node), CHECK_ID, Severity.WARNING, MESSAGE.format(function=function, parameter=name))
         for name, node in mutations
     ]
 
@@ -171,8 +171,8 @@ def check_parameter_mutation(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Localize Mutation",
+    check_id=CHECK_ID,
+    title="Parameter Mutation",
     summary=(
         "Public, undecorated Python module-level functions outside tests, never passed as a callback in their module, "
         "that write or delete an item of one of their "

@@ -12,7 +12,7 @@ async function refresh() {
 }
 """
     _, report = run_pristine({f"application.{extension}": source})
-    assert rule_findings(report, "BS-14") == [(4, "warning")]
+    assert rule_findings(report, "SAFE-8") == [(4, "warning")]
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ async function refresh() {{
 }}
 """
     _, report = run_pristine({"application.ts": source})
-    assert rule_findings(report, "BS-14") == []
+    assert rule_findings(report, "SAFE-8") == []
 
 
 @pytest.mark.parametrize(
@@ -53,7 +53,7 @@ async function refresh() {{
 }}
 """
     _, report = run_pristine({"application.ts": source})
-    assert rule_findings(report, "BS-14") == []
+    assert rule_findings(report, "SAFE-8") == []
 
 
 @pytest.mark.parametrize(
@@ -72,7 +72,7 @@ async function refresh() {{
 }}
 """
     _, report = run_pristine({path: source})
-    assert rule_findings(report, "BS-14") == []
+    assert rule_findings(report, "SAFE-8") == []
 
 
 @pytest.mark.parametrize("limited", [False, True])
@@ -87,7 +87,7 @@ async function refresh() {{
 }}
 """
     _, report = run_pristine({"application.ts": source})
-    assert rule_findings(report, "BS-14") == ([] if limited else [(6, "warning")])
+    assert rule_findings(report, "SAFE-8") == ([] if limited else [(6, "warning")])
 
 
 def test_shadowed_promises_and_parameter_collections_are_not_fan_out_defects(run_pristine: RunPristine) -> None:
@@ -101,4 +101,4 @@ async function refreshGiven(items) {
 }
 """
     _, report = run_pristine({"application.ts": source})
-    assert rule_findings(report, "BS-14") == []
+    assert rule_findings(report, "SAFE-8") == []

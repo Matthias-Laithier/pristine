@@ -9,7 +9,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 
-RULE_ID = "CO-11"
+CHECK_ID = "DEP-4"
 EXPORT_LIST = "__all__"
 PACKAGE_INIT = "__init__.py"
 SCRIPT_INDEX_STEM = "index"
@@ -60,10 +60,10 @@ def export_list_findings(parsed: ParsedFile) -> Iterator[Finding]:
     for entry, name in export_entries(parsed):
         if not is_open and name not in defined:
             message = f"{EXPORT_LIST} lists '{name}', which the module neither defines nor imports; remove or fix it"
-            yield Finding(parsed.path, line_of(entry), RULE_ID, Severity.ERROR, message)
+            yield Finding(parsed.path, line_of(entry), CHECK_ID, Severity.ERROR, message)
         elif name.startswith("_") and not name.endswith("__"):
             message = f"{EXPORT_LIST} lists the private name '{name}'; drop it or make it public deliberately"
-            yield Finding(parsed.path, line_of(entry), RULE_ID, Severity.WARNING, message)
+            yield Finding(parsed.path, line_of(entry), CHECK_ID, Severity.WARNING, message)
 
 
 def imports_names_from_submodule(statement: Node, package: Path) -> bool:
@@ -99,7 +99,7 @@ def package_reexport_findings(parsed: ParsedFile) -> Iterator[Finding]:
     for statement, names in reexports:
         if names:
             message = f"package re-exports {', '.join(names)} without {EXPORT_LIST}; declare the public names in it"
-            yield Finding(parsed.path, line_of(statement), RULE_ID, Severity.WARNING, message)
+            yield Finding(parsed.path, line_of(statement), CHECK_ID, Severity.WARNING, message)
             return
 
 
@@ -116,7 +116,7 @@ def script_findings(parsed: ParsedFile) -> Iterator[Finding]:
     for statement in filter(is_relative_star_export, parsed.root.named_children):
         source = node_text(statement.child_by_field_name("source"))
         message = f"index re-exports every name of {source}; export the public names explicitly"
-        yield Finding(parsed.path, line_of(statement), RULE_ID, Severity.WARNING, message)
+        yield Finding(parsed.path, line_of(statement), CHECK_ID, Severity.WARNING, message)
 
 
 LANGUAGE_CHECKS: dict[str, tuple[Callable[[ParsedFile], Iterator[Finding]], ...]] = {
@@ -131,8 +131,8 @@ def check_export_contract(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Export Only the Public Contract",
+    check_id=CHECK_ID,
+    title="Export Contracts",
     summary=(
         "Python: a package __init__.py that re-exports names without __all__, and __all__ entries that are "
         "undefined or private. JS/TS: export * from a relative module in an index file. Tests are exempt."

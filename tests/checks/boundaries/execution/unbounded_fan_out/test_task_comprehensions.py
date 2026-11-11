@@ -27,4 +27,4 @@ def test_task_comprehensions_require_a_concurrency_limit(
     run_pristine: RunPristine, coroutine: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({"summaries.py": SOURCE.format(coroutine=coroutine)})
-    assert rule_findings(report, "BS-14") == expected
+    assert rule_findings(report, "SAFE-8") == expected

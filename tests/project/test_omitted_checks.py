@@ -47,7 +47,7 @@ def test_orphaned_quality_invocation_must_reach_check(
     source: str,
 ) -> None:
     _, report = run_project(files)
-    assert rule_findings(report, "TL-2") == [
+    assert rule_findings(report, "PROJ-2") == [
         ("error", f"make check does not run the configured flake8 linter declared in {source}", line)
         if source.startswith("Makefile")
         else ("error", f"make check does not run the configured oxlint linter declared in {source}", line)
@@ -72,7 +72,7 @@ def test_reachable_aliases_and_multiple_tools_are_not_omitted(run_project: RunPr
             "Makefile": "dev:\n\tnpm start\ncheck:\n\tnpm run verify\n\tnpm run typecheck\ncheck-all: check\n",
         }
     )
-    assert rule_findings(report, "TL-2") == []
+    assert rule_findings(report, "PROJ-2") == []
 
 
 @pytest.mark.parametrize(
@@ -89,7 +89,7 @@ def test_alias_origins_do_not_own_expanded_tool_calls(run_project: RunProject, m
         "scripts": {"verify": "npm run lint", "lint": "eslint .", "typecheck": "tsc --noEmit"},
     }
     _, report = run_project({"package.json": json.dumps(package), "Makefile": makefile})
-    assert rule_findings(report, "TL-2") == [
+    assert rule_findings(report, "PROJ-2") == [
         ("error", "make check does not run the configured eslint linter declared in package script 'lint'", 1)
     ]
 
@@ -112,4 +112,4 @@ def test_mentions_and_dependencies_are_not_configured_checks(
         ),
     }
     _, report = run_project(files)
-    assert rule_findings(report, "TL-2") == []
+    assert rule_findings(report, "PROJ-2") == []

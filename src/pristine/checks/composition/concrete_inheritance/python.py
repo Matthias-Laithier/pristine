@@ -10,7 +10,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text, unwrapped
 from pristine.syntax.python_scopes import CLASS_KIND, FUNCTION_KIND
 
-RULE_ID = "CO-1"
+CHECK_ID = "DEP-1"
 PLAIN_BASES = frozenset({"object"})
 ABSTRACT_MARKER = "abstractmethod"
 EXTENSION_NAME = re.compile(r"_|.*(Base|Mixin|Abstract|Interface|Protocol|Default)")
@@ -90,13 +90,13 @@ def check_concrete_inheritance(parsed: ParsedFile) -> list[Finding]:
         method = overridden(node, classes[base]) if is_sole_variant and is_concrete_leaf(classes[base]) else None
         if method is not None:
             message = MESSAGE.format(name=name, base=base, method=method)
-            findings.append(Finding(parsed.path, line_of(node), RULE_ID, Severity.WARNING, message))
+            findings.append(Finding(parsed.path, line_of(node), CHECK_ID, Severity.WARNING, message))
     return findings
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Favor Composition Over Inheritance",
+    check_id=CHECK_ID,
+    title="Concrete Inheritance Overrides",
     summary=(
         "Python classes outside tests whose only base is a plain concrete class of the same module, one with no "
         "bases, decorators, abstract or stub methods, extension name, or other subclass there, and that override "

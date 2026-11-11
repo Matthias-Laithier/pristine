@@ -10,7 +10,7 @@ from pristine.checks.composition.concrete_inheritance.classes import (
     plain_header,
     statements,
 )
-from pristine.checks.composition.stateless_classes.python import MESSAGE, RULE_ID
+from pristine.checks.composition.stateless_classes.python import CHECK_ID, MESSAGE
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -75,5 +75,5 @@ def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
             and namespace_only(parsed, node, name)
         )
         if eligible:
-            findings.append(Finding(parsed.path, line_of(node), RULE_ID, Severity.WARNING, MESSAGE.format(name=name)))
+            findings.append(Finding(parsed.path, line_of(node), CHECK_ID, Severity.WARNING, MESSAGE.format(name=name)))
     return findings

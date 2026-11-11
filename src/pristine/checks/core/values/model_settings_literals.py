@@ -15,7 +15,7 @@ from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_state
 from pristine.syntax.python_calls import import_bindings, keyword_values, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
-RULE_ID = "CR-18"
+CHECK_ID = "SAFE-13"
 SHEBANG = "#!"
 MODEL_KEYWORD = "model"
 NEUTRAL_SAMPLING = {"temperature": 0.0, "top_p": 1.0}
@@ -111,7 +111,7 @@ def setting_finding(parsed: ParsedFile, name: str, value: Node, literals: dict[s
     literal = resolved(value, literals)
     origin = "" if literal is value else f", a module constant holding {node_text(literal)},"
     message = f"'{name}={shown}'{origin} hardcodes a model setting at a call site; {FIX}"
-    return Finding(parsed.path, line_of(value), RULE_ID, Severity.WARNING, message)
+    return Finding(parsed.path, line_of(value), CHECK_ID, Severity.WARNING, message)
 
 
 def check_model_settings_literals(parsed: ParsedFile) -> list[Finding]:
@@ -133,8 +133,8 @@ def check_model_settings_literals(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Model Settings Belong in Configuration",
+    check_id=CHECK_ID,
+    title="Hardcoded Model Settings",
     summary=(
         "Python and JS/TS calls passing a literal model identifier or a literal temperature or top_p/topP, directly or "
         "through a same-module literal constant. Any literal model counts on a call to a model SDK client "

@@ -17,8 +17,8 @@ class Report:
     def count(self, severity: Severity) -> int:
         return sum(1 for finding in self.findings if finding.severity is severity)
 
-    def by_rule(self) -> dict[str, int]:
-        counts = Counter(finding.rule_id for finding in self.findings)
+    def by_check(self) -> dict[str, int]:
+        counts = Counter(finding.check_id for finding in self.findings)
         return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
 
     @property
@@ -40,7 +40,7 @@ def build_report(outcomes: dict[str, Outcome], path_findings: list[Finding], mis
     ordered = sorted(outcomes.items())
     file_findings = [finding for _, outcome in ordered if isinstance(outcome, Checked) for finding in outcome.findings]
     findings = sorted(
-        [*file_findings, *path_findings], key=lambda finding: (finding.path, finding.line, finding.rule_id)
+        [*file_findings, *path_findings], key=lambda finding: (finding.path, finding.line, finding.check_id)
     )
     unchecked = {path: outcome.reason for path, outcome in ordered if isinstance(outcome, Unchecked | Unsupported)}
     unsupported = {path: outcome.reason for path, outcome in ordered if isinstance(outcome, Unsupported)}

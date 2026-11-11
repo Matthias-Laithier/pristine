@@ -5,7 +5,7 @@ from pristine.files.classification import is_generated
 from pristine.files.path_roles import is_test_path, is_vendored
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "CR-15"
+CHECK_ID = "STR-9"
 HEADER_BYTES = 8192
 CODE_SUFFIXES = frozenset({".py", ".pyi", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"})
 TYPE_DECLARATION_SUFFIX = ".d.ts"
@@ -55,7 +55,7 @@ def grouped_directories(directories: Directories) -> Directories:
 
 
 def directory_finding(files: list[PurePosixPath], message: str, severity: Severity = Severity.WARNING) -> Finding:
-    return Finding(str(min(files)), 1, RULE_ID, severity, message)
+    return Finding(str(min(files)), 1, CHECK_ID, severity, message)
 
 
 def read_header(path: PurePosixPath) -> str:

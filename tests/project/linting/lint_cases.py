@@ -33,7 +33,7 @@ BASE_PRESET_RULES = (
 
 def lint_messages(files: dict[str, str], run_project: RunProject) -> list[str]:
     _, report = run_project(files)
-    return [message for _, message, _ in rule_findings(report, "TL-3")]
+    return [message for _, message, _ in rule_findings(report, "PROJ-3")]
 
 
 def annotation_findings(files: dict[str, str], run_project: RunProject) -> list[tuple[str, str]]:

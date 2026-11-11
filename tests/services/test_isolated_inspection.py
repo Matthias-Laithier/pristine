@@ -118,5 +118,5 @@ def test_one_expired_assignment_cannot_kill_the_remaining_work(monkeypatch: Monk
 
 def test_a_valid_outcome_larger_than_sixteen_mib_is_preserved() -> None:
     result = outcomes(["large.py"], jobs=1, command=(sys.executable, "-c", LARGE_FINDING_WORKER))
-    expected = Finding("large.py", 1, "CR-4", Severity.WARNING, "x" * 16_777_217)
+    expected = Finding("large.py", 1, "STR-4", Severity.WARNING, "x" * 16_777_217)
     assert result == {"large.py": Checked([expected])}

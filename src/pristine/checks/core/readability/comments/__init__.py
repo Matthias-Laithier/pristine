@@ -5,9 +5,9 @@ from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import CommentText, ParsedFile
 
-RULE_ID = "CR-3"
+CHECK_ID = "STR-4"
 PREVIEW_LENGTH = 60
-DOC_TEXT_HINT = "allowed only on units a framework or published reference generator reads (CR-3 exceptions)"
+DOC_TEXT_HINT = "allowed only on units a framework or published reference generator reads (STR-4 exceptions)"
 
 
 def preview(text: str) -> str:
@@ -19,7 +19,7 @@ def comment_finding(path: str, comment: CommentText) -> Finding:
         message = f"documentation text '{preview(comment.text)}' is {DOC_TEXT_HINT}"
     else:
         message = f"comment '{preview(comment.text)}'; make the code say it, then delete the comment"
-    return Finding(path, comment.line, RULE_ID, Severity.ERROR, message)
+    return Finding(path, comment.line, CHECK_ID, Severity.ERROR, message)
 
 
 def check_comments(parsed: ParsedFile) -> list[Finding]:
@@ -35,7 +35,7 @@ def check_comments(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="No Comments Except Machine-Read Text",
     summary=(
         "Every comment, doc comment, and docstring. Shebangs and comments that start with a toolchain directive, "

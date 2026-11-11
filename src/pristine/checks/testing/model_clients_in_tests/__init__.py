@@ -14,7 +14,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile
 
-RULE_ID = "TST-8"
+CHECK_ID = "TEST-5"
 EVALS_DIRECTORY = "evals"
 MODEL_SURFACE = re.compile(
     r"\.(chat|fim|embeddings|ocr|agents|conversations|classifiers|messages|responses|completions)\.\w+|\.generate_content\b"
@@ -44,12 +44,12 @@ def check_model_clients_in_tests(parsed: ParsedFile) -> list[Finding]:
         "environment; replace the model with a fake that returns scripted outputs, and measure model quality with "
         "evals (make eval)"
     )
-    return [Finding(parsed.path, live[0].line, RULE_ID, Severity.WARNING, message)]
+    return [Finding(parsed.path, live[0].line, CHECK_ID, Severity.WARNING, message)]
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="No Live Model Clients in Tests",
+    check_id=CHECK_ID,
+    title="Live Model Clients in Tests",
     summary=(
         "Test files constructing a real LLM SDK client (Python openai, anthropic, mistralai Mistral, "
         "google.generativeai, cohere; JS/TS openai, @anthropic-ai/sdk, @mistralai/mistralai) whose API key "

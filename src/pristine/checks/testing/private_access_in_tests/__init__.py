@@ -9,7 +9,7 @@ from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_tests import is_python_test_module
 
-RULE_ID = "TST-1"
+CHECK_ID = "TEST-1"
 PRIVATE_NAME = re.compile(r"_[A-Za-z0-9]\w*(?<!_)")
 OWN_RECEIVERS = frozenset({"self", "cls", "super()"})
 DOUBLE_PREFIXES = ("mock", "fake")
@@ -75,7 +75,7 @@ def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
         Finding(
             parsed.path,
             line_of(node),
-            RULE_ID,
+            CHECK_ID,
             Severity.WARNING,
             f"test reaches into private attribute '{node_text(node)}'; "
             "assert on the public outcome instead: return values, persisted state, emitted events, or calls to fakes",
@@ -85,8 +85,8 @@ def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Tests Avoid Private State",
+    check_id=CHECK_ID,
+    title="Private State in Tests",
     summary=(
         "Python test modules (test paths that define test functions or classes, and conftest.py) reading or "
         "writing a single-underscore private attribute of an object other than self or cls. Mock and monkeypatch targets, mock* and fake* variables, and framework privates such as "

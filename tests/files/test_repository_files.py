@@ -27,5 +27,5 @@ def test_checks_run_from_a_subdirectory_see_each_repository_file_once(
     main(["check", ".", "--json"])
     findings = parsed_report(capsys.readouterr().out)["findings"]
     assert [
-        (finding["rule_id"], finding["path"]) for finding in findings if finding["rule_id"] in {"CO-8", "CR-5"}
-    ] == [("CO-8", "invoices.py")]
+        (finding["check_id"], finding["path"]) for finding in findings if finding["check_id"] in {"DEP-3", "STR-10"}
+    ] == [("DEP-3", "invoices.py")]

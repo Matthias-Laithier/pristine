@@ -22,28 +22,28 @@ EXPECTED_JSON_REPORT = {
         "missing_paths": 0,
         "unsupported_files": 0,
         "verification_failures": 0,
-        "by_rule": {"CR-1": 1, "CR-3": 1},
+        "by_check": {"STR-1": 1, "STR-4": 1},
         "omitted": 0,
     },
     "findings": [
         {
             "path": "invoice.py",
             "line": 1,
-            "rule_id": "CR-1",
+            "check_id": "STR-1",
             "severity": "error",
             "message": "invoice file is too long",
         },
         {
             "path": "receipt.py",
             "line": 2,
-            "rule_id": "CR-3",
+            "check_id": "STR-4",
             "severity": "error",
             "message": "receipt file has a comment",
         },
     ],
     "triage": [
-        {"path": "invoice.py", "distinct_rules": 1, "findings": 1, "fix": {"CR-1": 1}, "verify": {}},
-        {"path": "receipt.py", "distinct_rules": 1, "findings": 1, "fix": {"CR-3": 1}, "verify": {}},
+        {"path": "invoice.py", "distinct_checks": 1, "findings": 1, "fix": {"STR-1": 1}, "verify": {}},
+        {"path": "receipt.py", "distinct_checks": 1, "findings": 1, "fix": {"STR-4": 1}, "verify": {}},
     ],
     "unchecked": [],
     "skipped": [],
@@ -60,8 +60,8 @@ def worker_outcomes(
     stdout: pytest.CaptureFixture[str],
 ) -> Callable[[list[str], int], AbstractContextManager[Iterator[tuple[str, Checked]]]]:
     findings = [
-        Finding("invoice.py", 1, "CR-1", Severity.ERROR, "invoice file is too long"),
-        Finding("receipt.py", 2, "CR-3", Severity.ERROR, "receipt file has a comment"),
+        Finding("invoice.py", 1, "STR-1", Severity.ERROR, "invoice file is too long"),
+        Finding("receipt.py", 2, "STR-4", Severity.ERROR, "receipt file has a comment"),
     ]
     outcomes = iter(
         [
@@ -110,8 +110,8 @@ def test_check_returns_the_full_result_after_every_worker(
     if report_options:
         assert json.loads(output) == EXPECTED_JSON_REPORT
     else:
-        assert "invoice.py\n  1 error; fix CR-1\n  - file: CR-1 error: invoice file is too long" in output
-        assert "receipt.py\n  1 error; fix CR-3\n  - line 2: CR-3 error: receipt file has a comment" in output
+        assert "invoice.py\n  1 error; fix STR-1\n  - file: STR-1 error: invoice file is too long" in output
+        assert "receipt.py\n  1 error; fix STR-4\n  - line 2: STR-4 error: receipt file has a comment" in output
         assert "summary: 2 errors, 0 warnings\nfiles: 2 checked files" in output
         assert "verification: complete, 0 failures" in output
 

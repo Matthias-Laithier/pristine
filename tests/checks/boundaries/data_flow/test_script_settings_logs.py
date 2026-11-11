@@ -17,7 +17,7 @@ function update() { process.env.TOKEN = 'new'; delete process.env.TOKEN; }
 function enabled() { return !process.env.FEATURE_FLAG; }
 """
     _, report = run_pristine({f"application.{extension}": source})
-    assert rule_findings(report, "BS-1") == [(3, "warning"), (10, "warning")]
+    assert rule_findings(report, "SAFE-1") == [(3, "warning"), (10, "warning")]
 
 
 @pytest.mark.parametrize(
@@ -25,7 +25,7 @@ function enabled() { return !process.env.FEATURE_FLAG; }
 )
 def test_script_settings_startup_and_tests_are_exempt(run_pristine: RunPristine, path: str) -> None:
     _, report = run_pristine({path: "function load() { return process.env.API_URL; }"})
-    assert rule_findings(report, "BS-1") == []
+    assert rule_findings(report, "SAFE-1") == []
 
 
 @pytest.mark.parametrize("extension", ["js", "ts", "tsx"])
@@ -45,7 +45,7 @@ def test_script_interpolated_logs_keep_constant_and_structured_messages(
 }
 """
     _, report = run_pristine({f"application.{extension}": source})
-    assert rule_findings(report, "BS-15") == [(2, "warning"), (3, "warning"), (4, "warning")]
+    assert rule_findings(report, "SAFE-9") == [(2, "warning"), (3, "warning"), (4, "warning")]
 
 
 @pytest.mark.parametrize("extension", ["js", "ts", "tsx"])
@@ -53,7 +53,7 @@ def test_imported_process_is_not_the_node_global(run_pristine: RunPristine, exte
     _, report = run_pristine(
         {f"application.{extension}": "import process from './fake';\nfunction load() { return process.env.TOKEN; }"}
     )
-    assert rule_findings(report, "BS-1") == []
+    assert rule_findings(report, "SAFE-1") == []
 
 
 @pytest.mark.parametrize("extension", ["js", "ts", "tsx"])
@@ -69,4 +69,4 @@ function scopes(input) {
 }
 """
     _, report = run_pristine({f"application.{extension}": source})
-    assert rule_findings(report, "BS-1") == [(2, "warning"), (4, "warning"), (8, "warning")]
+    assert rule_findings(report, "SAFE-1") == [(2, "warning"), (4, "warning"), (8, "warning")]

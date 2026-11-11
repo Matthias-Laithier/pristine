@@ -2,7 +2,7 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
-from pristine.checks.composition.parameter_mutation.python import MESSAGE, RULE_ID
+from pristine.checks.composition.parameter_mutation.python import CHECK_ID, MESSAGE
 from pristine.checks.composition.parameter_mutation.types import COLLECTION_TYPES, MUTATORS, typed_parameters
 from pristine.clients.script_calls import bound_names
 from pristine.files.path_roles import is_test_path
@@ -117,7 +117,7 @@ def function_findings(parsed: ParsedFile, function: Node, shadowed: set[str]) ->
             first.setdefault(parameter, node)
     return [
         Finding(
-            parsed.path, line_of(node), RULE_ID, Severity.WARNING, MESSAGE.format(function=name, parameter=parameter)
+            parsed.path, line_of(node), CHECK_ID, Severity.WARNING, MESSAGE.format(function=name, parameter=parameter)
         )
         for parameter, node in first.items()
     ]

@@ -19,7 +19,7 @@ function render() {{
 }}
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")
 
 
 @pytest.mark.parametrize(
@@ -31,4 +31,4 @@ function render() {{
 )
 def test_reassigned_bindings_are_not_model_evidence(run_pristine: RunPristine, source: str) -> None:
     _, report = run_pristine({"services/model.ts": 'import OpenAI from "openai";\n' + source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")

@@ -6,7 +6,7 @@ from pristine.files.path_roles import PYTEST_CONFTEST, is_test_file, is_test_fol
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import LANGUAGE_BY_SUFFIX
 
-RULE_ID = "TST-4"
+CHECK_ID = "TEST-2"
 SOURCE_FOLDER = "src"
 SOURCE_SIBLING_TEST_FOLDERS = frozenset({"test", "tests"})
 HIDDEN_PREFIX = "."
@@ -36,7 +36,7 @@ def is_pytest_root(path: PurePosixPath) -> bool:
 
 
 def placement_finding(path: str, severity: Severity, problem: str) -> Finding:
-    return Finding(path, 1, RULE_ID, severity, f"{problem}; {MOVE_HINT}")
+    return Finding(path, 1, CHECK_ID, severity, f"{problem}; {MOVE_HINT}")
 
 
 def test_file_finding(path: str, folders: tuple[str, ...]) -> Finding | None:
@@ -73,8 +73,8 @@ def check_test_location(paths: list[str]) -> list[Finding]:
 
 
 CHECK = PathCheck(
-    rule_id=RULE_ID,
-    title="Tests Live in a Dedicated tests Folder",
+    check_id=CHECK_ID,
+    title="Test Placement",
     summary="Python, JavaScript/JSX and TypeScript/TSX test files outside a dedicated test folder such as tests/, test/, or spec/.",
     run=check_test_location,
 )

@@ -10,7 +10,7 @@ from pristine.imports.repository import with_repository_files
 from pristine.imports.script_imports import read_script_edges
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "CO-8"
+CHECK_ID = "DEP-3"
 CYCLE_FIXES = (
     "move the shared contract into a lower-level module that depends on neither side, invert one dependency "
     "through a contract wired at the composition root, or merge modules that cannot be separated"
@@ -65,7 +65,7 @@ def cycle_description(cycle: ImportCycle) -> str:
 def cycle_finding(cycle: ImportCycle, lines: ImportLines) -> Finding:
     first, following = cycle.path[0], cycle.path[1]
     message = f"import cycle {cycle_description(cycle)}; {CYCLE_FIXES}"
-    return Finding(first, lines[first][following], RULE_ID, Severity.ERROR, message)
+    return Finding(first, lines[first][following], CHECK_ID, Severity.ERROR, message)
 
 
 def check_import_cycles(paths: list[str]) -> list[Finding]:
@@ -76,8 +76,8 @@ def check_import_cycles(paths: list[str]) -> list[Finding]:
 
 
 CHECK = PathCheck(
-    rule_id=RULE_ID,
-    title="No Circular Dependencies",
+    check_id=CHECK_ID,
+    title="Import Cycles",
     summary=(
         "Import cycles between files. Python imports, including lazy, dynamic with literal names, and "
         "TYPE_CHECKING ones, and relative TS and JS imports, including type-only ones, that resolve with "

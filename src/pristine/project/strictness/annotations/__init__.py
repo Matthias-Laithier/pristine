@@ -1,4 +1,4 @@
-from pristine.project.automation import RULE_ID, fast_gate
+from pristine.project.automation import CHECK_ID, fast_gate
 from pristine.project.commands.shell import program_calls, words_of
 from pristine.project.repository.loading import Project
 from pristine.project.repository.tools import Ecosystem
@@ -48,7 +48,7 @@ def python_annotations(project: Project) -> list[Finding]:
         return [verification_finding(project, unverifiable[0])]
     detail = "; ".join(dict.fromkeys(shortfalls)) or "no annotation-enforcing invocation"
     message = f"make check does not enforce explicit Python annotations: {detail}; {FIX}"
-    return [Finding(project.shown(gate.rule.path), gate.rule.line, RULE_ID, Severity.ERROR, message)]
+    return [Finding(project.shown(gate.rule.path), gate.rule.line, CHECK_ID, Severity.ERROR, message)]
 
 
 def eligible_calls(command: str) -> list[tuple[str, list[str]]]:
@@ -73,7 +73,7 @@ def command_shortfall(project: Project, command: str) -> str | None:
 
 def verification_finding(project: Project, error: UnverifiedConfigError) -> Finding:
     message = f"cannot verify that make check enforces explicit Python annotations: {error.reason}; {FIX}"
-    return Finding(project.shown(error.path), FIRST_LINE, RULE_ID, Severity.WARNING, message, FindingKind.VERIFICATION)
+    return Finding(project.shown(error.path), FIRST_LINE, CHECK_ID, Severity.WARNING, message, FindingKind.VERIFICATION)
 
 
 def verify_ignored_recipe(project: Project, command: str) -> None:

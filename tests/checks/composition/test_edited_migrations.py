@@ -47,7 +47,9 @@ def seed_repository(tmp_path: Path, tmp_path_factory: pytest.TempPathFactory) ->
 
 
 def edited_migrations(report: JsonReport) -> list[tuple[str, str]]:
-    return [(finding["path"], finding["severity"]) for finding in report["findings"] if finding["rule_id"] == "CO-14"]
+    return [
+        (finding["path"], finding["severity"]) for finding in report["findings"] if finding["check_id"] == "SAFE-12"
+    ]
 
 
 def test_only_the_edited_migration_is_reported(

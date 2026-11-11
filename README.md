@@ -39,6 +39,8 @@ Before coding, run pristine guide. Run pristine check on touched directories and
 
 36 source checks cover file and function size, nesting, comments, placement, imports, mutation, external calls, injection patterns, async work and tests. Four project check families inspect the Makefile, verification gates, static tools and reproducible dependencies. `pristine checks --json` lists exact coverage from the implementations.
 
+Check IDs are grouped as `STR` (structure), `DEP` (dependencies), `SAFE` (safety), `TEST` (tests) and `PROJ` (project). JSON uses `check_id`, `by_check` and `distinct_checks`. Version 0.12.0 replaces the old IDs and JSON field names without compatibility aliases.
+
 Supported source: `.py`, `.pyi`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, `.cts`. Other languages are reported as unsupported. Secret scanning covers every discovered file, including data and lockfiles. Python and Prisma SQL migrations retain history checks.
 
 Checks favor precision over recall. A clean scan establishes only the advertised patterns. Use Pristine alongside your formatter, linter, type checker and tests. Generic floating promises need type-aware ESLint; TypeScript path aliases, untyped JavaScript mutation and custom test frameworks remain outside the detected patterns.

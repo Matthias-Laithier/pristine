@@ -49,7 +49,7 @@ def test_ruff_global_ignore_disables_all_selection(run_project: RunProject) -> N
 def test_ruff_dynamic_config_is_explicitly_unverifiable(run_project: RunProject) -> None:
     files = with_python_lint_config('[tool.ruff]\nextend = "ruff-${mode}.toml"\n')
     _, report = run_project(files)
-    finding = next(finding for finding in report["findings"] if finding["rule_id"] == "TL-3")
+    finding = next(finding for finding in report["findings"] if finding["check_id"] == "PROJ-3")
     assert finding["kind"] == "verification"
     assert finding["message"] == (
         "cannot verify that the Ruff rule sets are configured: pyproject.toml refers to ruff-${mode}.toml, "

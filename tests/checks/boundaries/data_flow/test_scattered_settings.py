@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-1"
+CHECK_ID = "SAFE-1"
 SCATTERED_READS = """import os
 from os import environ, getenv
 
@@ -89,12 +89,12 @@ def legacy_region():
 
 def test_reads_inside_functions_are_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing.py": SCATTERED_READS})
-    assert rule_findings(report, RULE_ID) == [(6, "warning"), (10, "warning"), (14, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(6, "warning"), (10, "warning"), (14, "warning")]
 
 
 def test_module_level_writes_dynamic_process_and_startup_reads_are_not_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing.py": UNREPORTED_READS})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 @pytest.mark.parametrize(
@@ -112,14 +112,14 @@ def test_settings_modules_entrypoints_tests_and_scripts_are_exempt(
     run_pristine: RunPristine, path: str, source: str
 ) -> None:
     _, report = run_pristine({path: source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_read_in_an_application_module_is_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing/reminders.py": READ_IN_FUNCTION})
-    assert rule_findings(report, RULE_ID) == [(5, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(5, "warning")]
 
 
 def test_constant_keys_are_resolved_and_computed_keys_skipped(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing.py": CONSTANT_KEYS})
-    assert rule_findings(report, RULE_ID) == [(7, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(7, "warning")]

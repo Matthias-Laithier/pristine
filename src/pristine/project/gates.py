@@ -6,7 +6,7 @@ from pristine.project.repository.makefile import COMPLETE_GATE, FAST_GATE, reach
 from pristine.project.repository.tools import Ecosystem
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "TL-2"
+CHECK_ID = "PROJ-2"
 FIRST_LINE = 1
 
 
@@ -29,7 +29,7 @@ def complete_gate_runs_fast_gate(project: Project) -> list[Finding]:
         f"'{COMPLETE_GATE}' does not run '{FAST_GATE}'; list it as a prerequisite "
         f"('{COMPLETE_GATE}: {FAST_GATE} ...') or call '$(MAKE) {FAST_GATE}' in its recipe"
     )
-    return [Finding(project.shown(rule.path), rule.line, RULE_ID, Severity.ERROR, message)]
+    return [Finding(project.shown(rule.path), rule.line, CHECK_ID, Severity.ERROR, message)]
 
 
 def package_scripts(project: Project) -> dict[str, str]:
@@ -74,7 +74,7 @@ def omitted_checks(project: Project) -> list[Finding]:
         Finding(
             declared.path,
             declared.line,
-            RULE_ID,
+            CHECK_ID,
             Severity.ERROR,
             f"make check does not run the configured {name} {role} declared in {declared.source}",
         )

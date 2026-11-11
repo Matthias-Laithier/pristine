@@ -17,7 +17,7 @@ from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_o
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
-RULE_ID = "BS-1"
+CHECK_ID = "SAFE-1"
 PYTEST_HOOK_PREFIX = "pytest_"
 SETTINGS_BASES = ("pydantic_settings", "pydantic.BaseSettings", "pydantic.v1.BaseSettings")
 ENVIRONMENT = "os.environ"
@@ -121,7 +121,7 @@ def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
                 if VARIABLE_NAME.fullmatch(key) and PROCESS_VARIABLES.fullmatch(key) is None
             }
         )
-        return [Finding(parsed.path, line, RULE_ID, Severity.WARNING, message) for line in lines]
+        return [Finding(parsed.path, line, CHECK_ID, Severity.WARNING, message) for line in lines]
     if parsed.language != "python":
         return []
     bindings = import_bindings(parsed)
@@ -131,12 +131,12 @@ def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
         "environment read inside a function; validate settings once at startup and pass the typed settings value in"
     )
     lines = sorted({line_of(node) for node in environment_reads(parsed, bindings)})
-    return [Finding(parsed.path, line, RULE_ID, Severity.WARNING, message) for line in lines]
+    return [Finding(parsed.path, line, CHECK_ID, Severity.WARNING, message) for line in lines]
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Centralize Settings Acquisition",
+    check_id=CHECK_ID,
+    title="Scattered Settings Reads",
     summary=(
         "Python reads of a named setting (os.environ[...], os.environ.get, os.getenv) inside functions, keyed by "
         "a string literal or a same-module string constant. Modules defining a pydantic-settings BaseSettings "

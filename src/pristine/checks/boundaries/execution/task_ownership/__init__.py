@@ -11,7 +11,7 @@ from pristine.syntax.nodes import NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, is_async, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
-RULE_ID = "BS-8"
+CHECK_ID = "SAFE-5"
 TASK_FACTORIES = frozenset({"asyncio.create_task", "asyncio.ensure_future"})
 LOOP_RECEIVER = re.compile(r"([\w.]*\.)?\w*loop(\(\))?", re.IGNORECASE)
 STATEMENT_CONTAINERS = frozenset({"module", "block"})
@@ -39,7 +39,7 @@ def dropped_tasks(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[Find
         is_statement = call.parent is not None and call.parent.type in STATEMENT_CONTAINERS
         if is_statement and spawns_task(call, bindings):
             message = f"'{callee_of(call)}(...)' creates a task and drops its reference; {OWN_TASK_HINT}"
-            yield Finding(parsed.path, line_of(call), RULE_ID, Severity.ERROR, message)
+            yield Finding(parsed.path, line_of(call), CHECK_ID, Severity.ERROR, message)
 
 
 def scope_nodes(root: Node) -> Iterator[Node]:
@@ -121,7 +121,7 @@ def swallowed_cancellations(parsed: ParsedFile, bindings: dict[str, str]) -> Ite
             caught = clause.child_by_field_name("value")
             head = "except" if caught is None else f"except {' '.join((node_text(caught) or '').split())}"
             message = f"'{head}' swallows the task's cancellation; {RERAISE_HINT}"
-            yield Finding(parsed.path, line_of(clause), RULE_ID, Severity.ERROR, message)
+            yield Finding(parsed.path, line_of(clause), CHECK_ID, Severity.ERROR, message)
 
 
 def check_task_ownership(parsed: ParsedFile) -> list[Finding]:
@@ -135,8 +135,8 @@ def check_task_ownership(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Task Ownership and Cancellation",
+    check_id=CHECK_ID,
+    title="Dropped Tasks and Cancellation",
     summary=(
         "Python asyncio tasks created and dropped as a bare statement, and except clauses that catch "
         "CancelledError, or BaseException in an async def, without re-raising it."

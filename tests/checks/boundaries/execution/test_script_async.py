@@ -17,7 +17,7 @@ function synchronous() { fs.readFileSync('data'); }
 async function shadowed(fs) { fs.readFileSync('data'); }
 """
     _, report = run_pristine({f"services/files.{extension}": source})
-    assert rule_findings(report, "BS-13") == [(4, "error"), (5, "error")]
+    assert rule_findings(report, "SAFE-7") == [(4, "error"), (5, "error")]
 
 
 @pytest.mark.parametrize("extension", ["js", "ts", "tsx"])
@@ -39,7 +39,7 @@ async function load() {
 function shadowed(axios) { axios.get('https://example.com'); }
 """
     _, report = run_pristine({f"services/files.{extension}": source})
-    assert rule_findings(report, "BS-8") == [(5, "error"), (6, "error"), (7, "error")]
+    assert rule_findings(report, "SAFE-5") == [(5, "error"), (6, "error"), (7, "error")]
 
 
 def test_unknown_sync_calls_and_type_imports_are_not_defects(run_pristine: RunPristine) -> None:
@@ -52,8 +52,8 @@ async function load(fs) {
 }
 """
     _, report = run_pristine({"services/files.ts": source})
-    assert rule_findings(report, "BS-8") == []
-    assert rule_findings(report, "BS-13") == []
+    assert rule_findings(report, "SAFE-5") == []
+    assert rule_findings(report, "SAFE-7") == []
 
 
 def test_async_arrow_methods_and_namespace_imports(run_pristine: RunPristine) -> None:
@@ -65,8 +65,8 @@ class Store {
 }
 """
     _, report = run_pristine({"services/files.ts": source})
-    assert rule_findings(report, "BS-13") == [(3, "error"), (5, "error")]
-    assert rule_findings(report, "BS-8") == [(5, "error")]
+    assert rule_findings(report, "SAFE-7") == [(3, "error"), (5, "error")]
+    assert rule_findings(report, "SAFE-5") == [(5, "error")]
 
 
 def test_mixed_type_imports_and_reassigned_clients_are_not_guessed(run_pristine: RunPristine) -> None:
@@ -80,7 +80,7 @@ function load() {
 }
 """
     _, report = run_pristine({"services/files.ts": source})
-    assert rule_findings(report, "BS-8") == [(6, "error")]
+    assert rule_findings(report, "SAFE-5") == [(6, "error")]
 
 
 @pytest.mark.parametrize("extension", ["js", "ts", "tsx"])
@@ -100,7 +100,7 @@ async function scopes(input) {
 }
 """
     _, report = run_pristine({f"services/files.{extension}": source})
-    assert rule_findings(report, "BS-13") == [(3, "error"), (5, "error"), (12, "error")]
+    assert rule_findings(report, "SAFE-7") == [(3, "error"), (5, "error"), (12, "error")]
 
 
 def test_function_scoped_var_masks_import_but_sibling_var_does_not(run_pristine: RunPristine) -> None:
@@ -110,4 +110,4 @@ async function load() { fs.readFileSync('data'); }
 async function local() { if (enabled) { var fs = fake; } fs.readFileSync('data'); }
 """
     _, report = run_pristine({"services/files.ts": source})
-    assert rule_findings(report, "BS-13") == [(3, "error")]
+    assert rule_findings(report, "SAFE-7") == [(3, "error")]

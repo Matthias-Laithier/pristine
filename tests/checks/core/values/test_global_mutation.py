@@ -113,14 +113,14 @@ JS_FLAGS = (
 
 def test_python_writes_to_module_state_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": PYTHON_WRITES})
-    assert rule_findings(report, "CR-7") == [(6, "error"), (7, "error"), (8, "error"), (11, "error")]
+    assert rule_findings(report, "SAFE-10") == [(6, "error"), (7, "error"), (8, "error"), (11, "error")]
 
 
 def test_python_memos_fixtures_and_module_setup_are_allowed_and_registrations_are_errors(
     run_pristine: RunPristine,
 ) -> None:
     _, report = run_pristine({"handlers.py": PYTHON_OWNED})
-    findings = [finding for finding in report["findings"] if finding["rule_id"] == "CR-7"]
+    findings = [finding for finding in report["findings"] if finding["check_id"] == "SAFE-10"]
     assert [finding["line"] for finding in findings] == [8, 9]
     assert all(
         "write the registry as a dict literal in its owning module" in finding["message"] for finding in findings
@@ -129,19 +129,19 @@ def test_python_memos_fixtures_and_module_setup_are_allowed_and_registrations_ar
 
 def test_private_cache_and_registration_names_alone_do_not_exempt(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": PYTHON_NAMED_LIKE_OWNED})
-    assert rule_findings(report, "CR-7") == [(6, "error"), (7, "error")]
+    assert rule_findings(report, "SAFE-10") == [(6, "error"), (7, "error")]
 
 
 def test_js_writes_to_module_state_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.ts": JS_WRITES})
-    assert rule_findings(report, "CR-7") == [(7, "error"), (8, "error"), (9, "error"), (10, "error")]
+    assert rule_findings(report, "SAFE-10") == [(7, "error"), (8, "error"), (9, "error"), (10, "error")]
 
 
 def test_js_lazy_initialization_is_allowed_and_a_later_reset_is_an_error(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"connection.js": JS_FLAGS})
-    assert rule_findings(report, "CR-7") == [(7, "error"), (10, "error")]
+    assert rule_findings(report, "SAFE-10") == [(7, "error"), (10, "error")]
 
 
 def test_js_memo_caches_listeners_and_test_hooks_are_allowed(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"formats.js": JS_OWNED})
-    assert rule_findings(report, "CR-7") == []
+    assert rule_findings(report, "SAFE-10") == []

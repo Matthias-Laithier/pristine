@@ -32,7 +32,7 @@ class SecretScanFailed(Exception):
 class Leak:
     path: str
     line: int
-    rule_id: str
+    scanner_rule_id: str
 
 
 def mirror_paths(paths: list[str], root: Path) -> dict[str, str]:
@@ -77,16 +77,16 @@ def run_gitleaks(root: Path) -> str:
 def parsed_leak(entry: object, links: dict[str, str]) -> Leak:
     if not isinstance(entry, dict):
         raise SecretScanFailed("gitleaks reported a leak that is not an object")
-    link, line, rule_id = entry.get("SymlinkFile"), entry.get("StartLine"), entry.get("RuleID")
+    link, line, scanner_rule_id = entry.get("SymlinkFile"), entry.get("StartLine"), entry.get("RuleID")
     if (
         not isinstance(link, str)
         or link not in links
         or type(line) is not int
         or line < 0
-        or not isinstance(rule_id, str)
+        or not isinstance(scanner_rule_id, str)
     ):
         raise SecretScanFailed("gitleaks reported a leak without a known file, line, and rule")
-    return Leak(links[link], line, rule_id)
+    return Leak(links[link], line, scanner_rule_id)
 
 
 def parsed_report(report: str, links: dict[str, str]) -> list[Leak]:

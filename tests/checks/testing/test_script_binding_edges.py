@@ -10,7 +10,7 @@ def test_function_scoped_var_shadows_globals_after_loop(run_pristine: RunPristin
 });
 """
     _, report = run_pristine({"tests/random.test.ts": source})
-    assert not rule_findings(report, "TST-6")
+    assert not rule_findings(report, "TEST-3")
 
 
 @pytest.mark.parametrize("extension", ["ts", "tsx", "js"])
@@ -21,4 +21,4 @@ def test_destructuring_defaults_are_reads_not_bindings(run_pristine: RunPristine
 });
 """
     _, report = run_pristine({f"tests/random.test.{extension}": source})
-    assert rule_findings(report, "TST-6") == [(2, "warning"), (3, "warning")]
+    assert rule_findings(report, "TEST-3") == [(2, "warning"), (3, "warning")]

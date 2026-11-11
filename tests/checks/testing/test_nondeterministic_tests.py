@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "TST-6"
+CHECK_ID = "TEST-3"
 SOURCE = """import random
 import time
 
@@ -65,19 +65,21 @@ UNSHADOWED_TIME = """def test_retry_backs_off():
 
 def test_reads_of_the_outside_world_are_warnings(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_welcome.py": SOURCE})
-    assert rule_findings(report, RULE_ID) == [(7, "warning"), (8, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(7, "warning"), (8, "warning")]
 
 
 def test_files_without_tests_are_exempt_unless_they_are_conftest(run_pristine: RunPristine) -> None:
     load_script = "import random\n\n\ndef send_requests():\n    return random.random()\n"
     files = {"benchmark/load_test.py": load_script, "tests/conftest.py": SOURCE}
     _, report = run_pristine(files)
-    assert {finding["path"] for finding in report["findings"] if finding["rule_id"] == RULE_ID} == {"tests/conftest.py"}
+    assert {finding["path"] for finding in report["findings"] if finding["check_id"] == CHECK_ID} == {
+        "tests/conftest.py"
+    }
 
 
 def test_unimported_time_module_is_resolved_unless_shadowed(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_welcome.py": UNIMPORTED})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_implicit_modules_are_resolved_per_file(run_pristine: RunPristine) -> None:
@@ -98,7 +100,7 @@ def test_seeds_patched_sleeps_and_production_code_are_exempt(run_pristine: RunPr
         "app/welcome.py": SOURCE,
     }
     _, report = run_pristine(files)
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 @pytest.mark.parametrize("extension", ["test.ts", "spec.tsx"])
@@ -117,7 +119,7 @@ check("real", async () => {
 check("other", () => setTimeout(done, 20));
 """
     _, report = run_pristine({f"tests/orders.{extension}": source})
-    assert rule_findings(report, RULE_ID) == [
+    assert rule_findings(report, CHECK_ID) == [
         (4, "warning"),
         (5, "warning"),
         (8, "warning"),
@@ -139,7 +141,7 @@ describe("real", () => {
 test("top", () => setTimeout(done, 2));
 """
     _, report = run_pristine({"tests/orders.test.ts": source})
-    assert rule_findings(report, RULE_ID) == [(5, "warning"), (8, "warning"), (10, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(5, "warning"), (8, "warning"), (10, "warning")]
 
 
 def test_typescript_shadowed_or_conditional_fakes_do_not_exempt(run_pristine: RunPristine) -> None:
@@ -151,7 +153,7 @@ test("globals", (Math, setTimeout) => { Math.random(); setTimeout(done, 2); });
 function helper(test) { test("custom", () => Math.random()); }
 """
     _, report = run_pristine({"tests/orders.test.ts": source, "orders.ts": 'test("x", () => Math.random());'})
-    assert rule_findings(report, RULE_ID) == [(2, "warning"), (3, "warning"), (4, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(2, "warning"), (3, "warning"), (4, "warning")]
 
 
 def test_typescript_unproven_timer_setup_is_not_owned(run_pristine: RunPristine) -> None:
@@ -165,7 +167,7 @@ test("real", () => { clock.useFakeTimers(); if (ready) clock.useRealTimers(); se
 test("replaced", () => { clock = custom; clock.useFakeTimers(); setTimeout(done, 2); });
 """
     _, report = run_pristine({"tests/orders.test.ts": source})
-    assert rule_findings(report, RULE_ID) == [
+    assert rule_findings(report, CHECK_ID) == [
         (4, "warning"),
         (5, "warning"),
         (6, "warning"),

@@ -11,7 +11,7 @@ from pristine.project.repository.manifests import Manifest
 from pristine.project.repository.tools import TOOLS, TOOLS_BY_NAME, Ecosystem, Role, Tool
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "TL-3"
+CHECK_ID = "PROJ-3"
 FIRST_LINE = 1
 TYPESCRIPT_CONFIG = "tsconfig.json"
 TYPESCRIPT_PACKAGE = "typescript"
@@ -109,11 +109,11 @@ def unmet(project: Project, requirement: Requirement, gate: FastGate | None) -> 
         message = (
             f"no {requirement.ecosystem} {requirement.role} configured; declare one of {names} and run it in make check"
         )
-        return [Finding(project.shown(manifest.path), FIRST_LINE, RULE_ID, Severity.ERROR, message)]
+        return [Finding(project.shown(manifest.path), FIRST_LINE, CHECK_ID, Severity.ERROR, message)]
     if gate is None:
         return []
     message = f"make check does not run {RUN_DESCRIPTIONS[requirement.role]} (configured: {', '.join(configured)})"
-    return [Finding(project.shown(gate.rule.path), gate.rule.line, RULE_ID, Severity.ERROR, message)]
+    return [Finding(project.shown(gate.rule.path), gate.rule.line, CHECK_ID, Severity.ERROR, message)]
 
 
 def automated_quality_checks(project: Project) -> list[Finding]:

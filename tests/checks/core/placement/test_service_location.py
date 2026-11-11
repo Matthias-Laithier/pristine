@@ -92,12 +92,12 @@ def test_client_imports_outside_services(
     run_pristine: RunPristine, path: str, source: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({path: source})
-    assert rule_findings(report, "CR-8") == expected
+    assert rule_findings(report, "STR-6") == expected
 
 
 def test_one_finding_lists_every_client_library(run_pristine: RunPristine) -> None:
     source = "import redis\nimport boto3\nimport redis.asyncio\n\nredis.asyncio.Redis()\nboto3.client('s3')\n"
     _, report = run_pristine({"orders/cache.py": source})
-    messages = [finding["message"] for finding in report["findings"] if finding["rule_id"] == "CR-8"]
+    messages = [finding["message"] for finding in report["findings"] if finding["check_id"] == "STR-6"]
     assert len(messages) == 1
     assert "boto3, redis outside" in messages[0]

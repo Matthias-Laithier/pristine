@@ -2,17 +2,17 @@ from pristine.checks.definitions import PathCheck
 from pristine.reports.findings import Finding, FindingKind, Severity
 lazy from pristine.services.gitleaks import Leak, SecretScanFailed, scan_paths
 
-RULE_ID = "BS-2"
+CHECK_ID = "SAFE-2"
 SCAN_SCOPE_PATH = "."
 SCAN_SCOPE_LINE = 0
 
 
 def leak_finding(leak: Leak) -> Finding:
     message = (
-        f"gitleaks rule '{leak.rule_id}' matched a secret; load it from the environment or a secret provider, "
+        f"gitleaks rule '{leak.scanner_rule_id}' matched a secret; load it from the environment or a secret provider, "
         "and rotate it if it was ever committed"
     )
-    return Finding(leak.path, leak.line, RULE_ID, Severity.ERROR, message)
+    return Finding(leak.path, leak.line, CHECK_ID, Severity.ERROR, message)
 
 
 def check_secrets(paths: list[str]) -> list[Finding]:
@@ -24,7 +24,7 @@ def check_secrets(paths: list[str]) -> list[Finding]:
             Finding(
                 SCAN_SCOPE_PATH,
                 SCAN_SCOPE_LINE,
-                RULE_ID,
+                CHECK_ID,
                 Severity.WARNING,
                 message,
                 FindingKind.VERIFICATION,
@@ -34,8 +34,8 @@ def check_secrets(paths: list[str]) -> list[Finding]:
 
 
 CHECK = PathCheck(
-    rule_id=RULE_ID,
-    title="Keep Secrets Out of Code and Output",
+    check_id=CHECK_ID,
+    title="Secrets",
     summary=(
         "Secrets in every discovered file, skipped data and lockfiles included, detected by gitleaks with its "
         "default rules or the project's .gitleaks.toml; a failed scan is an incomplete-verification finding."

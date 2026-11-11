@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "TST-7"
+CHECK_ID = "TEST-4"
 REPORTED = """import pytest
 
 
@@ -92,22 +92,22 @@ def test_rejects_unknown_currency(validator):
 def test_assertions_that_cannot_fail_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_orders.py": REPORTED})
     expected_lines = [6, 10, 11, 12, 13, 14]
-    assert rule_findings(report, RULE_ID) == [(line, "error") for line in expected_lines]
+    assert rule_findings(report, CHECK_ID) == [(line, "error") for line in expected_lines]
 
 
 def test_assertions_that_can_fail_are_exempt(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_orders.py": EXEMPT})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_production_code_is_exempt(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"orders/pricing.py": REPORTED})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_only_resolved_raising_contexts_exempt_assertions(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_invoice.py": RAISING})
-    assert rule_findings(report, RULE_ID) == [(20, "error"), (27, "error")]
+    assert rule_findings(report, CHECK_ID) == [(20, "error"), (27, "error")]
 
 
 @pytest.mark.parametrize("extension", ["test.ts", "spec.tsx"])
@@ -132,7 +132,7 @@ check("oracle", () => {
 });
 """
     _, report = run_pristine({f"tests/orders.{extension}": source})
-    assert rule_findings(report, RULE_ID) == [(5, "error"), (6, "error"), (7, "error"), (8, "error"), (9, "error")]
+    assert rule_findings(report, CHECK_ID) == [(5, "error"), (6, "error"), (7, "error"), (8, "error"), (9, "error")]
 
 
 def test_typescript_oracles_require_owned_assertion_and_callback(run_pristine: RunPristine) -> None:
@@ -144,7 +144,7 @@ function helper(test) { test("custom", () => expect(1).toBe(1)); }
 test("local", () => { const expect = custom; expect(1).toBe(1); });
 """
     _, report = run_pristine({"tests/orders.test.ts": source, "orders.ts": 'test("x", () => expect(1).toBe(1));'})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_jest_namespace_aliases_and_function_callbacks(run_pristine: RunPristine) -> None:
@@ -156,4 +156,4 @@ framework.it.only("oracle", function () {
 });
 """
     _, report = run_pristine({"tests/orders.test.tsx": source})
-    assert rule_findings(report, RULE_ID) == [(4, "error"), (5, "error")]
+    assert rule_findings(report, CHECK_ID) == [(4, "error"), (5, "error")]

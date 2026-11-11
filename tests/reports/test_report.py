@@ -8,11 +8,11 @@ from pristine.reports.report import build_report
 
 
 def test_report_renders_additive_verification_fields() -> None:
-    code_finding = Finding("invoice.py", 3, "CR-3", Severity.WARNING, "comment")
+    code_finding = Finding("invoice.py", 3, "STR-4", Severity.WARNING, "comment")
     verification_finding = Finding(
         "verification.py",
         1,
-        "CR-3",
+        "STR-4",
         Severity.ERROR,
         "not verified",
         FindingKind.VERIFICATION,
@@ -46,7 +46,7 @@ def test_codec_round_trips_unsupported_and_decodes_legacy_findings() -> None:
     )
     legacy_line = (
         '{"path": "invoice.py", "kind": "checked", "findings": '
-        '[{"path": "invoice.py", "line": 3, "rule_id": "CR-3", "severity": "warning", "message": "comment"}]}'
+        '[{"path": "invoice.py", "line": 3, "check_id": "STR-4", "severity": "warning", "message": "comment"}]}'
     )
-    expected = Checked([Finding("invoice.py", 3, "CR-3", Severity.WARNING, "comment")])
+    expected = Checked([Finding("invoice.py", 3, "STR-4", Severity.WARNING, "comment")])
     assert decoded_outcome(legacy_line) == ("invoice.py", expected)

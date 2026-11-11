@@ -4,7 +4,7 @@ from typing import NotRequired, TypedDict
 class ReportedFinding(TypedDict):
     path: str
     line: int
-    rule_id: str
+    check_id: str
     severity: str
     message: str
     kind: NotRequired[str]
@@ -24,7 +24,7 @@ class ReportSummary(TypedDict):
     missing_paths: int
     unsupported_files: NotRequired[int]
     verification_failures: NotRequired[int]
-    by_rule: dict[str, int]
+    by_check: dict[str, int]
     omitted: int
 
 

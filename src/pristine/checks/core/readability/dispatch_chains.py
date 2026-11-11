@@ -10,7 +10,7 @@ from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.nodes import COMMENT_KINDS, IF_KINDS
 from pristine.syntax.parsing import ParsedFile, line_of, node_text
 
-RULE_ID = "CR-14"
+CHECK_ID = "STR-8"
 DISPATCH_CASE_MINIMUM = 3
 SUBJECT_PREVIEW_LENGTH = 40
 EQUALITY_OPERATORS = frozenset({"==", "===", "is"})
@@ -101,7 +101,7 @@ def chain_finding(parsed: ParsedFile, head: Node) -> Finding | None:
         return None
     subject, count = subjects.most_common(1)[0]
     message = f"if/else-if chain compares '{subject[:SUBJECT_PREVIEW_LENGTH]}' to {count} constants; {CHAIN_FIX}"
-    return Finding(parsed.path, line_of(head), RULE_ID, Severity.ERROR, message)
+    return Finding(parsed.path, line_of(head), CHECK_ID, Severity.ERROR, message)
 
 
 def label_leaves(label: Node) -> list[Node]:
@@ -126,7 +126,7 @@ def switch_finding(parsed: ParsedFile, switch: Node) -> Finding | None:
     if count < DISPATCH_CASE_MINIMUM:
         return None
     message = f"{switch.type} dispatches on {count} constant cases; {SWITCH_FIX}"
-    return Finding(parsed.path, line_of(switch), RULE_ID, Severity.WARNING, message)
+    return Finding(parsed.path, line_of(switch), CHECK_ID, Severity.WARNING, message)
 
 
 def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
@@ -140,8 +140,8 @@ def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Value Dispatch Through a Registry",
+    check_id=CHECK_ID,
+    title="Value Dispatch",
     summary=f"Dispatch on {DISPATCH_CASE_MINIMUM}+ constants: if/else-if chain (error), switch or match (warning).",
     run=check_dispatch_chains,
 )

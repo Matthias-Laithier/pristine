@@ -19,7 +19,7 @@ def test_complete_script_metadata_is_allowed_and_surrounding_comments_are_errors
         )
     )
     _, report = run_pristine({"release.py": source})
-    assert rule_findings(report, "CR-3") == [(1, "error"), (7, "error")]
+    assert rule_findings(report, "STR-4") == [(1, "error"), (7, "error")]
 
 
 @pytest.mark.parametrize(
@@ -34,7 +34,7 @@ def test_incomplete_or_non_script_metadata_stays_an_error(
     run_pristine: RunPristine, source: str, expected_lines: list[int]
 ) -> None:
     _, report = run_pristine({"invalid.py": source})
-    assert rule_findings(report, "CR-3") == [(line, "error") for line in expected_lines]
+    assert rule_findings(report, "STR-4") == [(line, "error") for line in expected_lines]
 
 
 def test_script_metadata_blocks_after_code_are_allowed(run_pristine: RunPristine) -> None:
@@ -49,4 +49,4 @@ def test_script_metadata_blocks_after_code_are_allowed(run_pristine: RunPristine
         "import pytest\n"
     )
     _, report = run_pristine({"release.py": source})
-    assert rule_findings(report, "CR-3") == []
+    assert rule_findings(report, "STR-4") == []

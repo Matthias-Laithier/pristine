@@ -20,7 +20,7 @@ def test_tool_names_in_arguments_are_not_invocations(run_project: RunProject, re
     files = project_files("uv run flake8 .")
     files["Makefile"] = files["Makefile"].replace("$(RUN) mypy --strict app", recipe)
     _, report = run_project(files)
-    assert rule_findings(report, "TL-2") == [
+    assert rule_findings(report, "PROJ-2") == [
         ("error", "make check does not run the configured flake8 linter declared in Makefile target 'orphan'", 8)
     ]
 
@@ -33,7 +33,7 @@ def test_real_program_invocations_are_reached(run_project: RunProject, recipe: s
     files = project_files(recipe)
     files["Makefile"] = files["Makefile"].replace("$(RUN) mypy --strict app", recipe)
     _, report = run_project(files)
-    assert rule_findings(report, "TL-2") == []
+    assert rule_findings(report, "PROJ-2") == []
 
 
 @pytest.mark.parametrize(
@@ -51,4 +51,4 @@ def test_option_values_are_not_child_commands(run_project: RunProject, recipe: s
         files["Makefile"] = files["Makefile"].replace("\tmypy .\n", "\ttsc --noEmit --pretty false\n")
     files["Makefile"] = files["Makefile"].replace("$(RUN) mypy --strict app", recipe)
     _, report = run_project(files)
-    assert rule_findings(report, "TL-2") == []
+    assert rule_findings(report, "PROJ-2") == []

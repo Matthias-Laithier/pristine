@@ -25,7 +25,7 @@ def script_groups(paths: list[str]) -> tuple[list[list[ScriptBody]], list[Findin
     failures = []
     for path, outcome in outcomes.items():
         if not isinstance(outcome, Checked):
-            failures.append(Finding(path, 1, "CR-5", Severity.ERROR, outcome.reason, FindingKind.VERIFICATION))
+            failures.append(Finding(path, 1, "STR-10", Severity.ERROR, outcome.reason, FindingKind.VERIFICATION))
             continue
         for record in outcome.findings:
             payload = json.loads(record.message)

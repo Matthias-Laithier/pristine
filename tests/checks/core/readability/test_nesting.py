@@ -27,17 +27,17 @@ COMPREHENSION_LEVEL = (
 )
 def test_nesting_limits(run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({"ship.py": source})
-    assert rule_findings(report, "CR-13") == expected
+    assert rule_findings(report, "STR-3") == expected
 
 
 def test_else_if_adds_no_level(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"route.js": ELSE_IF_CHAIN})
-    assert rule_findings(report, "CR-13") == []
+    assert rule_findings(report, "STR-3") == []
 
 
 def test_comprehension_adds_one_level(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"ship.py": COMPREHENSION_LEVEL})
-    assert rule_findings(report, "CR-13") == [(4, "warning")]
+    assert rule_findings(report, "STR-3") == [(4, "warning")]
 
 
 def test_function_bound_to_a_name_opens_its_own_scope(run_pristine: RunPristine) -> None:
@@ -46,7 +46,7 @@ def test_function_bound_to_a_name_opens_its_own_scope(run_pristine: RunPristine)
         "      if (order.paid) { send(order); }\n    }\n  });\n};\n"
     )
     _, report = run_pristine({"use-orders.ts": source})
-    assert rule_findings(report, "CR-13") == [(4, "warning")]
+    assert rule_findings(report, "STR-3") == [(4, "warning")]
 
 
 def test_test_framework_callbacks_add_no_level(run_pristine: RunPristine) -> None:
@@ -58,4 +58,4 @@ def test_test_framework_callbacks_add_no_level(run_pristine: RunPristine) -> Non
         "      while (line.pending) { settle(line); }\n    }\n  }\n});\n"
     )
     _, report = run_pristine({"invoice.test.ts": source})
-    assert rule_findings(report, "CR-13") == [(13, "error")]
+    assert rule_findings(report, "STR-3") == [(13, "error")]

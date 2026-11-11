@@ -6,7 +6,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.syntax.nodes import COMMENT_KINDS
 from pristine.syntax.parsing import ParsedFile, line_of, node_text
 
-RULE_ID = "BS-4"
+CHECK_ID = "SAFE-4"
 PROPAGATE_HINT = "handle it, translate it while keeping the cause, or let it propagate"
 NARROW_HINT = "narrow the catch to the expected error, or let the failure propagate"
 CALL_KINDS = frozenset({"call", "call_expression"})
@@ -30,7 +30,7 @@ class HandlerScope:
 
 
 def swallow(parsed: ParsedFile, node: Node, severity: Severity, message: str) -> Finding:
-    return Finding(parsed.path, line_of(node), RULE_ID, severity, message)
+    return Finding(parsed.path, line_of(node), CHECK_ID, severity, message)
 
 
 def normalized(node: Node) -> str:

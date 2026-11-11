@@ -17,7 +17,7 @@ from pristine.syntax.nodes import (
 )
 from pristine.syntax.parsing import ParsedFile, function_name, line_of, node_text
 
-RULE_ID = "CR-13"
+CHECK_ID = "STR-3"
 NESTING_LIMIT = Limit(target=2, hard=3)
 TEST_FRAMEWORK_CALL = re.compile(
     r"(describe|context|suite|it|test|bench|beforeEach|afterEach|beforeAll|afterAll)(\.\w+)*(\(.*\))?",
@@ -108,12 +108,12 @@ def check_nesting(parsed: ParsedFile) -> list[Finding]:
             f"{scope_name(block.scope)} nests {block.depth} levels deep ({NESTING_LIMIT.describe()}); "
             "use guard clauses or extract the deepest block into a named helper"
         )
-        findings.append(Finding(parsed.path, line_of(block.node), RULE_ID, severity, message))
+        findings.append(Finding(parsed.path, line_of(block.node), CHECK_ID, severity, message))
     return findings
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="Nesting Depth",
     summary=(
         f"Control-flow nesting depth per function ({NESTING_LIMIT.describe()}); else-if adds no level, "

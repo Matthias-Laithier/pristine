@@ -9,7 +9,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
-RULE_ID = "CR-21"
+CHECK_ID = "SAFE-14"
 TYPING_MODULES = ("typing", "typing_extensions")
 ANY_NAMES = frozenset(f"{module}.Any" for module in TYPING_MODULES)
 CAST_NAMES = frozenset(f"{module}.cast" for module in TYPING_MODULES)
@@ -126,12 +126,12 @@ def check_type_escapes(parsed: ParsedFile) -> list[Finding]:
     if scanner is None or parsed.path.endswith(DECLARATION_SUFFIXES):
         return []
     escapes = [*scanner(parsed), *suppressions(parsed)]
-    return [Finding(parsed.path, escape.line, RULE_ID, escape.severity, escape.message) for escape in escapes]
+    return [Finding(parsed.path, escape.line, CHECK_ID, escape.severity, escape.message) for escape in escapes]
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Never Escape the Type Checker",
+    check_id=CHECK_ID,
+    title="Type Checker Escapes",
     summary=(
         "Type checker escape hatches: Python Any in annotations and bare type: ignore or pyright: ignore "
         "(error), typing.cast (warning); TypeScript any, @ts-ignore, and @ts-nocheck (error), and non-null "

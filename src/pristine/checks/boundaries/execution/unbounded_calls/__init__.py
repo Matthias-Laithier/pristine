@@ -5,7 +5,7 @@ from pristine.reports.findings import Finding
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, line_of
 
-RULE_ID = "BS-3"
+CHECK_ID = "SAFE-3"
 SCANNERS = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {"python": scan_python}
 
 
@@ -16,7 +16,7 @@ def check_unbounded_calls(parsed: ParsedFile) -> list[Finding]:
         Finding(
             parsed.path,
             line_of(violation.node),
-            RULE_ID,
+            CHECK_ID,
             violation.call.severity,
             f"'{violation.callee}' runs without a timeout or deadline; {violation.call.fix}",
         )
@@ -25,8 +25,8 @@ def check_unbounded_calls(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Bound Every External Call",
+    check_id=CHECK_ID,
+    title="Missing External Deadlines",
     summary=(
         "Known external calls without a timeout: Python requests, subprocess, urlopen, socket, and smtplib; "
         "server-side JS/TS/JSX/TSX fetch without signal and axios without timeout."

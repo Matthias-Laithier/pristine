@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "TST-6"
+CHECK_ID = "TEST-3"
 
 
 @pytest.mark.parametrize(
@@ -23,4 +23,4 @@ def test_catch_and_loop_shadowing_is_lexically_scoped(run_pristine: RunPristine,
   {outer}
 }});"""
     _, report = run_pristine({"tests/lexical.test.ts": source})
-    assert rule_findings(report, RULE_ID) == ([(3, "warning"), (4, "warning")] if outer else [])
+    assert rule_findings(report, CHECK_ID) == ([(3, "warning"), (4, "warning")] if outer else [])

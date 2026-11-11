@@ -5,7 +5,7 @@ from pristine.checks.definitions import PathCheck
 from pristine.files.path_roles import VENDORED_DIRECTORIES, holds_test_material
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "CR-9"
+CHECK_ID = "STR-7"
 ASSET_SUFFIXES = frozenset(
     {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".ico"}
     | {".woff", ".woff2", ".ttf", ".otf", ".eot", ".mp3", ".wav", ".mp4", ".webm"}
@@ -63,12 +63,12 @@ def asset_finding(path: str, documented_folders: set[PurePosixPath]) -> Finding 
         return Finding(
             path,
             1,
-            RULE_ID,
+            CHECK_ID,
             Severity.ERROR,
             f"static asset sits outside an assets/ folder; {MOVE_HINT}, or out of the repository if it is generated",
         )
     if folders[-1] in ASSET_FOLDER_NAMES:
-        return Finding(path, 1, RULE_ID, Severity.WARNING, f"loose file at the root of assets/; {MOVE_HINT}")
+        return Finding(path, 1, CHECK_ID, Severity.WARNING, f"loose file at the root of assets/; {MOVE_HINT}")
     return None
 
 
@@ -84,8 +84,8 @@ def check_asset_location(paths: list[str]) -> list[Finding]:
 
 
 CHECK = PathCheck(
-    rule_id=RULE_ID,
-    title="Assets Live in an Organized assets Folder",
+    check_id=CHECK_ID,
+    title="Asset Placement",
     summary=(
         "Images, icons, fonts, audio, and video outside an assets/ folder, or loose at the root of assets/. "
         "Framework locations (public/, static/, Android res/, *.xcassets, Next.js app icons), documentation, "

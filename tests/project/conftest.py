@@ -26,9 +26,9 @@ def track_all(directory: Path) -> None:
         run_git(directory, *command)
 
 
-def rule_findings(report: JsonReport, rule_id: str) -> list[tuple[str, str, int]]:
+def rule_findings(report: JsonReport, check_id: str) -> list[tuple[str, str, int]]:
     return [
         (finding["severity"], finding["message"], finding["line"])
         for finding in report["findings"]
-        if finding["rule_id"] == rule_id
+        if finding["check_id"] == check_id
     ]

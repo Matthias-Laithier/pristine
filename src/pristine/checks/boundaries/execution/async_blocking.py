@@ -14,7 +14,7 @@ from pristine.syntax.nodes import NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, is_async, line_of
 from pristine.syntax.python_calls import EXTERNAL_CALLS, import_bindings, qualified_callee
 
-RULE_ID = "BS-13"
+CHECK_ID = "SAFE-7"
 BLOCKING_CALLS = frozenset(EXTERNAL_CALLS) | {"time.sleep", "psycopg2.connect"}
 OFFLOAD_CALLS = frozenset({"asyncio.to_thread", "anyio.to_thread.run_sync"})
 EXECUTOR_METHOD = ".run_in_executor"
@@ -62,7 +62,7 @@ def script_blocking_findings(parsed: ParsedFile) -> list[Finding]:
             message = (
                 f"'{callee_of(call)}' blocks the event loop inside an async function; await a Node fs/promises API"
             )
-            findings.append(Finding(parsed.path, line_of(call), RULE_ID, Severity.ERROR, message))
+            findings.append(Finding(parsed.path, line_of(call), CHECK_ID, Severity.ERROR, message))
     return findings
 
 
@@ -91,7 +91,7 @@ def async_function_findings(path: str, function: Node, bindings: dict[str, str])
             f"'{callee}' blocks the event loop inside async function '{name}'; "
             "await an async API, or offload the call with asyncio.to_thread"
         )
-        yield Finding(path, line_of(call), RULE_ID, Severity.ERROR, message)
+        yield Finding(path, line_of(call), CHECK_ID, Severity.ERROR, message)
 
 
 def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
@@ -106,8 +106,8 @@ def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Async Code Never Blocks the Event Loop",
+    check_id=CHECK_ID,
+    title="Blocking Async Calls",
     summary=(
         "Python blocking calls made directly in an async def: time.sleep, requests, urlopen, subprocess, "
         "smtplib, socket.create_connection, and psycopg2.connect. Calls offloaded to a thread are exempt."

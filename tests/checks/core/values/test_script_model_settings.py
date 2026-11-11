@@ -14,7 +14,7 @@ async function generate(settings) {
 }
 """
     _, report = run_pristine({f"services/model.{suffix}": source})
-    findings = rule_findings(report, "CR-18")
+    findings = rule_findings(report, "SAFE-13")
     assert len(findings) == 3
     assert findings == [(5, "warning")] * 3
 
@@ -27,7 +27,7 @@ def test_unknown_calls_only_match_model_identifiers(run_pristine: RunPristine) -
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert len(rule_findings(report, "CR-18")) == 2
+    assert len(rule_findings(report, "SAFE-13")) == 2
 
 
 def test_computed_models_and_test_inputs_are_exempt(run_pristine: RunPristine) -> None:
@@ -38,9 +38,9 @@ async function generate(settings) {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")
     _, report = run_pristine({"tests/model.test.ts": source.replace("`model-${settings.version}`", '"gpt-4o"')})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")
 
 
 def test_shorthand_model_constants_are_detected(run_pristine: RunPristine) -> None:
@@ -50,7 +50,7 @@ async function generate() {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert len(rule_findings(report, "CR-18")) == 1
+    assert len(rule_findings(report, "SAFE-13")) == 1
 
 
 def test_typed_sdk_parameters_identify_custom_models(run_pristine: RunPristine) -> None:
@@ -60,7 +60,7 @@ async function generate(client: ModelClient) {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert rule_findings(report, "CR-18") == [(3, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(3, "warning")]
 
 
 def test_unrelated_client_names_and_shadowed_constants_are_not_sdk_evidence(run_pristine: RunPristine) -> None:
@@ -73,7 +73,7 @@ function render(client, MODEL) {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")
 
 
 def test_type_only_sdk_injection_is_model_evidence(run_pristine: RunPristine) -> None:
@@ -83,7 +83,7 @@ function generate(client: OpenAI) {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert rule_findings(report, "CR-18") == [(3, "warning"), (3, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(3, "warning"), (3, "warning")]
 
 
 @pytest.mark.parametrize("suffix", ["ts", "js"])
@@ -93,7 +93,7 @@ function unrelated() { const MODEL = "invoice"; }
 function generate() { provider.create({model: MODEL}); }
 """
     _, report = run_pristine({f"services/model.{suffix}": source})
-    assert rule_findings(report, "CR-18") == [(3, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(3, "warning")]
 
 
 def test_block_constants_resolve_only_inside_their_scope(run_pristine: RunPristine) -> None:
@@ -106,7 +106,7 @@ function generate() {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert rule_findings(report, "CR-18") == [(4, "warning"), (5, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(4, "warning"), (5, "warning")]
 
 
 def test_clients_and_constructor_aliases_resolve_in_their_own_scope(run_pristine: RunPristine) -> None:
@@ -122,7 +122,7 @@ function generate() {
 function render(client) { client.create({model: "invoice"}); }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert rule_findings(report, "CR-18") == [(5, "warning"), (8, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(5, "warning"), (8, "warning")]
 
 
 @pytest.mark.parametrize("import_line", ['import type OpenAI from "openai";', 'import {type OpenAI} from "openai";'])
@@ -136,7 +136,7 @@ function generate(injected: OpenAI) {{
 }}
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert rule_findings(report, "CR-18") == [(5, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(5, "warning")]
 
 
 @pytest.mark.parametrize("parameter", ["MODEL", "{MODEL}", "[MODEL]", "...MODEL"])
@@ -146,7 +146,7 @@ def test_parameter_patterns_shadow_model_constants(run_pristine: RunPristine, pa
 function render({parameter}) {{ renderer.create({{model: MODEL}}); }}
 """
     _, report = run_pristine({f"services/model.{suffix}": source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")
 
 
 def test_type_names_do_not_leak_from_sibling_or_local_declarations(run_pristine: RunPristine) -> None:
@@ -161,7 +161,7 @@ function local() {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert rule_findings(report, "CR-18") == [(2, "warning")]
+    assert rule_findings(report, "SAFE-13") == [(2, "warning")]
 
 
 @pytest.mark.parametrize("suffix", ["ts", "js"])
@@ -177,7 +177,7 @@ function render() {
 }
 """
     _, report = run_pristine({f"services/model.{suffix}": source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")
 
 
 def test_var_loop_bindings_shadow_after_the_loop(run_pristine: RunPristine) -> None:
@@ -189,4 +189,4 @@ function render() {
 }
 """
     _, report = run_pristine({"services/model.ts": source})
-    assert not rule_findings(report, "CR-18")
+    assert not rule_findings(report, "SAFE-13")

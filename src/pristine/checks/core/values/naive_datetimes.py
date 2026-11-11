@@ -6,7 +6,7 @@ from pristine.syntax.calls import BoundedCall, calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import has_bound, import_bindings, qualified_callee
 
-RULE_ID = "CR-22"
+CHECK_ID = "SAFE-15"
 NOW_FIX = "use datetime.now(UTC)"
 TIMESTAMP_FIX = "use datetime.fromtimestamp(timestamp, UTC)"
 LOCAL_RESULT_USES = frozenset(
@@ -67,13 +67,13 @@ def check_naive_datetimes(parsed: ParsedFile) -> list[Finding]:
         call = NAIVE_CALLS.get(qualified)
         if call is not None and not has_bound(arguments, call) and not is_local_time_use(node, qualified):
             message = f"'{callee}()' creates a naive datetime for an instant; {call.fix}"
-            findings.append(Finding(parsed.path, line_of(node), RULE_ID, call.severity, message))
+            findings.append(Finding(parsed.path, line_of(node), CHECK_ID, call.severity, message))
     return findings
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Timezone-Aware Instants",
+    check_id=CHECK_ID,
+    title="Naive Datetimes",
     summary=(
         "Python naive datetimes for instants: datetime.utcnow, utcfromtimestamp, today, and now or "
         "fromtimestamp without a timezone. date.today is allowed. "

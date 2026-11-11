@@ -15,7 +15,7 @@ class Settings {
 }
 """
     _, report = run_pristine({f"settings.{suffix}": source})
-    assert rule_findings(report, "CO-13") == [(3, "error"), (5, "error"), (7, "error")]
+    assert rule_findings(report, "DEP-5") == [(3, "error"), (5, "error"), (7, "error")]
 
 
 def test_instance_initializers_and_function_defaults_are_deferred(run_pristine: RunPristine) -> None:
@@ -27,4 +27,4 @@ class Settings {
 }
 """
     _, report = run_pristine({"settings.ts": source})
-    assert not rule_findings(report, "CO-13")
+    assert not rule_findings(report, "DEP-5")

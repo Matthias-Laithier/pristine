@@ -13,8 +13,8 @@ from tests.conftest import run_cli
             "",
         ),
         (("guide",), "# Pristine guide\n", ""),
-        (("checks",), "BS-1 Centralize Settings Acquisition (check): ", ""),
-        (("checks", "--json"), '[\n  {\n    "rule_id": "BS-1",', ""),
+        (("checks",), "STR-1 File Size (check): ", ""),
+        (("checks", "--json"), '[\n  {\n    "check_id": "STR-1",', ""),
     ],
     ids=["version", "help", "guide", "checks", "checks-json"],
 )

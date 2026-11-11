@@ -1,4 +1,4 @@
-from pristine.project.automation import RULE_ID, is_configured, is_typescript
+from pristine.project.automation import CHECK_ID, is_configured, is_typescript
 from pristine.project.repository.loading import Project
 from pristine.project.repository.manifests import array, table
 from pristine.project.repository.tools import TOOLS_BY_NAME
@@ -91,7 +91,7 @@ def react_shortfall(project: Project, document: dict[str, object]) -> list[str]:
 
 
 def lint_finding(project: Project, path: str, message: str, severity: Severity, kind: FindingKind) -> Finding:
-    return Finding(project.shown(path), FIRST_LINE, RULE_ID, severity, message, kind)
+    return Finding(project.shown(path), FIRST_LINE, CHECK_ID, severity, message, kind)
 
 
 def eslint_shortfall(project: Project) -> list[Finding]:

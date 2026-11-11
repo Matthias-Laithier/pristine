@@ -18,7 +18,7 @@ def parser() -> argparse.ArgumentParser:
     commands = root.add_subparsers(dest="command", required=True)
     add_check_command(commands)
     project = commands.add_parser(
-        "project", help="check the repository tooling contract (TL-1 to TL-4)", description=PROJECT_DESCRIPTION
+        "project", help="check the repository tooling contract (PROJ-1 to PROJ-4)", description=PROJECT_DESCRIPTION
     )
     project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
     add_report_options(project)

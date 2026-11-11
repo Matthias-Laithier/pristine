@@ -9,7 +9,7 @@ from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, line_of
 
-RULE_ID = "BS-10"
+CHECK_ID = "SAFE-6"
 
 
 def scan_python(parsed: ParsedFile) -> Iterator[Injection]:
@@ -26,14 +26,14 @@ def check_injection(parsed: ParsedFile) -> list[Finding]:
     scanner = SCANNERS.get(parsed.language)
     injections = [] if scanner is None else scanner(parsed)
     return [
-        Finding(parsed.path, line_of(injection.node), RULE_ID, Severity.ERROR, injection.message)
+        Finding(parsed.path, line_of(injection.node), CHECK_ID, Severity.ERROR, injection.message)
         for injection in injections
     ]
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Safe Interpreter Boundaries",
+    check_id=CHECK_ID,
+    title="Injection Patterns",
     summary=(
         "Injection-prone construction: Python SQL built by formatting or concatenation, shell commands, eval, "
         "pickle, and unsafe yaml.load; JS/TS/JSX/TSX non-literal markup, child_process exec of built strings, "

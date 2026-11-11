@@ -8,7 +8,7 @@ from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
 
-RULE_ID = "CO-5"
+CHECK_ID = "DEP-2"
 PLAIN_BASES = frozenset({"object"})
 STATIC_DECORATOR = "staticmethod"
 CLASS_DECORATOR = "classmethod"
@@ -130,13 +130,13 @@ def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
             and is_used_as_namespace(parsed.root, node, name)
         ):
             message = MESSAGE.format(name=name)
-            findings.append(Finding(parsed.path, line_of(node), RULE_ID, Severity.WARNING, message))
+            findings.append(Finding(parsed.path, line_of(node), CHECK_ID, Severity.WARNING, message))
     return findings
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Functions Where Possible, Classes Where Needed",
+    check_id=CHECK_ID,
+    title="Stateless Classes",
     summary=(
         "Python module-level classes that only group static or class methods, with one public method or "
         "private helpers, no bases, decorators, attributes, or instances."

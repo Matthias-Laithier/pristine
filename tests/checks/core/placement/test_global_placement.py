@@ -61,7 +61,7 @@ def test_global_defined_below_first_definition(
     run_pristine: RunPristine, file_name: str, source: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({file_name: source})
-    assert rule_findings(report, "CR-6") == expected
+    assert rule_findings(report, "STR-5") == expected
 
 
 @pytest.mark.parametrize(
@@ -88,4 +88,4 @@ def test_only_module_references_connect_declarations(
 ) -> None:
     source = f"def send(invoice):\n    return invoice\n{declaration}HANDLERS = (send,)\n"
     _, report = run_pristine({"billing.py": source})
-    assert rule_findings(report, "CR-6") == expected
+    assert rule_findings(report, "STR-5") == expected

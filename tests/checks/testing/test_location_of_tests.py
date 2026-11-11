@@ -24,12 +24,12 @@ TEST_BODY = "def test_total():\n    assert True\n"
 )
 def test_test_file_location(run_pristine: RunPristine, path: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({path: TEST_BODY})
-    assert rule_findings(report, "TST-4") == expected
+    assert rule_findings(report, "TEST-2") == expected
 
 
 def test_jest_folder_inside_source_is_a_warning(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"frontend/src/components/__tests__/fixtures.ts": "export const total = 1;\n"})
-    assert rule_findings(report, "TST-4") == [(1, "warning")]
+    assert rule_findings(report, "TEST-2") == [(1, "warning")]
 
 
 @pytest.mark.parametrize(
@@ -42,4 +42,4 @@ def test_jest_folder_inside_source_is_a_warning(run_pristine: RunPristine) -> No
 )
 def test_conftest_location(run_pristine: RunPristine, files: dict[str, str], expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine(files)
-    assert rule_findings(report, "TST-4") == expected
+    assert rule_findings(report, "TEST-2") == expected

@@ -10,7 +10,7 @@ from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_tests import is_python_test_module
 
-RULE_ID = "TST-6"
+CHECK_ID = "TEST-3"
 SLEEP = "time.sleep"
 RANDOM_MODULE = "random"
 UNSEEDED_EXEMPT = frozenset(
@@ -126,7 +126,7 @@ def check_nondeterministic_tests(parsed: ParsedFile) -> list[Finding]:
         Finding(
             parsed.path,
             line_of(node),
-            RULE_ID,
+            CHECK_ID,
             Severity.WARNING,
             f"test reads the outside world through '{callee}()'; {fix_for(parsed, kind)}",
         )
@@ -135,7 +135,7 @@ def check_nondeterministic_tests(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="Nondeterministic Test Patterns",
     summary=(
         "Python test modules (test paths that define test functions or classes, and conftest.py) that sleep "

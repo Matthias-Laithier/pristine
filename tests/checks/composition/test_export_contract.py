@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CO-11"
+CHECK_ID = "DEP-4"
 REEXPORT = "from .delivery import send_invoice\n"
 DECLARED_REEXPORT = 'from .delivery import send_invoice\n\n__all__ = ["send_invoice"]\n'
 EXPLICIT_ALIAS_REEXPORT = "from .delivery import send_invoice as send_invoice\n"
@@ -40,24 +40,24 @@ def test_package_reexports_need_an_export_list(
     run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({"invoices/__init__.py": source})
-    assert rule_findings(report, RULE_ID) == expected
+    assert rule_findings(report, CHECK_ID) == expected
 
 
 def test_reexports_in_a_plain_module_or_a_test_package_are_allowed(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices/sending.py": REEXPORT, "tests/invoices/__init__.py": REEXPORT})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_export_list_names_must_be_defined_and_public(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices/billing.py": EXPORT_LIST})
-    assert rule_findings(report, RULE_ID) == [(14, "error"), (15, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(14, "error"), (15, "warning")]
 
 
 def test_star_import_makes_export_list_unverifiable(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices/billing.py": STAR_EXPORT_LIST})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_index_must_not_reexport_a_whole_internal_module(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices/index.ts": INDEX, "invoices/billing.js": INDEX})
-    assert rule_findings(report, RULE_ID) == [(1, "warning"), (2, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(1, "warning"), (2, "warning")]

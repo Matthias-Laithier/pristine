@@ -19,7 +19,7 @@ def test_exit_code_is_zero_with_warnings_only(run_pristine: RunPristine) -> None
     source = "def calculate_invoice():\n" + "    value = 1\n" * 30
     exit_code, report = run_pristine({"values.py": source})
     assert report["summary"]["warnings"] == 1
-    assert report["summary"]["by_rule"] == {"CR-12": 1}
+    assert report["summary"]["by_check"] == {"STR-2": 1}
     assert exit_code == 0
 
 
@@ -43,7 +43,7 @@ def test_text_output_names_rule_and_location(run_pristine: RunPristine, capsys: 
     run_pristine({"values.py": LONG_FILE})
     main(["check", "values.py"])
     output = capsys.readouterr().out
-    assert "values.py\n  1 error; fix CR-1\n  - file: CR-1 error: file has 201 lines" in output
+    assert "values.py\n  1 error; fix STR-1\n  - file: STR-1 error: file has 201 lines" in output
     assert "\nMechanical checks\nsummary: 1 error, 0 warnings\n" in output
     assert "\nfiles: 1 checked file, 0 unchecked files, 0 skipped files, 0 missing paths\n" in output
 
@@ -52,36 +52,36 @@ def test_summary_counts_findings_per_rule_by_count(
     run_pristine: RunPristine, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _, report = run_pristine({"values.py": COMMENTED_LONG_FILE})
-    assert list(report["summary"]["by_rule"].items()) == [("CR-3", 2), ("CR-1", 1)]
+    assert list(report["summary"]["by_check"].items()) == [("STR-4", 2), ("STR-1", 1)]
     main(["check", "values.py"])
-    assert "\nby rule: CR-3 2, CR-1 1\n" in capsys.readouterr().out
+    assert "\nby check: STR-4 2, STR-1 1\n" in capsys.readouterr().out
 
 
 def test_max_prints_the_first_findings_and_counts_the_rest(
     run_pristine: RunPristine, capsys: pytest.CaptureFixture[str]
 ) -> None:
     _, report = run_pristine({"values.py": COMMENTED_LONG_FILE}, "--max", "1")
-    assert [finding["rule_id"] for finding in report["findings"]] == ["CR-1"]
+    assert [finding["check_id"] for finding in report["findings"]] == ["STR-1"]
     assert (report["summary"]["omitted"], report["summary"]["errors"]) == (2, 3)
     main(["check", "values.py", "--max", "2"])
     lines = capsys.readouterr().out.splitlines()
-    assert "... 1 more finding omitted (CR-3 1); raise --max or remove --max to see them all" in lines
+    assert "... 1 more finding omitted (STR-4 1); raise --max or remove --max to see them all" in lines
     assert any(line.startswith("summary: 3 errors") for line in lines)
 
 
-def test_max_omission_line_names_the_omitted_rules() -> None:
+def test_max_omission_line_names_the_omitted_checks() -> None:
     report = Report(
         findings=[
-            Finding("values.py", 1, "CR-1", Severity.ERROR, "file has 201 lines"),
-            Finding("values.py", 202, "CR-3", Severity.ERROR, "comment"),
-            Finding("values.py", 203, "CR-3", Severity.ERROR, "another comment"),
+            Finding("values.py", 1, "STR-1", Severity.ERROR, "file has 201 lines"),
+            Finding("values.py", 202, "STR-4", Severity.ERROR, "comment"),
+            Finding("values.py", 203, "STR-4", Severity.ERROR, "another comment"),
         ],
         unchecked={},
         skipped={},
         checked_files=1,
         missing=(),
     )
-    assert ("... 2 more findings omitted (CR-3 2); raise --max or remove --max to see them all") in render_text(
+    assert ("... 2 more findings omitted (STR-4 2); raise --max or remove --max to see them all") in render_text(
         report, 1
     ).splitlines()
 

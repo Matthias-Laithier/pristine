@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CR-23"
+CHECK_ID = "STR-11"
 FLAGGED = {
     "built getattr": ("jobs.py", 'handler = getattr(handlers, f"on_{kind}")\n', "warning"),
     "concatenated import": (
@@ -25,10 +25,10 @@ KEPT = {
 @pytest.mark.parametrize(("name", "source", "severity"), FLAGGED.values(), ids=FLAGGED.keys())
 def test_unsearchable_names_are_flagged(run_pristine: RunPristine, name: str, source: str, severity: str) -> None:
     _, report = run_pristine({name: source})
-    assert [found_severity for _, found_severity in rule_findings(report, RULE_ID)] == [severity]
+    assert [found_severity for _, found_severity in rule_findings(report, CHECK_ID)] == [severity]
 
 
 @pytest.mark.parametrize(("name", "source"), KEPT.values(), ids=KEPT.keys())
 def test_searchable_names_pass(run_pristine: RunPristine, name: str, source: str) -> None:
     _, report = run_pristine({name: source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

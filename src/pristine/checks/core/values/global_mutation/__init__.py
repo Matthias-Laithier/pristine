@@ -9,7 +9,7 @@ from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
 
-RULE_ID = "CR-7"
+CHECK_ID = "SAFE-10"
 TEST_HOOKS = frozenset({"beforeEach", "beforeAll", "afterEach", "afterAll"})
 FIXTURE_MARKER = "fixture"
 LAZY_OPERATORS = frozenset({"??=", "||="})
@@ -64,7 +64,7 @@ def mutation_finding(path: str, mutation: Mutation) -> Finding:
     scope_name = function_name(enclosing_scopes(mutation.node)[0])
     hint = REGISTRY_HINT if is_registration(mutation) else FIX_HINT
     message = f"function '{scope_name}' {mutation.action} module-level '{mutation.name}'; {hint}"
-    return Finding(path, line_of(mutation.node), RULE_ID, Severity.ERROR, message)
+    return Finding(path, line_of(mutation.node), CHECK_ID, Severity.ERROR, message)
 
 
 def global_finding(path: str, statement: Node) -> Finding:
@@ -72,7 +72,7 @@ def global_finding(path: str, statement: Node) -> Finding:
     scope_name = f"function '{function_name(scopes[0])}'" if scopes else "module level code"
     names = ", ".join(node_text(name) or "" for name in statement.named_children)
     message = f"{scope_name} rebinds module-level '{names}' through 'global'; {FIX_HINT}"
-    return Finding(path, line_of(statement), RULE_ID, Severity.ERROR, message)
+    return Finding(path, line_of(statement), CHECK_ID, Severity.ERROR, message)
 
 
 def check_global_mutation(parsed: ParsedFile) -> list[Finding]:
@@ -92,8 +92,8 @@ def check_global_mutation(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Global Variables Are Config, Never Mutated",
+    check_id=CHECK_ID,
+    title="Global Mutation",
     summary=(
         "Module-level state written from functions: Python 'global' and in-place writes to module-level "
         "collections; JS/TS reassignment of top-level let/var and writes to top-level array, object, Map, "

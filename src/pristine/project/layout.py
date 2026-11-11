@@ -3,7 +3,7 @@ from pristine.project.repository.makefile import COMPLETE_GATE, FAST_GATE
 from pristine.project.repository.tools import Ecosystem
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "TL-1"
+CHECK_ID = "PROJ-1"
 ROOT = "."
 FIRST_LINE = 1
 CONTRACT_TARGETS = ("dev", FAST_GATE, COMPLETE_GATE)
@@ -15,7 +15,7 @@ def missing_makefile(project: Project) -> list[Finding]:
     if project.makefile_path is not None:
         return []
     message = "no Makefile at the repository root; add one with the dev, check, and check-all targets"
-    return [Finding(project.shown(ROOT), FIRST_LINE, RULE_ID, Severity.ERROR, message)]
+    return [Finding(project.shown(ROOT), FIRST_LINE, CHECK_ID, Severity.ERROR, message)]
 
 
 def missing_contract_targets(project: Project) -> list[Finding]:
@@ -23,7 +23,7 @@ def missing_contract_targets(project: Project) -> list[Finding]:
         return []
     path = project.shown(project.makefile.path)
     return [
-        Finding(path, FIRST_LINE, RULE_ID, Severity.ERROR, f"the Makefile has no '{target}' target")
+        Finding(path, FIRST_LINE, CHECK_ID, Severity.ERROR, f"the Makefile has no '{target}' target")
         for target in CONTRACT_TARGETS
         if target not in project.makefile.rules
     ]
@@ -46,7 +46,7 @@ def missing_build_target(project: Project) -> list[Finding]:
     if evidence is None:
         return []
     message = f"the project produces artifacts ({evidence}) but the Makefile has no '{BUILD_TARGET}' target"
-    return [Finding(project.shown(project.makefile.path), FIRST_LINE, RULE_ID, Severity.WARNING, message)]
+    return [Finding(project.shown(project.makefile.path), FIRST_LINE, CHECK_ID, Severity.WARNING, message)]
 
 
 def component_makefiles(project: Project) -> list[Finding]:
@@ -54,7 +54,7 @@ def component_makefiles(project: Project) -> list[Finding]:
     if not nested:
         return []
     message = f"component Makefiles found ({', '.join(nested)}); keep one Makefile at the repository root"
-    return [Finding(project.shown(project.makefile_path or ROOT), FIRST_LINE, RULE_ID, Severity.WARNING, message)]
+    return [Finding(project.shown(project.makefile_path or ROOT), FIRST_LINE, CHECK_ID, Severity.WARNING, message)]
 
 
 CHECKS = (missing_makefile, missing_contract_targets, missing_build_target, component_makefiles)

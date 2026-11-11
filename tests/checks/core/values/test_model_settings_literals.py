@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CR-18"
+CHECK_ID = "SAFE-13"
 HARDCODED_SETTINGS = """from mistralai import Mistral
 
 SUMMARY_MODEL = "mistral-small-latest"
@@ -84,17 +84,17 @@ LITERAL_MODEL_CALL = """def summarize_ticket(client, ticket):
 def test_literal_models_and_sampling_settings_are_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"support.py": HARDCODED_SETTINGS})
     expected = [(8, "warning"), (10, "warning"), (11, "warning"), (16, "warning"), (20, "warning"), (24, "warning")]
-    assert rule_findings(report, RULE_ID) == expected
+    assert rule_findings(report, CHECK_ID) == expected
 
 
 def test_configured_neutral_and_unrelated_values_are_not_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"support.py": CONFIGURED_SETTINGS})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_any_literal_on_a_model_sdk_client_is_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"support.py": SDK_CLIENT_CALLS})
-    assert rule_findings(report, RULE_ID) == [(10, "warning"), (14, "warning"), (19, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(10, "warning"), (14, "warning"), (19, "warning")]
 
 
 @pytest.mark.parametrize(
@@ -106,7 +106,7 @@ def test_any_literal_on_a_model_sdk_client_is_reported(run_pristine: RunPristine
 )
 def test_tests_and_shebang_scripts_are_exempt(run_pristine: RunPristine, path: str, source: str) -> None:
     _, report = run_pristine({path: source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 @pytest.mark.parametrize(
@@ -114,4 +114,4 @@ def test_tests_and_shebang_scripts_are_exempt(run_pristine: RunPristine, path: s
 )
 def test_literal_model_is_reported_whatever_the_folder(run_pristine: RunPristine, path: str) -> None:
     _, report = run_pristine({path: LITERAL_MODEL_CALL})
-    assert rule_findings(report, RULE_ID) == [(2, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(2, "warning")]

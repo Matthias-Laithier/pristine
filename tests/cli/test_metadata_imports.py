@@ -24,5 +24,5 @@ print(json.dumps({"exit_code": exit_code, "native_imports": native_imports}), fi
 """
     exit_code, stdout, stderr = run_python(observer)
     assert exit_code == 0
-    assert stdout.startswith('[\n  {\n    "rule_id": "BS-1",')
+    assert stdout.startswith('[\n  {\n    "check_id": "STR-1",')
     assert json.loads(stderr) == {"exit_code": 0, "native_imports": []}

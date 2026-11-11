@@ -15,7 +15,7 @@ OUTCOME_KINDS: dict[type[ReasonOutcome], str] = {
     Unsupported: "unsupported",
     Skipped: "skipped",
 }
-FINDING_TEXT_FIELDS = ("path", "rule_id", "message")
+FINDING_TEXT_FIELDS = ("path", "check_id", "message")
 SEVERITIES = frozenset(Severity)
 
 
@@ -39,15 +39,15 @@ def outcome_record(outcome: Outcome) -> dict[str, object]:
 def decoded_finding(entry: object) -> Finding:
     if not isinstance(entry, dict):
         raise MalformedOutcomeLine("a finding is not an object")
-    path, rule_id, message = (entry.get(field) for field in FINDING_TEXT_FIELDS)
+    path, check_id, message = (entry.get(field) for field in FINDING_TEXT_FIELDS)
     line, severity = entry.get("line"), entry.get("severity")
     kind = entry.get("kind", FindingKind.CODE)
-    has_texts = isinstance(path, str) and isinstance(rule_id, str) and isinstance(message, str)
+    has_texts = isinstance(path, str) and isinstance(check_id, str) and isinstance(message, str)
     has_line = isinstance(line, int) and not isinstance(line, bool)
     has_severity = isinstance(severity, str) and severity in SEVERITIES
     if not has_texts or not has_line or not has_severity or kind not in FindingKind:
-        raise MalformedOutcomeLine("a finding lacks a path, line, rule, severity, message, or kind")
-    return Finding(path, line, rule_id, Severity(severity), message, FindingKind(kind))
+        raise MalformedOutcomeLine("a finding lacks a path, line, check ID, severity, message, or kind")
+    return Finding(path, line, check_id, Severity(severity), message, FindingKind(kind))
 
 
 def decoded_body(document: dict[str, object]) -> Outcome:

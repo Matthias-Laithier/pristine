@@ -20,7 +20,7 @@ from tests.conftest import RunPristine, rule_findings
 )
 def test_script_catch_blocks(run_pristine: RunPristine, body: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({"load.ts": f"try {{ read(path); }} catch (error) {body}\n"})
-    assert rule_findings(report, "BS-4") == expected
+    assert rule_findings(report, "SAFE-4") == expected
 
 
 @pytest.mark.parametrize(
@@ -37,4 +37,4 @@ def test_script_logged_defaults_resolve_console_and_constants(
 ) -> None:
     body = "try { read(path); } catch (error) { console.warn(error); return defaultConfig; }\n"
     _, report = run_pristine({"load.ts": head + body})
-    assert rule_findings(report, "BS-4") == expected
+    assert rule_findings(report, "SAFE-4") == expected

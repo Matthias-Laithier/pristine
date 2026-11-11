@@ -8,7 +8,7 @@ from pristine.syntax.nodes import COMMENT_KINDS
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_strings import built_string
 
-RULE_ID = "BS-15"
+CHECK_ID = "SAFE-9"
 LOGGER = re.compile(r"(.+\.)?_?(logger|log|LOGGER|LOG)|logging")
 LOG_METHODS = frozenset({"debug", "info", "warning", "warn", "error", "exception", "critical", "log"})
 SCRIPT_LOGGER = re.compile(r"console|(.+\.)?_?(logger|log|LOGGER|LOG)")
@@ -75,7 +75,7 @@ def check_interpolated_logs(parsed: ParsedFile) -> list[Finding]:
         Finding(
             parsed.path,
             line_of(node),
-            RULE_ID,
+            CHECK_ID,
             Severity.WARNING,
             f"log message is built with {builder}; log a constant message and pass the values as arguments "
             "or structured fields, keeping personal data out",
@@ -86,7 +86,7 @@ def check_interpolated_logs(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="Constant Log Messages",
     summary=(
         "Python logging calls whose message is built by an f-string, %-formatting, str.format, or string "

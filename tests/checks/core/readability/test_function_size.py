@@ -21,13 +21,13 @@ def test_function_size_limits_ignore_blank_lines(
     run_pristine: RunPristine, line_count: int, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({"compute.py": python_function(line_count)})
-    assert rule_findings(report, "CR-12") == expected
+    assert rule_findings(report, "STR-2") == expected
 
 
 def test_typescript_methods_are_measured(run_pristine: RunPristine) -> None:
     body = "".join(f"    const total{index} = {index};\n" for index in range(50))
     _, report = run_pristine({"invoice.ts": f"class Invoice {{\n  total() {{\n{body}  }}\n}}\n"})
-    assert rule_findings(report, "CR-12") == [(2, "error")]
+    assert rule_findings(report, "STR-2") == [(2, "error")]
 
 
 @pytest.mark.parametrize(
@@ -50,4 +50,4 @@ def test_only_exhaustive_single_clause_match_is_exempt(
     run_pristine: RunPristine, pattern: str, clause: str, prefix: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({"label.py": python_match(pattern, clause, prefix)})
-    assert rule_findings(report, "CR-12") == expected
+    assert rule_findings(report, "STR-2") == expected

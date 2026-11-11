@@ -42,7 +42,7 @@ WARNING = [(1, "warning")]
 )
 def test_if_else_if_chains(run_pristine: RunPristine, name: str, source: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({name: source})
-    assert rule_findings(report, "CR-14") == expected
+    assert rule_findings(report, "STR-8") == expected
 
 
 @pytest.mark.parametrize(
@@ -56,4 +56,4 @@ def test_if_else_if_chains(run_pristine: RunPristine, name: str, source: str, ex
 )
 def test_switch_and_match(run_pristine: RunPristine, name: str, source: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({name: source})
-    assert rule_findings(report, "CR-14") == expected
+    assert rule_findings(report, "STR-8") == expected

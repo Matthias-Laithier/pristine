@@ -17,7 +17,7 @@ def test_deployable_application_without_committed_lockfile(run_project: RunProje
     )
     track_all(tmp_path)
     _, report = run_project({"package.json": '{"engines": {"node": "22"}}', "pnpm-lock.yaml": ""})
-    assert rule_findings(report, "TL-4") == [
+    assert rule_findings(report, "PROJ-4") == [
         (
             "warning",
             (
@@ -43,7 +43,7 @@ def test_lockfile_verification_needs_git_only_when_a_lockfile_is_required(
     assert [
         finding.get("kind", "code")
         for finding in report["findings"]
-        if finding["rule_id"] == "TL-4" and finding["message"].startswith("cannot verify")
+        if finding["check_id"] == "PROJ-4" and finding["message"].startswith("cannot verify")
     ] == ["verification"]
 
     (tmp_path / "package.json").unlink()
@@ -51,4 +51,4 @@ def test_lockfile_verification_needs_git_only_when_a_lockfile_is_required(
     assert exit_code == 0
     assert report["verification_status"] == "complete"
     assert report["summary"]["verification_failures"] == 0
-    assert rule_findings(report, "TL-4") == []
+    assert rule_findings(report, "PROJ-4") == []

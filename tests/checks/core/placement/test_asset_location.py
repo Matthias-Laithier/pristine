@@ -25,9 +25,9 @@ IMAGE_BYTES = "PNG"
 )
 def test_asset_location(run_pristine: RunPristine, path: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({path: IMAGE_BYTES})
-    assert rule_findings(report, "CR-9") == expected
+    assert rule_findings(report, "STR-7") == expected
 
 
 def test_image_beside_markdown_is_documentation(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing/README.md": "# Billing\n", "billing/invoice_flow.png": IMAGE_BYTES})
-    assert rule_findings(report, "CR-9") == []
+    assert rule_findings(report, "STR-7") == []

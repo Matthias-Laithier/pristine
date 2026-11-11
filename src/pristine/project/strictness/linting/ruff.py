@@ -1,7 +1,7 @@
 import posixpath
 import tomllib
 
-from pristine.project.automation import RULE_ID, is_configured
+from pristine.project.automation import CHECK_ID, is_configured
 from pristine.project.repository.loading import Project
 from pristine.project.repository.manifests import array, table
 from pristine.project.repository.tools import TOOLS_BY_NAME
@@ -122,7 +122,7 @@ def ruff_shortfall(project: Project) -> list[Finding]:
             Finding(
                 project.shown(error.path),
                 FIRST_LINE,
-                RULE_ID,
+                CHECK_ID,
                 Severity.WARNING,
                 f"cannot verify that the Ruff rule sets are configured: {error.reason}",
                 FindingKind.VERIFICATION,
@@ -134,7 +134,7 @@ def ruff_shortfall(project: Project) -> list[Finding]:
         Finding(
             project.shown(config_path(project)),
             FIRST_LINE,
-            RULE_ID,
+            CHECK_ID,
             Severity.ERROR,
             f"Ruff does not enable the required rule sets ({', '.join(missing)}); {RUFF_FIX}",
         )

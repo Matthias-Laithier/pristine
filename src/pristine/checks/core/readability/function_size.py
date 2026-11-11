@@ -4,7 +4,7 @@ from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Limit
 from pristine.syntax.parsing import FunctionSpan, ParsedFile, line_of, node_text
 
-RULE_ID = "CR-12"
+CHECK_ID = "STR-2"
 FUNCTION_LINE_LIMIT = Limit(target=30, hard=50)
 SINGLE_CLAUSE_KINDS = frozenset({"return_statement", "raise_statement", "expression_statement", "pass_statement"})
 
@@ -64,12 +64,12 @@ def check_function_size(parsed: ParsedFile) -> list[Finding]:
             f"function '{function.name}' has {line_count} non-blank lines "
             f"({FUNCTION_LINE_LIMIT.describe()}); extract named helpers along real jobs"
         )
-        findings.append(Finding(parsed.path, function.start_line, RULE_ID, severity, message))
+        findings.append(Finding(parsed.path, function.start_line, CHECK_ID, severity, message))
     return findings
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="Function Size",
     summary=(
         f"Function and method length, blank lines excluded ({FUNCTION_LINE_LIMIT.describe()}); "

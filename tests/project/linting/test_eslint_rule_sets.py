@@ -73,7 +73,7 @@ def test_eslint_flat_config_is_explicitly_unverifiable(run_project: RunProject) 
         "eslint.config.json": "",
     }
     _, report = run_project(files)
-    finding = next(finding for finding in report["findings"] if finding["rule_id"] == "TL-3")
+    finding = next(finding for finding in report["findings"] if finding["check_id"] == "PROJ-3")
     assert finding["kind"] == "verification"
     assert finding["message"] == (
         "cannot verify that the ESLint rule sets are configured: eslint.config.json uses a configuration mode "

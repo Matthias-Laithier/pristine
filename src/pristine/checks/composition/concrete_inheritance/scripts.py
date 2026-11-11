@@ -13,10 +13,10 @@ from pristine.checks.composition.concrete_inheritance.classes import (
     statements,
 )
 from pristine.checks.composition.concrete_inheritance.python import (
+    CHECK_ID,
     EXTENSION_NAME,
     MESSAGE,
     MIN_BEHAVIOR_STATEMENTS,
-    RULE_ID,
 )
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -77,5 +77,5 @@ def check_concrete_inheritance(parsed: ParsedFile) -> list[Finding]:
         method = next((key for key in overridden if len(statements(inherited[key])) >= MIN_BEHAVIOR_STATEMENTS), None)
         if method is not None:
             message = MESSAGE.format(name=name, base=base, method=method)
-            findings.append(Finding(parsed.path, line_of(node), RULE_ID, Severity.WARNING, message))
+            findings.append(Finding(parsed.path, line_of(node), CHECK_ID, Severity.WARNING, message))
     return findings

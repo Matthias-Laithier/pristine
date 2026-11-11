@@ -43,7 +43,7 @@ def candidate(path: str, function: Node) -> Finding | None:
         return None
     digest = hashlib.sha256(json.dumps(shape(body), ensure_ascii=False).encode()).hexdigest()
     payload = json.dumps({"name": function_name(function), "shape": digest})
-    return Finding(path, line_of(function), "CR-5", Severity.WARNING, payload)
+    return Finding(path, line_of(function), "STR-10", Severity.WARNING, payload)
 
 
 def inspect(path: str) -> Outcome:

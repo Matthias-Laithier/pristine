@@ -16,7 +16,7 @@ class FindingKind(StrEnum):
 class Finding:
     path: str
     line: int
-    rule_id: str
+    check_id: str
     severity: Severity
     message: str
     kind: FindingKind = FindingKind.CODE
@@ -26,7 +26,7 @@ def finding_record(finding: Finding) -> dict[str, object]:
     record: dict[str, object] = {
         "path": finding.path,
         "line": finding.line,
-        "rule_id": finding.rule_id,
+        "check_id": finding.check_id,
         "severity": finding.severity,
         "message": finding.message,
     }

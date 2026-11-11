@@ -9,7 +9,7 @@ from pristine.project.repository.makefile_syntax import Rule
 from pristine.project.repository.tools import Ecosystem
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "TL-4"
+CHECK_ID = "PROJ-4"
 NPM_LOCKFILES = ("package-lock.json", "npm-shrinkwrap.json")
 UV_FROZEN_VARIABLES = ("UV_FROZEN", "UV_LOCKED")
 GLOBAL_OPTIONS = ("-g", "--global")
@@ -90,7 +90,7 @@ def rule_findings(project: Project, makefile: Makefile, rule: Rule) -> list[Find
         f"'{installer.unfrozen_form}' can rewrite the lockfile; install in frozen mode with '{installer.frozen_form}'"
         for installer in installers
     )
-    return [Finding(project.shown(rule.path), rule.line, RULE_ID, Severity.ERROR, message) for message in messages]
+    return [Finding(project.shown(rule.path), rule.line, CHECK_ID, Severity.ERROR, message) for message in messages]
 
 
 def unfrozen_installs(project: Project) -> list[Finding]:

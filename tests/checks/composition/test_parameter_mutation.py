@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CO-12"
+CHECK_ID = "SAFE-11"
 FLAGGED = {
     "item write": "def mark_paid(order, paid_at):\n    order['paid_at'] = paid_at\n",
     "augmented item": "def apply_discount(order, cents):\n    order['total'] -= cents\n",
@@ -31,21 +31,21 @@ KEPT = {
 @pytest.mark.parametrize("source", FLAGGED.values(), ids=FLAGGED.keys())
 def test_parameter_mutation_is_a_warning(run_pristine: RunPristine, source: str) -> None:
     _, report = run_pristine({"orders.py": source})
-    assert rule_findings(report, RULE_ID) == [(2, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(2, "warning")]
 
 
 @pytest.mark.parametrize("source", KEPT.values(), ids=KEPT.keys())
 def test_mutation_with_an_owner_is_kept(run_pristine: RunPristine, source: str) -> None:
     _, report = run_pristine({"orders.py": source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_each_mutated_parameter_is_reported_once(run_pristine: RunPristine) -> None:
     source = "def merge(target, issues: list):\n    target['a'] = 1\n    target['b'] = 2\n    issues.append(3)\n"
     _, report = run_pristine({"orders.py": source})
-    assert rule_findings(report, RULE_ID) == [(2, "warning"), (4, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(2, "warning"), (4, "warning")]
 
 
 def test_test_files_are_kept(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/helpers.py": "def mark(order):\n    order['paid'] = True\n"})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

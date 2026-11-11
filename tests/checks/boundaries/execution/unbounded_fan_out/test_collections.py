@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-14"
+CHECK_ID = "SAFE-8"
 UNBOUNDED_FAN_OUTS = """import asyncio
 
 from archive import list_documents
@@ -122,12 +122,12 @@ async def fetch_invoices(client):
 
 def test_fan_outs_over_external_loads_are_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": UNBOUNDED_FAN_OUTS})
-    assert rule_findings(report, RULE_ID) == UNBOUNDED_LINES
+    assert rule_findings(report, CHECK_ID) == UNBOUNDED_LINES
 
 
 def test_collections_that_are_not_external_loads_are_not_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": BOUNDED_FAN_OUTS})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 @pytest.mark.parametrize(
@@ -136,9 +136,9 @@ def test_collections_that_are_not_external_loads_are_not_reported(run_pristine: 
 )
 def test_tests_and_durable_workflows_are_exempt(run_pristine: RunPristine, path: str, source: str) -> None:
     _, report = run_pristine({path: source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_fan_out_in_an_application_module_is_reported(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.py": FAN_OUT})
-    assert rule_findings(report, RULE_ID) == [(6, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(6, "warning")]

@@ -6,7 +6,7 @@ import pytest
 from pristine.cli.main import main
 from tests.conftest import JsonReport, RunPristine, parsed_report, run_git
 
-RULE_ID = "CR-5"
+CHECK_ID = "STR-10"
 SETTLE_BODY = """    total = 0
     for line in order.lines:
         if line.refunded:
@@ -34,7 +34,7 @@ def reported_clones(report: JsonReport) -> list[tuple[str, int, str]]:
     return [
         (finding["path"], finding["line"], finding["message"].split(";")[0])
         for finding in report["findings"]
-        if finding["rule_id"] == RULE_ID and finding["severity"] == "warning"
+        if finding["check_id"] == CHECK_ID and finding["severity"] == "warning"
     ]
 
 

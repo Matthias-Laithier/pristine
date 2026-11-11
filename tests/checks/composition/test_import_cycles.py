@@ -13,7 +13,7 @@ def reported_cycles(report: JsonReport) -> list[tuple[str, int, str]]:
     return [
         (finding["path"], finding["line"], finding["message"].removeprefix("import cycle ").split(";")[0])
         for finding in report["findings"]
-        if finding["rule_id"] == "CO-8" and finding["severity"] == "error"
+        if finding["check_id"] == "DEP-3" and finding["severity"] == "error"
     ]
 
 

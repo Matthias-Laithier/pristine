@@ -12,7 +12,7 @@ def test_file_size_limits(
 ) -> None:
     source = "".join(f"value_{index} = {index}\n" for index in range(line_count))
     exit_code, report = run_pristine({"values.py": source})
-    assert rule_findings(report, "CR-1") == expected
+    assert rule_findings(report, "STR-1") == expected
     assert exit_code == expected_exit
     assert report["summary"]["warnings"] == 0
     assert report["summary"]["checked_files"] == 1
@@ -30,6 +30,6 @@ def test_file_size_counts_blank_lines_and_the_unterminated_last_line(
 ) -> None:
     source = "\n" * (line_count - 1) + "value = 1" + ending
     _, report = run_pristine({"values.py": source})
-    assert rule_findings(report, "CR-1") == expected
+    assert rule_findings(report, "STR-1") == expected
     assert report["summary"]["checked_files"] == 1
     assert report["verification_status"] == "complete"

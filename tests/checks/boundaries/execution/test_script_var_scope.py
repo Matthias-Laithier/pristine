@@ -9,4 +9,4 @@ async function load() {
 }
 """
     _, report = run_pristine({"services/files.ts": source})
-    assert not rule_findings(report, "BS-13")
+    assert not rule_findings(report, "SAFE-7")

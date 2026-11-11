@@ -9,7 +9,7 @@ from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 
-RULE_ID = "CR-23"
+CHECK_ID = "STR-11"
 PYTHON = "python"
 LOOKUP_NAME_POSITIONS = {
     "getattr": 1,
@@ -22,7 +22,7 @@ LOOKUP_NAME_POSITIONS = {
 }
 BUILT_STRING_KINDS = frozenset({"binary_operator", "binary_expression", "template_string"})
 ENTRY_POINT_STEMS = frozenset({"index", "__init__"})
-LOOKUP_FIX = "name the target literally, or map each value to its target in a dict literal (CR-14)"
+LOOKUP_FIX = "name the target literally, or map each value to its target in a dict literal (STR-8)"
 WILDCARD_FIX = "import each name you use from the module that defines it"
 DATA_MODULE_SUFFIX = ".json"
 REEXPORT_FIX = "import from the defining module; only a package entry point such as index.ts re-exports"
@@ -55,13 +55,13 @@ def dynamic_lookups(parsed: ParsedFile, call_kind: str) -> Iterator[Finding]:
         if loads_data(callee, arguments[position]):
             continue
         message = f"'{callee}' looks up a name built at runtime, which no search can find; {LOOKUP_FIX}"
-        yield Finding(parsed.path, line_of(node), RULE_ID, Severity.WARNING, message)
+        yield Finding(parsed.path, line_of(node), CHECK_ID, Severity.WARNING, message)
 
 
 def python_wildcards(parsed: ParsedFile) -> Iterator[Finding]:
     for node in all_nodes(parsed):
         if node.type == "wildcard_import":
-            yield Finding(parsed.path, line_of(node), RULE_ID, Severity.ERROR, f"wildcard import; {WILDCARD_FIX}")
+            yield Finding(parsed.path, line_of(node), CHECK_ID, Severity.ERROR, f"wildcard import; {WILDCARD_FIX}")
 
 
 def script_reexports(parsed: ParsedFile) -> Iterator[Finding]:
@@ -69,7 +69,7 @@ def script_reexports(parsed: ParsedFile) -> Iterator[Finding]:
         return
     for node in parsed.root.named_children:
         if node.type == "export_statement" and node.child_by_field_name("source") is not None:
-            yield Finding(parsed.path, line_of(node), RULE_ID, Severity.WARNING, f"re-export; {REEXPORT_FIX}")
+            yield Finding(parsed.path, line_of(node), CHECK_ID, Severity.WARNING, f"re-export; {REEXPORT_FIX}")
 
 
 def check_greppable_names(parsed: ParsedFile) -> list[Finding]:
@@ -81,8 +81,8 @@ def check_greppable_names(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Code Is Greppable",
+    check_id=CHECK_ID,
+    title="Dynamic Names and Wildcard Imports",
     summary=(
         "Python and TypeScript: attribute and module lookups by a name built from a string template "
         "or concatenation, wildcard imports, and TypeScript re-exports outside a "

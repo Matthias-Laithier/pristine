@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterator
 
-from pristine.checks.boundaries.execution.swallowed_failures.handlers import RULE_ID
+from pristine.checks.boundaries.execution.swallowed_failures.handlers import CHECK_ID
 from pristine.checks.boundaries.execution.swallowed_failures.python import python_swallows
 from pristine.checks.boundaries.execution.swallowed_failures.scripts import script_swallows
 from pristine.checks.definitions import FileCheck
@@ -21,8 +21,8 @@ def check_swallowed_failures(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Do Not Swallow Failures",
+    check_id=CHECK_ID,
+    title="Swallowed Failures",
     summary=("Handlers that hide a failure: silent Python excepts and empty or empty-returning JS/TS/JSX/TSX catches."),
     run=check_swallowed_failures,
 )

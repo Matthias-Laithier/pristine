@@ -2,7 +2,7 @@ from pristine.project.repository.loading import Project
 from pristine.reports.findings import Finding, FindingKind, Severity
 from pristine.services.git import tracked_files
 
-RULE_ID = "TL-4"
+CHECK_ID = "PROJ-4"
 FIRST_LINE = 1
 LOCKFILES = {
     "pyproject.toml": ("uv.lock", "poetry.lock", "pdm.lock", "pylock.toml"),
@@ -22,7 +22,7 @@ def missing_lockfile(project: Project, manifest: str, container_file: str) -> Fi
         f"deployable application (container build file {container_file}) has no committed lockfile for {manifest}; "
         f"commit one of {', '.join(LOCKFILES[manifest])}"
     )
-    return Finding(project.shown(manifest), FIRST_LINE, RULE_ID, Severity.WARNING, message)
+    return Finding(project.shown(manifest), FIRST_LINE, CHECK_ID, Severity.WARNING, message)
 
 
 def uncommitted_lockfiles(project: Project) -> list[Finding]:
@@ -38,7 +38,7 @@ def uncommitted_lockfiles(project: Project) -> list[Finding]:
             Finding(
                 project.shown(manifests[0]),
                 FIRST_LINE,
-                RULE_ID,
+                CHECK_ID,
                 Severity.WARNING,
                 message,
                 FindingKind.VERIFICATION,

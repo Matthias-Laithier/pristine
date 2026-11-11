@@ -39,7 +39,7 @@ def test_wrapper_flags_precede_the_child_program(run_project: RunProject) -> Non
 
 def test_formatter_must_run_in_check_mode(run_project: RunProject) -> None:
     _, report = run_project({"pyproject.toml": PYPROJECT, "Makefile": PYTHON_MAKEFILE.format(format_mode="")})
-    assert rule_findings(report, "TL-3") == [
+    assert rule_findings(report, "PROJ-3") == [
         (
             "error",
             (
@@ -53,7 +53,7 @@ def test_formatter_must_run_in_check_mode(run_project: RunProject) -> None:
 
 def test_python_project_without_tools(run_project: RunProject) -> None:
     _, report = run_project({"pyproject.toml": '[project]\nname = "app"\n'})
-    assert [message.split(";")[0] for _, message, _ in rule_findings(report, "TL-3")] == [
+    assert [message.split(";")[0] for _, message, _ in rule_findings(report, "PROJ-3")] == [
         "no Python formatter configured",
         "no Python linter configured",
         "no Python type checker configured",
@@ -77,14 +77,14 @@ def test_typescript_needs_a_type_checker_run(run_project: RunProject) -> None:
         "Makefile": JAVASCRIPT_MAKEFILE.replace("\tpnpm typecheck\n", ""),
     }
     _, report = run_project(files)
-    assert [message for _, message, _ in rule_findings(report, "TL-3")] == [
+    assert [message for _, message, _ in rule_findings(report, "PROJ-3")] == [
         "make check does not run the type checker (configured: tsc)"
     ]
 
 
 def test_invalid_manifest_is_listed_as_unchecked(run_project: RunProject) -> None:
     _, report = run_project({"Makefile": JAVASCRIPT_MAKEFILE, "package.json": "{"})
-    assert rule_findings(report, "TL-3") == []
+    assert rule_findings(report, "PROJ-3") == []
     assert [entry["reason"].split(":")[0] for entry in report["unchecked"]] == ["invalid package.json"]
 
 
@@ -92,7 +92,7 @@ def test_configured_architecture_contract_must_run_in_make_check(run_project: Ru
     pyproject = PYPROJECT + '\n[tool.importlinter]\nroot_package = "app"\n'
     makefile = PYTHON_MAKEFILE.format(format_mode="--check")
     _, report = run_project({"pyproject.toml": pyproject, "Makefile": makefile})
-    assert rule_findings(report, "TL-3") == [
+    assert rule_findings(report, "PROJ-3") == [
         ("error", "make check does not run the architecture contract checker (configured: lint-imports)", 4)
     ]
     makefile = makefile.replace("check-all: check\n", "\t$(RUN) lint-imports\ncheck-all: check\n")

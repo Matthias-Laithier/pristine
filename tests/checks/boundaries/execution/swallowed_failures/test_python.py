@@ -78,7 +78,7 @@ def python_except(caught: str, body: str, tail: str = "", head: str = "") -> str
 )
 def test_python_except_clauses(run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({"load.py": source})
-    assert rule_findings(report, "BS-4") == expected
+    assert rule_findings(report, "SAFE-4") == expected
 
 
 def test_python_narrow_pass_falls_back_after_a_return(run_pristine: RunPristine) -> None:
@@ -86,4 +86,4 @@ def test_python_narrow_pass_falls_back_after_a_return(run_pristine: RunPristine)
         "def port(text):\n    try:\n        return int(text)\n    except ValueError:\n        pass\n    return 80\n"
     )
     _, report = run_pristine({"port.py": source})
-    assert rule_findings(report, "BS-4") == []
+    assert rule_findings(report, "SAFE-4") == []

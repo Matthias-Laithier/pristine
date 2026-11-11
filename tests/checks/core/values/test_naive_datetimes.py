@@ -1,6 +1,6 @@
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CR-22"
+CHECK_ID = "SAFE-15"
 SOURCE = """import datetime as dt
 from datetime import UTC, date, datetime
 
@@ -39,9 +39,9 @@ def record_order(order):
 
 def test_naive_datetimes_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"clock.py": SOURCE})
-    assert rule_findings(report, RULE_ID) == [(line, "error") for line in [*range(4, 11), 21, 22, 31]]
+    assert rule_findings(report, CHECK_ID) == [(line, "error") for line in [*range(4, 11), 21, 22, 31]]
 
 
 def test_unimported_datetime_is_not_resolved(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"clock.py": "datetime.now()\npendulum.now()\n"})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

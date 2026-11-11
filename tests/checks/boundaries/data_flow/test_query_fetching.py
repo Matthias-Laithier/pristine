@@ -23,4 +23,4 @@ def test_fetch_all_queries_require_bound_values(
         "    )\n"
     )
     _, report = run_pristine({"invoices.py": source})
-    assert rule_findings(report, "BS-10") == expected
+    assert rule_findings(report, "SAFE-6") == expected

@@ -6,7 +6,7 @@ from pristine.files.path_roles import is_test_path, is_vendored
 from pristine.reports.findings import Finding, Severity
 from pristine.services.git import edited_since_default_branch, repository_root
 
-RULE_ID = "CO-14"
+CHECK_ID = "SAFE-12"
 MIGRATIONS_FOLDER = "migrations"
 ALEMBIC_FOLDERS = (("alembic", "versions"), ("migrations", "versions"))
 PYTHON_PACKAGE_MARKER = "__init__.py"
@@ -53,14 +53,14 @@ def check_edited_migrations(paths: list[str]) -> list[Finding]:
     roots = {folder: repository_root(folder) for folder in {location.parent for location in migrations.values()}}
     edited = {root: edited_since_default_branch(root) for root in set(roots.values()) if root is not None}
     return [
-        Finding(path, 1, RULE_ID, Severity.ERROR, MESSAGE)
+        Finding(path, 1, CHECK_ID, Severity.ERROR, MESSAGE)
         for path, location in migrations.items()
         if edited_in_repository(location, roots[location.parent], edited)
     ]
 
 
 CHECK = PathCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="Changes to Merged Migrations",
     summary=(
         "Migration files (Alembic versions/, Django and SQL numbered migrations/, Prisma "

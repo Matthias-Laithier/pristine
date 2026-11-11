@@ -4,7 +4,7 @@ from pristine.project.repository.loading import Project
 from pristine.project.repository.tools import Ecosystem
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "TL-4"
+CHECK_ID = "PROJ-4"
 FIRST_LINE = 1
 
 
@@ -30,7 +30,7 @@ def unpinned(project: Project, pin: RuntimePin) -> list[Finding]:
     if pin.version_files:
         locations = f"{locations} or add one of {', '.join(pin.version_files)}"
     message = f"the {pin.runtime} version is not pinned; {locations}"
-    return [Finding(project.shown(manifest.path), FIRST_LINE, RULE_ID, Severity.WARNING, message)]
+    return [Finding(project.shown(manifest.path), FIRST_LINE, CHECK_ID, Severity.WARNING, message)]
 
 
 def unpinned_runtimes(project: Project) -> list[Finding]:

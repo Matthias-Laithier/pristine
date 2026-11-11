@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import JsonReport, RunPristine, rule_findings
 
-RULE_ID = "CR-15"
+CHECK_ID = "STR-9"
 CODE = "VALUE = 1\n"
 WARNING = [(1, "warning")]
 ERROR = [(1, "error")]
@@ -14,7 +14,7 @@ def tree(folder: str, names: list[str]) -> dict[str, str]:
 
 
 def severities(report: JsonReport) -> list[tuple[int, str]]:
-    return rule_findings(report, RULE_ID)
+    return rule_findings(report, CHECK_ID)
 
 
 @pytest.mark.parametrize(("count", "expected"), [(8, []), (9, WARNING), (15, WARNING), (16, ERROR)])
@@ -27,7 +27,7 @@ def test_code_files_over_the_limits_are_reported(
 
 def test_crowded_directory_is_reported_on_its_first_file(run_pristine: RunPristine) -> None:
     _, report = run_pristine(tree("billing/src", LEDGER_FILES[:9]))
-    findings = [finding for finding in report["findings"] if finding["rule_id"] == RULE_ID]
+    findings = [finding for finding in report["findings"] if finding["check_id"] == CHECK_ID]
     assert [finding["path"] for finding in findings] == ["billing/src/ledger_0.py"]
     assert "9 code files" in findings[0]["message"]
 

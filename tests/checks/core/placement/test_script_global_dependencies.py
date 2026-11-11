@@ -10,7 +10,7 @@ function unrelated(send) {{ {body} }}
 const HANDLERS = {{send}};
 """
     _, report = run_pristine({"handlers.ts": source})
-    assert rule_findings(report, "CR-6") == [(3, "warning")]
+    assert rule_findings(report, "STR-5") == [(3, "warning")]
 
 
 def test_related_callback_registry_stays_together(run_pristine: RunPristine) -> None:
@@ -19,4 +19,4 @@ function send_reminder(invoice) { return send(invoice); }
 const HANDLERS = {send, send_reminder};
 """
     _, report = run_pristine({"handlers.ts": source})
-    assert not rule_findings(report, "CR-6")
+    assert not rule_findings(report, "STR-5")

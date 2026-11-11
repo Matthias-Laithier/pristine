@@ -14,7 +14,7 @@ from pristine.syntax.nodes import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
 from pristine.syntax.parsing import ParsedFile, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings
 
-RULE_ID = "CR-6"
+CHECK_ID = "STR-5"
 PYTHON = "python"
 VALUE_LIST_KINDS = frozenset({"expression_list"})
 REFERENCE_FIELDS = ("value", "right", "type")
@@ -133,13 +133,13 @@ def check_global_placement(parsed: ParsedFile) -> list[Finding]:
         record_definition(item, spec, state)
         for binding, names in misplaced_bindings(item, spec, state):
             message = MESSAGE.format(names=", ".join(sorted(names)))
-            findings.append(Finding(parsed.path, line_of(binding), RULE_ID, Severity.WARNING, message))
+            findings.append(Finding(parsed.path, line_of(binding), CHECK_ID, Severity.WARNING, message))
     return findings
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Globals Follow the Opening Import Block",
+    check_id=CHECK_ID,
+    title="Global Placement",
     summary=(
         "Module-level variables and constants defined below the first function or class. Values immediately beside "
         "their dependencies, __all__, and type aliases (TypeAlias annotations, typing generics, unions, "

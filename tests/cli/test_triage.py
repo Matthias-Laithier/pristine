@@ -35,15 +35,15 @@ def test_json_triage_uses_all_findings_without_reordering_records(
     assert main(["check", "c.py", "a.py", "b.py", "--json", "--max", limit]) == 1
     document = json_object(json.loads(capsys.readouterr().out))
     assert document["triage"] == [
-        {"path": "b.py", "distinct_rules": 2, "findings": 2, "fix": {"CR-1": 1, "CR-3": 1}, "verify": {}},
-        {"path": "c.py", "distinct_rules": 2, "findings": 3, "fix": {"CR-12": 1, "CR-3": 2}, "verify": {}},
-        {"path": "a.py", "distinct_rules": 1, "findings": 3, "fix": {"CR-3": 3}, "verify": {}},
+        {"path": "b.py", "distinct_checks": 2, "findings": 2, "fix": {"STR-1": 1, "STR-4": 1}, "verify": {}},
+        {"path": "c.py", "distinct_checks": 2, "findings": 3, "fix": {"STR-2": 1, "STR-4": 2}, "verify": {}},
+        {"path": "a.py", "distinct_checks": 1, "findings": 3, "fix": {"STR-4": 3}, "verify": {}},
     ]
     summary = json_object(document["summary"])
-    assert (summary["errors"], summary["warnings"], summary["by_rule"], summary["omitted"]) == (
+    assert (summary["errors"], summary["warnings"], summary["by_check"], summary["omitted"]) == (
         7,
         1,
-        {"CR-3": 6, "CR-1": 1, "CR-12": 1},
+        {"STR-4": 6, "STR-1": 1, "STR-2": 1},
         8 - int(limit),
     )
     findings = document["findings"]
@@ -61,12 +61,12 @@ def test_text_groups_ranked_files_and_keeps_full_overviews(
     assert main(["check", ".", *options]) == 1
     output = capsys.readouterr().out
     lines = output.splitlines()
-    assert lines[0] == "Findings (ranked by distinct code rules, then path)"
+    assert lines[0] == "Findings (ranked by distinct code checks, then path)"
     assert [line for line in lines if line in TRIAGE_FILES] == ["b.py", "c.py", "a.py"]
     assert [line for line in lines if "; fix " in line] == [
-        "  2 errors; fix CR-1, CR-3",
-        "  2 errors, 1 warning; fix CR-12, CR-3",
-        "  3 errors; fix CR-3",
+        "  2 errors; fix STR-1, STR-4",
+        "  2 errors, 1 warning; fix STR-2, STR-4",
+        "  3 errors; fix STR-4",
     ]
     assert all(output.count(path) == 1 and f"\n\n{path}\n" in output for path in TRIAGE_FILES)
     finding_lines = output.partition("\nMechanical checks\n")[0].splitlines()
@@ -75,8 +75,8 @@ def test_text_groups_ranked_files_and_keeps_full_overviews(
         ["file"] if options else ["file", "line 202", "line 1", "line 32", "line 33", "line 1", "line 2", "line 3"]
     )
     if options:
-        assert "... 7 more findings omitted (CR-12 1, CR-3 6); raise --max or remove --max to see them all" in lines
-    assert "by rule: CR-3 6, CR-1 1, CR-12 1" in lines
+        assert "... 7 more findings omitted (STR-2 1, STR-4 6); raise --max or remove --max to see them all" in lines
+    assert "by check: STR-4 6, STR-1 1, STR-2 1" in lines
     assert "verification: complete, 0 failures" in lines
 
 
@@ -88,7 +88,7 @@ def test_verification_findings_are_not_code_fixes_and_missing_paths_remain_visib
     assert main(["check", ".", "gone.py", "--json", "--max", "1"]) == 3
     document = json_object(json.loads(capsys.readouterr().out))
     assert document["triage"] == [
-        {"path": ".", "distinct_rules": 0, "findings": 1, "fix": {}, "verify": {"BS-2": 1}},
+        {"path": ".", "distinct_checks": 0, "findings": 1, "fix": {}, "verify": {"SAFE-2": 1}},
     ]
     assert document["missing"] == ["gone.py"]
     assert document["verification_status"] == "incomplete"
@@ -97,7 +97,7 @@ def test_verification_findings_are_not_code_fixes_and_missing_paths_remain_visib
     assert [json_object(entry)["path"] for entry in unchecked] == ["broken.py"]
     assert main(["check", ".", "gone.py", "--max", "1"]) == 3
     output = capsys.readouterr().out
-    assert "\n.\n  1 warning; verify BS-2\n  - file: verify BS-2 warning:" in output
+    assert "\n.\n  1 warning; verify SAFE-2\n  - file: verify SAFE-2 warning:" in output
     assert "missing: gone.py\n" in output
     assert "unchecked: broken.py (" in output
     assert "verification: incomplete, 2 failures\n" in output
@@ -109,11 +109,11 @@ def test_file_context_keeps_full_paths_and_distinguishes_line_one_from_file_find
     other_path = "/workspace/other/invoice.py"
     report = Report(
         findings=[
-            Finding(path, 1, "TL-3", Severity.WARNING, "probe unavailable", FindingKind.VERIFICATION),
-            Finding(path, 1, "CR-1", Severity.ERROR, "long file"),
-            Finding(path, 1, "CR-3", Severity.ERROR, "first-line comment"),
-            Finding(path, 7, "TL-3", Severity.WARNING, "line probe unavailable", FindingKind.VERIFICATION),
-            Finding(other_path, 0, "CR-3", Severity.ERROR, "unlocated issue"),
+            Finding(path, 1, "PROJ-3", Severity.WARNING, "probe unavailable", FindingKind.VERIFICATION),
+            Finding(path, 1, "STR-1", Severity.ERROR, "long file"),
+            Finding(path, 1, "STR-4", Severity.ERROR, "first-line comment"),
+            Finding(path, 7, "PROJ-3", Severity.WARNING, "line probe unavailable", FindingKind.VERIFICATION),
+            Finding(other_path, 0, "STR-4", Severity.ERROR, "unlocated issue"),
         ],
         unchecked={},
         skipped={},
@@ -122,16 +122,16 @@ def test_file_context_keeps_full_paths_and_distinguishes_line_one_from_file_find
     )
     output = render_text(report, limit)
     assert output.count(path) == output.count(other_path) == 1
-    assert f"{path}\n  2 errors, 2 warnings; fix CR-1, CR-3; verify TL-3\n" in output
-    assert f"{other_path}\n  1 error; fix CR-3\n" in output
-    assert "  - file: verify TL-3 warning: probe unavailable\n" in output
+    assert f"{path}\n  2 errors, 2 warnings; fix STR-1, STR-4; verify PROJ-3\n" in output
+    assert f"{other_path}\n  1 error; fix STR-4\n" in output
+    assert "  - file: verify PROJ-3 warning: probe unavailable\n" in output
     if limit is None:
-        assert "  - file: CR-1 error: long file\n  - line 1: CR-3 error: first-line comment\n" in output
-        assert "  - line 7: verify TL-3 warning: line probe unavailable\n" in output
-        assert "  - file: CR-3 error: unlocated issue\n" in output
+        assert "  - file: STR-1 error: long file\n  - line 1: STR-4 error: first-line comment\n" in output
+        assert "  - line 7: verify PROJ-3 warning: line probe unavailable\n" in output
+        assert "  - file: STR-4 error: unlocated issue\n" in output
     else:
         assert "  - line " not in output
-        assert "... 4 more findings omitted (CR-1 1, CR-3 2, TL-3 1);" in output
+        assert "... 4 more findings omitted (PROJ-3 1, STR-1 1, STR-4 2);" in output
 
 
 def test_clean_report_has_no_triage_work(run_pristine: RunPristine, capsys: pytest.CaptureFixture[str]) -> None:

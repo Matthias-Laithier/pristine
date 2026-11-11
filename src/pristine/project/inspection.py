@@ -6,16 +6,16 @@ from pristine.reports.outcomes import Checked, Outcome, Unchecked
 from pristine.reports.report import Report, build_report
 
 CHECK_GROUPS = (
-    ("TL-1", "Makefile Contract", "Root Makefile targets and component Makefile locations.", layout.CHECKS),
-    ("TL-2", "Verification Gates", "The complete gate includes the fast gate.", gates.CHECKS),
+    ("PROJ-1", "Makefile Contract", "Root Makefile targets and component Makefile locations.", layout.CHECKS),
+    ("PROJ-2", "Verification Gates", "The complete gate includes the fast gate.", gates.CHECKS),
     (
-        "TL-3",
+        "PROJ-3",
         "Static Analysis",
         "Supported formatter, lint, type-checker configuration and gate commands.",
         (*automation.CHECKS, *strict_mode.CHECKS),
     ),
     (
-        "TL-4",
+        "PROJ-4",
         "Reproducible Dependencies",
         "Supported lockfiles, frozen installs and runtime declarations.",
         (*lockfiles.CHECKS, *installs.CHECKS, *runtimes.CHECKS),

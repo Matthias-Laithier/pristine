@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "CO-13"
+CHECK_ID = "DEP-5"
 PYTHON_MODULE = """import logging
 import os
 import re
@@ -44,12 +44,18 @@ SCRIPT_ENVIRONMENT_READ = "export const apiUrl = process.env.API_URL;\n"
 
 def test_python_module_level_work(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"payments.py": PYTHON_MODULE})
-    assert rule_findings(report, RULE_ID) == [(8, "error"), (9, "error"), (10, "warning"), (11, "error"), (20, "error")]
+    assert rule_findings(report, CHECK_ID) == [
+        (8, "error"),
+        (9, "error"),
+        (10, "warning"),
+        (11, "error"),
+        (20, "error"),
+    ]
 
 
 def test_script_module_level_work(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"payments.ts": SCRIPT_MODULE})
-    assert rule_findings(report, RULE_ID) == [(1, "error"), (4, "error"), (6, "error"), (7, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(1, "error"), (4, "error"), (6, "error"), (7, "warning")]
 
 
 @pytest.mark.parametrize(
@@ -100,7 +106,7 @@ def test_script_module_level_work(run_pristine: RunPristine) -> None:
 )
 def test_python_definition_evaluation(run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]) -> None:
     _, report = run_pristine({"payments.py": source})
-    assert rule_findings(report, RULE_ID) == expected
+    assert rule_findings(report, CHECK_ID) == expected
 
 
 @pytest.mark.parametrize(
@@ -131,7 +137,7 @@ def test_python_deferred_class_expressions(
     run_pristine: RunPristine, source: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({"payments.py": source})
-    assert rule_findings(report, RULE_ID) == expected
+    assert rule_findings(report, CHECK_ID) == expected
 
 
 @pytest.mark.parametrize(
@@ -149,4 +155,4 @@ def test_python_deferred_class_expressions(
 )
 def test_entrypoints_and_tests_are_exempt(run_pristine: RunPristine, path: str, source: str) -> None:
     _, report = run_pristine({path: source})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

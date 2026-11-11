@@ -77,7 +77,7 @@ def parsed_finding(value: object) -> ReportedFinding:
     finding = ReportedFinding(
         path=json_text(entry["path"]),
         line=json_integer(entry["line"]),
-        rule_id=json_text(entry["rule_id"]),
+        check_id=json_text(entry["check_id"]),
         severity=json_text(entry["severity"]),
         message=json_text(entry["message"]),
     )
@@ -103,7 +103,7 @@ def parsed_summary(value: object) -> ReportSummary:
         missing_paths=json_integer(entry["missing_paths"]),
         unsupported_files=json_integer(entry.get("unsupported_files", 0)),
         verification_failures=json_integer(entry.get("verification_failures", 0)),
-        by_rule={rule_id: json_integer(count) for rule_id, count in json_object(entry["by_rule"]).items()},
+        by_check={check_id: json_integer(count) for check_id, count in json_object(entry["by_check"]).items()},
         omitted=json_integer(entry["omitted"]),
     )
 
@@ -150,5 +150,5 @@ def worker_process() -> Iterator[WorkerProcess]:
         worker.close()
 
 
-def rule_findings(report: JsonReport, rule_id: str) -> list[tuple[int, str]]:
-    return [(finding["line"], finding["severity"]) for finding in report["findings"] if finding["rule_id"] == rule_id]
+def rule_findings(report: JsonReport, check_id: str) -> list[tuple[int, str]]:
+    return [(finding["line"], finding["severity"]) for finding in report["findings"] if finding["check_id"] == check_id]

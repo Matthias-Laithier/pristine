@@ -122,5 +122,5 @@ def script_fan_out(parsed: ParsedFile) -> list[Finding]:
             and not callback_uses_limiter(mapped[0], bindings)
         ):
             message = f"'{callee_of(call)}' fans out over '{mapped[1]}' with no concurrency bound; use a bounded concurrency limiter"
-            findings.append(Finding(parsed.path, line_of(call), "BS-14", Severity.WARNING, message))
+            findings.append(Finding(parsed.path, line_of(call), "SAFE-8", Severity.WARNING, message))
     return findings

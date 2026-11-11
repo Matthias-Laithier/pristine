@@ -10,7 +10,7 @@ from pristine.files.path_roles import is_test_path, is_vendored
 from pristine.imports.repository import with_repository_files
 from pristine.reports.findings import Finding, Severity
 
-RULE_ID = "CR-5"
+CHECK_ID = "STR-10"
 PYTHON_SUFFIX = ".py"
 MIGRATION_FOLDER_MARKER = "migration"
 GENERATED_FOLDER_SUFFIX = "generated"
@@ -75,7 +75,7 @@ def clone_finding(group: list[FunctionBody] | list[ScriptBody], checked: set[str
         return None
     others = ", ".join(location(body) for body in group if body is not reported)
     message = f"function {reported.name} has the same body as {others}; {EXTRACTION_ADVICE}"
-    return Finding(reported.path, reported.line, RULE_ID, Severity.WARNING, message)
+    return Finding(reported.path, reported.line, CHECK_ID, Severity.WARNING, message)
 
 
 def compared_paths(paths: list[str]) -> list[str]:
@@ -92,7 +92,7 @@ def check_function_clones(paths: list[str]) -> list[Finding]:
 
 
 CHECK = PathCheck(
-    rule_id=RULE_ID,
+    check_id=CHECK_ID,
     title="Identical Function Bodies",
     summary=(
         f"Python functions and methods whose bodies of at least {MINIMUM_STATEMENTS} statements are identical "

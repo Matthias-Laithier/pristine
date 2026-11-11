@@ -13,7 +13,7 @@ from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.nodes import FUNCTION_KINDS
 from pristine.syntax.parsing import ParsedFile, line_of, node_text
 
-RULE_ID = "CO-13"
+CHECK_ID = "DEP-5"
 PREVIEW_LENGTH = 60
 SHEBANG = "#!"
 WHITESPACE = re.compile(r"\s+")
@@ -150,7 +150,7 @@ def is_entrypoint_or_test(parsed: ParsedFile) -> bool:
 def work_finding(parsed: ParsedFile, node: Node, work: ExternalWork) -> Finding:
     preview = parsed.text.splitlines()[line_of(node) - 1].strip()[:PREVIEW_LENGTH]
     message = f"{work.description} at import time ('{preview}'); move it into a function the entrypoint calls"
-    return Finding(parsed.path, line_of(node), RULE_ID, work.severity, message)
+    return Finding(parsed.path, line_of(node), CHECK_ID, work.severity, message)
 
 
 def check_import_time_work(parsed: ParsedFile) -> list[Finding]:
@@ -166,8 +166,8 @@ def check_import_time_work(parsed: ParsedFile) -> list[Finding]:
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="Imports Do Not Perform External Work",
+    check_id=CHECK_ID,
+    title="Import-Time External Work",
     summary=(
         "Known env, file, network, process, signal, dotenv, and output work in eager module expressions. "
         "Python eager class expressions and JS/TS static fields, blocks and computed names are included. "

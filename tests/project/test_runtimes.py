@@ -20,7 +20,7 @@ from tests.project.conftest import RunProject, rule_findings
 )
 def test_unpinned_runtime_is_a_warning(run_project: RunProject, files: dict[str, str], expected: str) -> None:
     _, report = run_project(files)
-    assert rule_findings(report, "TL-4") == [("warning", expected, 1)]
+    assert rule_findings(report, "PROJ-4") == [("warning", expected, 1)]
 
 
 @pytest.mark.parametrize(
@@ -37,4 +37,4 @@ def test_unpinned_runtime_is_a_warning(run_project: RunProject, files: dict[str,
 )
 def test_pinned_runtime_passes(run_project: RunProject, files: dict[str, str]) -> None:
     _, report = run_project(files)
-    assert rule_findings(report, "TL-4") == []
+    assert rule_findings(report, "PROJ-4") == []

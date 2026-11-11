@@ -2,7 +2,7 @@ import pytest
 
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "TST-1"
+CHECK_ID = "TEST-1"
 SOURCE = """import os
 import sys
 from collections import namedtuple
@@ -41,19 +41,21 @@ def test_charge_stops_after_max_retries(gateway, mocker, monkeypatch):
 
 def test_private_attribute_access_in_tests_is_a_warning(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_billing.py": SOURCE})
-    assert rule_findings(report, RULE_ID) == [(16, "warning"), (17, "warning"), (18, "warning"), (19, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(16, "warning"), (17, "warning"), (18, "warning"), (19, "warning")]
 
 
 def test_production_code_is_exempt(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"billing/retry.py": SOURCE})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_files_without_tests_are_exempt_unless_they_are_conftest(run_pristine: RunPristine) -> None:
     load_script = "def send_requests(client):\n    return client._session.post('/charge')\n"
     files = {"benchmark/load_test.py": load_script, "tests/conftest.py": load_script}
     _, report = run_pristine(files)
-    assert {finding["path"] for finding in report["findings"] if finding["rule_id"] == RULE_ID} == {"tests/conftest.py"}
+    assert {finding["path"] for finding in report["findings"] if finding["check_id"] == CHECK_ID} == {
+        "tests/conftest.py"
+    }
 
 
 @pytest.mark.parametrize("extension", ["test.ts", "spec.tsx"])
@@ -73,7 +75,7 @@ check("state", () => {
 });
 """
     _, report = run_pristine({f"tests/orders.{extension}": source})
-    assert rule_findings(report, RULE_ID) == [(4, "warning"), (5, "warning"), (6, "warning")]
+    assert rule_findings(report, CHECK_ID) == [(4, "warning"), (5, "warning"), (6, "warning")]
 
 
 def test_typescript_private_state_requires_test_path_and_callback(run_pristine: RunPristine) -> None:
@@ -82,4 +84,4 @@ check("state", () => service._state);
 function helper() { return service._state; }
 """
     _, report = run_pristine({"tests/orders.test.ts": source, "orders.ts": 'test("state", () => service._state);'})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []

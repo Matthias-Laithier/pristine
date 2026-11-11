@@ -10,7 +10,7 @@ from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_tests import is_python_test_module, is_test_definition
 
-RULE_ID = "TST-7"
+CHECK_ID = "TEST-4"
 EQUALITY = "=="
 IDENTITY = "is"
 PAIR_SIZE = 2
@@ -135,14 +135,14 @@ def check_dependent_oracles(parsed: ParsedFile) -> list[Finding]:
         dependent_assertions(parsed) if is_python_test_module(parsed) else typescript_dependent_assertions(parsed)
     )
     return [
-        Finding(parsed.path, line_of(node), RULE_ID, Severity.ERROR, f"{problem}, so it cannot fail; {FIX}")
+        Finding(parsed.path, line_of(node), CHECK_ID, Severity.ERROR, f"{problem}, so it cannot fail; {FIX}")
         for node, problem in assertions
     ]
 
 
 CHECK = FileCheck(
-    rule_id=RULE_ID,
-    title="No Tautological Assertions",
+    check_id=CHECK_ID,
+    title="Tautological Assertions",
     summary=(
         "Python test functions asserting == between two identical literals, or is between two identical names "
         "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt. "

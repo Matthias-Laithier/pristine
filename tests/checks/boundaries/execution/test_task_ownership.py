@@ -1,6 +1,6 @@
 from tests.conftest import RunPristine, rule_findings
 
-RULE_ID = "BS-8"
+CHECK_ID = "SAFE-5"
 TASKS = """import asyncio
 import asyncio as aio
 from asyncio import create_task, ensure_future
@@ -99,25 +99,25 @@ def close_rates(rate_source):
 
 def test_dropped_tasks_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"rates.py": TASKS})
-    assert rule_findings(report, RULE_ID) == [(line, "error") for line in range(7, 13)]
+    assert rule_findings(report, CHECK_ID) == [(line, "error") for line in range(7, 13)]
 
 
 def test_swallowed_cancellations_are_errors(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"rates.py": CANCELLATION})
-    assert rule_findings(report, RULE_ID) == [(8, "error"), (13, "error"), (17, "error"), (21, "error")]
+    assert rule_findings(report, CHECK_ID) == [(8, "error"), (13, "error"), (17, "error"), (21, "error")]
 
 
 def test_swallowed_cancellation_is_not_a_failure_swallow(run_pristine: RunPristine) -> None:
     source = "import asyncio\n\n\nasync def refresh(source):\n    try:\n        await source.fetch()\n"
     _, report = run_pristine({"rates.py": source + "    except asyncio.CancelledError:\n        pass\n"})
-    assert rule_findings(report, RULE_ID) == [(7, "error")]
-    assert rule_findings(report, "BS-4") == []
+    assert rule_findings(report, CHECK_ID) == [(7, "error")]
+    assert rule_findings(report, "SAFE-4") == []
 
 
 def test_unimported_names_are_not_resolved(run_pristine: RunPristine) -> None:
     source = "async def refresh(asyncio):\n    asyncio.create_task(job())\n    try:\n        await job()\n"
     _, report = run_pristine({"rates.py": source + "    except asyncio.CancelledError:\n        pass\n"})
-    assert rule_findings(report, RULE_ID) == []
+    assert rule_findings(report, CHECK_ID) == []
 
 
 def test_formatted_or_logged_cancellation_is_still_swallowed(run_pristine: RunPristine) -> None:
@@ -141,4 +141,4 @@ async def publish_rates(rate_source, setup_error):
         setup_error.add_note(f"cleanup failed: {cleanup_error!r}")
 """
     _, report = run_pristine({"rates.py": source})
-    assert rule_findings(report, RULE_ID) == [(7, "error"), (11, "error")]
+    assert rule_findings(report, CHECK_ID) == [(7, "error"), (11, "error")]

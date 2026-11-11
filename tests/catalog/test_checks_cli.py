@@ -9,17 +9,24 @@ from pristine.cli.main import main
 def test_catalog_lists_every_executable_check(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["checks", "--json"]) == 0
     entries = json.loads(capsys.readouterr().out)
-    ids = [entry["rule_id"] for entry in entries]
-    registered = {check.rule_id for check in [*file_checks(), *path_checks()]}
+    ids = [entry["check_id"] for entry in entries]
+    registered = {check.check_id for check in [*file_checks(), *path_checks()]}
     assert len(ids) == len(set(ids)) == 40
-    assert set(ids) == registered | {"TL-1", "TL-2", "TL-3", "TL-4"}
+    assert set(ids) == registered | {"PROJ-1", "PROJ-2", "PROJ-3", "PROJ-4"}
     assert all(entry["title"] and entry["summary"] for entry in entries)
     assert all(entry["checked_by"] in {"check", "project"} for entry in entries)
     assert not any("statement" in entry for entry in entries)
     assert main(["checks"]) == 0
     text = capsys.readouterr().out
     assert len(text.splitlines()) == len(entries)
-    assert "CR-1 Code File Size (check):" in text
+    assert "STR-1 File Size (check):" in text
+    expected = [
+        f"{group}-{number}"
+        for group, count in (("STR", 11), ("DEP", 5), ("SAFE", 15), ("TEST", 5), ("PROJ", 4))
+        for number in range(1, count + 1)
+    ]
+    assert ids == expected
+    assert all("rule_id" not in entry for entry in entries)
 
 
 def test_guide_is_short_and_contains_caller_first_design(capsys: pytest.CaptureFixture[str]) -> None:
