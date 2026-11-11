@@ -119,7 +119,20 @@ def callback(call: Node) -> Node | None:
 
 def test_callbacks(parsed: ParsedFile) -> list[Node]:
     if parsed.language not in {"javascript", "typescript", "tsx"} or not PurePath(parsed.path).name.endswith(
-        (".test.ts", ".spec.ts", ".test.tsx", ".spec.tsx", ".test.js", ".spec.js", ".test.jsx", ".spec.jsx")
+        (
+            ".test.ts",
+            ".spec.ts",
+            ".test.tsx",
+            ".spec.tsx",
+            ".test.js",
+            ".spec.js",
+            ".test.jsx",
+            ".spec.jsx",
+            ".test.mts",
+            ".spec.mts",
+            ".test.cts",
+            ".spec.cts",
+        )
     ):
         return []
     return [

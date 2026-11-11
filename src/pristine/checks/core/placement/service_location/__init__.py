@@ -21,7 +21,6 @@ COMPOSITION_ROOT_NAMES = frozenset(
         "main.js",
         "index.js",
         "server.js",
-        "main.go",
     }
 )
 

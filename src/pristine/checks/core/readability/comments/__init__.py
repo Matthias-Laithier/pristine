@@ -39,7 +39,7 @@ CHECK = FileCheck(
     title="No Comments Except Machine-Read Text",
     summary=(
         "Every comment, doc comment, and docstring. Shebangs and comments that start with a toolchain directive, "
-        "such as noqa, type: ignore, eslint-disable, or //go:build, are allowed, and so are Python docstrings "
+        "such as noqa, type: ignore, or eslint-disable, are allowed, and so are Python docstrings "
         "of functions under a framework decorator that publishes them, such as an MCP tool or a FastAPI route, "
         "module docstrings the module reads through __doc__, PEP 723 script metadata blocks, and JSDoc blocks "
         "of only type tags in JavaScript."

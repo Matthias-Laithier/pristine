@@ -51,15 +51,6 @@ await axios.post(url, order);
 await axios.post(url, order, { timeout: 3000 });
 await axios({ url });
 """
-GO_SOURCE = """package billing
-import "net/http"
-func fetchInvoices() {
-	http.Get(invoicesURL)
-	unbounded := &http.Client{}
-	bounded := &http.Client{Timeout: invoiceTimeout}
-	http.DefaultClient.Do(request)
-}
-"""
 BROWSER_MARKERS = [
     '"use client";\n',
     'import { useEffect } from "react";\n',
@@ -108,11 +99,6 @@ def test_browser_code_is_exempt(run_pristine: RunPristine, marker: str) -> None:
 def test_server_code_is_reported_whatever_its_path(run_pristine: RunPristine, path: str) -> None:
     _, report = run_pristine({path: SCRIPT_SOURCE})
     assert rule_findings(report, RULE_ID) == [(2, "warning"), (7, "warning"), (9, "warning")]
-
-
-def test_go_http_without_timeout(run_pristine: RunPristine) -> None:
-    _, report = run_pristine({"billing.go": GO_SOURCE})
-    assert rule_findings(report, RULE_ID) == [(4, "error"), (5, "warning"), (7, "warning")]
 
 
 def test_interactive_launch_on_the_terminal_is_exempt(run_pristine: RunPristine) -> None:

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.syntax.nodes import SyntaxNode
-from pristine.syntax.parsing import ParsedFile, node_text
+from pristine.syntax.parsing import node_text
 
 RECEIVER = "<receiver>"
 DOTTED_PATH = re.compile(r"[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+")
@@ -35,7 +35,3 @@ def called_injections(injections: Iterable[InjectedClient], callee_paths: Callee
     for injected in injections:
         if is_called(injected, callee_paths(injected.scope)):
             yield injected.entry_point, injected.line
-
-
-def no_injected_clients(_source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
-    yield from ()

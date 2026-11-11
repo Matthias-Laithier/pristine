@@ -19,8 +19,6 @@ class RuntimePin:
 RUNTIME_PINS = (
     RuntimePin(Ecosystem.PYTHON, "Python", (".python-version",), "requires-python"),
     RuntimePin(Ecosystem.JAVASCRIPT, "Node.js", (".nvmrc", ".node-version"), "engines.node"),
-    RuntimePin(Ecosystem.GO, "Go", (), "the go directive"),
-    RuntimePin(Ecosystem.RUST, "Rust", (), "rust-version"),
 )
 
 

@@ -4,11 +4,17 @@ import pytest
 
 from tests.project.conftest import RunProject, rule_findings, track_all
 
-from .fixtures import APPLICATION, CONTRACT
+from .fixtures import APPLICATION
 
 
 def test_deployable_application_without_committed_lockfile(run_project: RunProject, tmp_path: Path) -> None:
-    run_project({**APPLICATION, "go.mod": "module app\n\ngo 1.24\n", "go.sum": ""})
+    run_project(
+        {
+            **APPLICATION,
+            "pyproject.toml": '[project]\nname = "app"\nrequires-python = ">=3.13"\n',
+            "uv.lock": "",
+        }
+    )
     track_all(tmp_path)
     _, report = run_project({"package.json": '{"engines": {"node": "22"}}', "pnpm-lock.yaml": ""})
     assert rule_findings(report, "TL-4") == [
@@ -41,15 +47,7 @@ def test_lockfile_verification_needs_git_only_when_a_lockfile_is_required(
     ] == ["verification"]
 
     (tmp_path / "package.json").unlink()
-    exit_code, report = run_project(
-        {
-            **APPLICATION,
-            "Makefile": CONTRACT.replace(
-                "check:\n\tpytest\n", 'check:\n\ttest -z "$$(gofmt -l .)"\n\tgo vet ./...\n\tgo test ./...\n'
-            ),
-            "go.mod": "module app\n\ngo 1.24\n",
-        }
-    )
+    exit_code, report = run_project(APPLICATION)
     assert exit_code == 0
     assert report["verification_status"] == "complete"
     assert report["summary"]["verification_failures"] == 0

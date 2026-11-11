@@ -6,9 +6,8 @@ from pristine.reports.findings import Finding, Severity
 TARGET_FILES = 8
 HARD_LIMIT_FILES = 15
 PACKAGE_MARKER = "__init__.py"
-PACKAGE_DIRECTORY_SUFFIX = ".go"
 ROUTING_FOLDER_NAMES = frozenset({"pages", "routes"})
-ROUTING_SUFFIXES = frozenset({".ts", ".tsx", ".js", ".jsx", ".mjs", ".vue", ".svelte"})
+ROUTING_SUFFIXES = frozenset({".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"})
 
 
 def is_empty_marker(path: PurePosixPath) -> bool:
@@ -25,8 +24,7 @@ def is_routed(path: PurePosixPath) -> bool:
 
 
 def is_counted(path: PurePosixPath) -> bool:
-    is_package_file = path.suffix.lower() == PACKAGE_DIRECTORY_SUFFIX
-    return not (is_package_file or is_routed(path) or is_empty_marker(path))
+    return not (is_routed(path) or is_empty_marker(path))
 
 
 def count_finding(files: list[PurePosixPath]) -> Finding | None:

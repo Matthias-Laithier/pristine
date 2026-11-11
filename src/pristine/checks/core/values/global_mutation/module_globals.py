@@ -94,8 +94,8 @@ def js_globals(parsed: ParsedFile) -> Globals:
 
 
 _COLLECTORS: dict[str, GlobalsCollector] = {
-    "python": python_globals,
     "javascript": js_globals,
+    "python": python_globals,
     "typescript": js_globals,
     "tsx": js_globals,
 }

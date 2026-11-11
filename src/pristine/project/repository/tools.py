@@ -10,8 +10,6 @@ type ArgumentsTest = Callable[[list[str]], bool]
 class Ecosystem(StrEnum):
     PYTHON = "Python"
     JAVASCRIPT = "JavaScript/TypeScript"
-    GO = "Go"
-    RUST = "Rust"
 
 
 class Role(StrEnum):
@@ -35,10 +33,6 @@ def any_arguments(_: list[str]) -> bool:
     return True
 
 
-def non_writing(arguments: list[str]) -> bool:
-    return bool(arguments) and arguments[0] in {"-l", "-d"}
-
-
 def subcommand(*names: str) -> ArgumentsTest:
     return lambda arguments: next(iter(positionals(arguments)), None) in names
 
@@ -57,18 +51,6 @@ def all_of(*tests: ArgumentsTest) -> ArgumentsTest:
 
 def any_of(*tests: ArgumentsTest) -> ArgumentsTest:
     return lambda arguments: any(test(arguments) for test in tests)
-
-
-def denies_warnings(arguments: list[str]) -> bool:
-    return any(
-        argument in {"-Dwarnings", "--deny=warnings"}
-        or (argument in {"-D", "--deny"} and arguments[index + 1 : index + 2] == ["warnings"])
-        for index, argument in enumerate(arguments)
-    )
-
-
-def native_tool(name: str, ecosystem: Ecosystem, checks: Mapping[Role, ArgumentsTest], *config_files: str) -> Tool:
-    return Tool(name, ecosystem, checks, config_files)
 
 
 def python_tool(name: str, checks: Mapping[Role, ArgumentsTest], config_files: tuple[str, ...] = ()) -> Tool:
@@ -139,25 +121,5 @@ TOOLS = (
         "depcruise", {Role.ARCHITECTURE: any_arguments}, ".dependency-cruiser.*", package="dependency-cruiser"
     ),
     javascript_tool("tsgo", {Role.TYPE_CHECKER: any_arguments}, package="@typescript/native-preview"),
-    native_tool("gofmt", Ecosystem.GO, {Role.FORMATTER: non_writing}, "go.mod"),
-    native_tool("gofumpt", Ecosystem.GO, {Role.FORMATTER: non_writing}),
-    native_tool(
-        "go",
-        Ecosystem.GO,
-        {Role.LINTER: subcommand("vet"), Role.TYPE_CHECKER: subcommand("test", "build")},
-        "go.mod",
-    ),
-    native_tool("golangci-lint", Ecosystem.GO, {Role.LINTER: any_arguments}, ".golangci.yml", ".golangci.yaml"),
-    native_tool("staticcheck", Ecosystem.GO, {Role.LINTER: any_arguments}, "staticcheck.conf"),
-    native_tool(
-        "cargo",
-        Ecosystem.RUST,
-        {
-            Role.FORMATTER: all_of(subcommand("fmt"), option("--check")),
-            Role.LINTER: all_of(subcommand("clippy"), denies_warnings),
-            Role.TYPE_CHECKER: subcommand("check", "test", "build"),
-        },
-        "Cargo.toml",
-    ),
 )
 TOOLS_BY_NAME = {tool.name: tool for tool in TOOLS}

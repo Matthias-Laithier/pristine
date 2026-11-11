@@ -28,7 +28,7 @@ CHECK = PathCheck(
     summary=(
         "Directories holding more than 8 code files directly (error above 15), folders holding a single code "
         "file, and vague bucket directories (common/, misc/, helpers/, utils/, util/). Empty __init__.py files, "
-        "Go packages, file-based routes, migrations, generated, vendored, and test paths are exempt."
+        "File-based routes, migrations, generated, vendored, and test paths are exempt."
     ),
     run=check_directory_grouping,
 )

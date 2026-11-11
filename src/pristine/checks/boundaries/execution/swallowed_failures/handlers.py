@@ -15,15 +15,12 @@ EXPRESSION_STATEMENT = "expression_statement"
 EXPECTED_EXCEPTIONS = frozenset(
     {"FileNotFoundError", "FileExistsError", "ProcessLookupError", "StopIteration", "StopAsyncIteration"}
     | {"CancelledError", "ImportError", "ModuleNotFoundError", "NameError", "KeyboardInterrupt", "EOFError", "Empty"}
-    | {"QueueEmpty", "CancellationException", "OperationCanceledException", "TaskCanceledException"}
+    | {"QueueEmpty"}
 )
-FAILING_ASSERTIONS = frozenset(
-    {"fail", "Assert.fail", "Assertions.fail", "org.junit.Assert.fail", "org.junit.jupiter.api.Assertions.fail"}
-    | {"junit.framework.Assert.fail", "kotlin.test.fail", "pytest.fail"}
-)
-ASSERTION_CATCHERS = frozenset({"", "BaseException", "Throwable", "Error", "AssertionError", "AssertionFailedError"})
-ASSERTION_CALL_KINDS = frozenset({"call", "call_expression", "method_invocation"})
-ATTEMPT_BODY_KINDS = frozenset({"block", "statements"})
+FAILING_ASSERTIONS = frozenset({"fail", "pytest.fail"})
+ASSERTION_CATCHERS = frozenset({"", "BaseException", "AssertionError"})
+ASSERTION_CALL_KINDS = frozenset({"call", "call_expression"})
+ATTEMPT_BODY_KINDS = frozenset({"block"})
 
 
 @dataclass(frozen=True)

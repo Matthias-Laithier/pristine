@@ -21,10 +21,8 @@ VALUE_LIST_KINDS = frozenset({"expression_list"})
 REFERENCE_FIELDS = ("value", "right", "type")
 TYPE_ALIAS_ANNOTATION = "TypeAlias"
 IMPORT_CALL_PREFIXES = ("require(", "import(", "await import(")
-BLANK_NAME = re.compile(r"_")
 SPECIAL_NAME = re.compile(r"_|__\w*")
 MESSAGE = "global '{names}' sits below a function or class; move it to the top of the file, right after the imports"
-RUST_STARTS = ("function_item", "impl_item", "struct_item", "enum_item", "trait_item")
 
 
 @dataclass(frozen=True)
@@ -39,8 +37,6 @@ SCRIPT_SPEC = LanguageSpec(
 )
 LANGUAGE_SPECS = dict.fromkeys(SCRIPT_LANGUAGES, SCRIPT_SPEC) | {
     PYTHON: LanguageSpec(("assignment",), ("function_definition", "class_definition")),
-    "go": LanguageSpec(("var_spec", "const_spec"), ("function_declaration", "method_declaration"), BLANK_NAME),
-    "rust": LanguageSpec(("const_item", "static_item"), RUST_STARTS, BLANK_NAME),
 }
 
 

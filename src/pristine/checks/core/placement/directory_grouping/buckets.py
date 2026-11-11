@@ -5,13 +5,10 @@ from pristine.checks.core.placement.directory_grouping.layout import directory_f
 from pristine.reports.findings import Finding
 
 VAGUE_BUCKET_NAMES = frozenset({"common", "misc", "helpers", "utils", "util"})
-PACKAGE_PATH_ROOTS = frozenset({"java", "kotlin"})
 
 
 def bucket_of(path: PurePosixPath) -> PurePosixPath | None:
     folders = path.parts[:-1]
-    if not PACKAGE_PATH_ROOTS.isdisjoint(folders):
-        return None
     position = next((index for index, name in enumerate(folders) if name.lower() in VAGUE_BUCKET_NAMES), None)
     return None if position is None else PurePosixPath(*folders[: position + 1])
 

@@ -64,11 +64,11 @@ def test_only_the_edited_migration_is_reported(
 def test_edit_committed_on_the_current_branch_is_reported(
     run_pristine: RunPristine, seed_repository: SeedRepository, tmp_path: Path
 ) -> None:
-    seed_repository({"db/migrate/20240101000000_create_orders.rb": "class CreateOrders\nend\n"})
-    write_files(tmp_path, {"db/migrate/20240101000000_create_orders.rb": "class CreateOrders\n  TOTAL = 1\nend\n"})
+    seed_repository({"alembic/versions/a1_add_email.py": ADD_EMAIL})
+    write_files(tmp_path, {"alembic/versions/a1_add_email.py": RENAME_EMAIL})
     commit_all(tmp_path, "edit migration")
     _, report = run_pristine({})
-    assert edited_migrations(report) == [("db/migrate/20240101000000_create_orders.rb", "error")]
+    assert edited_migrations(report) == [("alembic/versions/a1_add_email.py", "error")]
 
 
 @pytest.mark.parametrize(

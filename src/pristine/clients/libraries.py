@@ -7,7 +7,6 @@ PYTHON_MODEL_CLIENTS = (
     "cohere",
 )
 SCRIPT_MODEL_CLIENTS = ("openai", "@anthropic-ai/sdk", "@mistralai/mistralai")
-GO_MODEL_CLIENTS = ("github.com/sashabaranov/go-openai", "github.com/anthropics/anthropic-sdk-go")
 PYTHON_CLIENTS = (
     "requests",
     "httpx",
@@ -64,27 +63,6 @@ SCRIPT_CLIENTS = (
     "@slack/web-api",
     "nodemailer",
     *SCRIPT_MODEL_CLIENTS,
-)
-GO_CLIENTS = (
-    "github.com/aws/aws-sdk-go",
-    "github.com/aws/aws-sdk-go-v2",
-    "cloud.google.com/go",
-    "github.com/Azure/azure-sdk-for-go",
-    "github.com/jackc/pgx",
-    "github.com/lib/pq",
-    "github.com/go-sql-driver/mysql",
-    "go.mongodb.org/mongo-driver",
-    "github.com/redis/go-redis",
-    "github.com/go-redis/redis",
-    "github.com/segmentio/kafka-go",
-    "github.com/confluentinc/confluent-kafka-go",
-    "github.com/rabbitmq/amqp091-go",
-    "github.com/streadway/amqp",
-    "github.com/stripe/stripe-go",
-    "github.com/slack-go/slack",
-    "github.com/elastic/go-elasticsearch",
-    "go.temporal.io/sdk/client",
-    *GO_MODEL_CLIENTS,
 )
 PYTHON_ENTRY_POINTS = frozenset(
     {

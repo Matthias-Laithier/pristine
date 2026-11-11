@@ -13,10 +13,6 @@ SCRIPT_PLACEMENT = (
     "const RETRY_COUNT = 3;\nexport const sendInvoice = (invoice) => invoice;\n"
     "const DEFAULT_INVOICE = sendInvoice({});\nexport const SMTP_PORT = 587;\n"
 )
-GO_PLACEMENT = (
-    "package billing\n\nconst retryCount = 3\n\ntype Sender struct{}\n\nfunc send() {}\n\n"
-    "var _ = Sender{}\nvar smtpPort = 587\n"
-)
 PYTHON_TYPES = (
     "from typing import Literal, TypeVar\nimport typing as t\nfrom pydantic import create_model\n\n\n"
     "def send(invoice):\n    return invoice\n\n\n"
@@ -30,7 +26,6 @@ PYTHON_CAPWORDS_VALUES = (
 SCRIPT_CAPWORDS_VALUES = (
     "export function send(invoice) {\n  return invoice;\n}\nexport const InvoiceStatus = { paid: 'paid' };\n"
 )
-RUST_PLACEMENT = "const RETRY_COUNT: u32 = 3;\n\nfn send() {}\n\nstatic SMTP_PORT: u32 = 587;\n"
 DEPENDENT_PLACEMENT = (
     "def send():\n    pass\ndef cancel():\n    pass\n"
     "HANDLERS = (send, cancel)\nDEFAULT = HANDLERS[0]\n"
@@ -56,8 +51,6 @@ RELATED_DECLARATIONS = (
         ("billing.py", PYTHON_CAPWORDS_VALUES, [(8, "warning"), (9, "warning"), (10, "warning")]),
         ("billing.ts", SCRIPT_PLACEMENT, [(4, "warning")]),
         ("billing.ts", SCRIPT_CAPWORDS_VALUES, [(4, "warning")]),
-        ("billing.go", GO_PLACEMENT, [(10, "warning")]),
-        ("billing.rs", RUST_PLACEMENT, [(5, "warning")]),
         ("billing.py", DEPENDENT_PLACEMENT, [(9, "warning")]),
         ("billing.py", INTERRUPTED_REGISTRY, [(7, "warning")]),
         ("billing.py", RELATED_DECLARATIONS, []),

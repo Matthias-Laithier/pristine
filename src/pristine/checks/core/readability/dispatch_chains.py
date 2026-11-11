@@ -15,28 +15,23 @@ DISPATCH_CASE_MINIMUM = 3
 SUBJECT_PREVIEW_LENGTH = 40
 EQUALITY_OPERATORS = frozenset({"==", "===", "is"})
 DISJUNCTION_OPERATORS = frozenset({"||", "or"})
-COMPARISON_KINDS = frozenset({"binary_expression", "comparison_operator", "equality_expression"})
-DISJUNCTION_KINDS = frozenset({"binary_expression", "boolean_operator", "disjunction_expression"})
+COMPARISON_KINDS = frozenset({"binary_expression", "comparison_operator"})
+DISJUNCTION_KINDS = frozenset({"binary_expression", "boolean_operator"})
 GROUPING_KIND = "parenthesized_expression"
 ELIF_KIND = "elif_clause"
 ELSE_KIND = "else"
 EXEMPT_SUBJECT_PREFIXES = ("typeof ",)
 CONSTANT_PATTERN = re.compile(
-    r"-?\s*\d[\w.]*|\"(?:[^\"\\$]|\\.)*\"|'(?:[^'\\$]|\\.)*'|`[^`$]*`|\.\w+"
-    r"|(?:\w+(?:\.|::))*(?:[A-Z]\w*(?:\.|::)\w+|[A-Z][A-Z0-9_]+)"
+    r"-?\s*\d[\w.]*|\"(?:[^\"\\$]|\\.)*\"|'(?:[^'\\$]|\\.)*'|`[^`$]*`"
+    r"|(?:\w+\.)*(?:[A-Z]\w*\.\w+|[A-Z][A-Z0-9_]+)"
 )
-SWITCH_LANGUAGES = frozenset({"python", *SCRIPT_LANGUAGES, "go", "java", "csharp", "kotlin"})
-SWITCH_KINDS = frozenset(
-    {"switch_statement", "expression_switch_statement", "switch_expression", "when_expression", "match_statement"}
-)
-CASE_KINDS = frozenset(
-    {"switch_case", "expression_case", "switch_block_statement_group", "switch_rule", "switch_section"}
-    | {"switch_expression_arm", "when_entry", "case_clause"}
-)
+SWITCH_LANGUAGES = frozenset({"python", *SCRIPT_LANGUAGES})
+SWITCH_KINDS = frozenset({"switch_statement", "match_statement"})
+CASE_KINDS = frozenset({"switch_case", "case_clause"})
 LABEL_FIELD = "value"
-LABEL_KINDS = frozenset({"switch_label", "constant_pattern", "when_condition", "case_pattern"})
+LABEL_KINDS = frozenset({"case_pattern"})
 LABEL_WRAPPER_KINDS = LABEL_KINDS | frozenset({"union_pattern", "expression_list"})
-GUARD_KINDS = frozenset({"when_clause", "guard", "if_clause"})
+GUARD_KINDS = frozenset({"if_clause"})
 CHAIN_FIX = (
     "replace it with a dict literal mapping each value to its handler, owned by this module, raising on unknown values"
 )

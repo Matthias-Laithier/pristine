@@ -65,12 +65,6 @@ REQUIREMENTS = (
     Requirement(Ecosystem.JAVASCRIPT, Role.TYPE_CHECKER, is_typescript),
     Requirement(Ecosystem.PYTHON, Role.ARCHITECTURE, has_architecture_contract),
     Requirement(Ecosystem.JAVASCRIPT, Role.ARCHITECTURE, has_architecture_contract),
-    Requirement(Ecosystem.GO, Role.FORMATTER, every_project),
-    Requirement(Ecosystem.GO, Role.LINTER, every_project),
-    Requirement(Ecosystem.GO, Role.TYPE_CHECKER, every_project),
-    Requirement(Ecosystem.RUST, Role.FORMATTER, every_project),
-    Requirement(Ecosystem.RUST, Role.LINTER, every_project),
-    Requirement(Ecosystem.RUST, Role.TYPE_CHECKER, every_project),
 )
 
 
@@ -82,25 +76,12 @@ class FastGate:
 
 
 def invocations(commands: Iterable[str]) -> frozenset[Invocation]:
-    normal_calls = [
-        (name, tuple(arguments)) for command in commands for name, arguments in program_calls(command, TOOL_NAMES)
-    ]
-    guarded_calls = {
-        (name, tuple(arguments))
-        for command in commands
-        for name, arguments in guarded_program_calls(command, TOOL_NAMES)
-    }
-    calls = normal_calls + [*guarded_calls]
     return frozenset(
         (name, role)
-        for name, arguments in calls
+        for command in commands
+        for name, arguments in (*program_calls(command, TOOL_NAMES), *guarded_program_calls(command, TOOL_NAMES))
         for role, test in TOOLS_BY_NAME[name].checks.items()
-        if test(list(arguments))
-        and (
-            role is not Role.FORMATTER
-            or TOOLS_BY_NAME[name].ecosystem is not Ecosystem.GO
-            or (name, arguments) in guarded_calls
-        )
+        if test(arguments)
     )
 
 

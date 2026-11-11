@@ -22,10 +22,8 @@ def test_folder_holding_one_file_is_reported(run_pristine: RunPristine) -> None:
     [
         "billing/src/refunds/__init__.py",
         "web/src/refunds/index.ts",
-        "billing/src/refunds/mod.rs",
         "web/src/app/refunds/page.tsx",
         "web/src/app/api/refunds/route.ts",
-        "billing/cmd/refunds/main.go",
         "billing/migrations/versions/0001_refunds.py",
         "billing/tests/refunds/test_refund_policy.py",
         "billing/src/services/refunds/stripe.py",

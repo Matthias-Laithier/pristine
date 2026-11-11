@@ -9,9 +9,8 @@ from pristine.reports.findings import Finding
 WORD_BOUNDARY = re.compile(r"[_.\-\s()\[\]]+|(?<=[a-z0-9])(?=[A-Z])")
 PACKAGE_MARKERS = frozenset({"__init__.py", "__main__.py"})
 INDEX_STEM = "index"
-PACKAGE_DIRECTORY_SUFFIXES = frozenset({".go", ".rs", ".java", ".kt", ".scala", ".cs", ".swift"})
 ROUTING_FOLDER_NAMES = frozenset({"app", "pages", "routes", "functions", "api"})
-ROUTING_SUFFIXES = frozenset({".ts", ".tsx", ".js", ".jsx", ".mjs", ".vue", ".svelte"})
+ROUTING_SUFFIXES = frozenset({".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"})
 PRESCRIBED_FOLDER_NAMES = frozenset({"services", "scripts", "bin", "cmd", "static", "public"})
 IGNORED_ENTRIES = frozenset({"__pycache__"})
 CURRENT_DIRECTORY = PurePosixPath(".")
@@ -37,7 +36,7 @@ def is_framework_placed(path: PurePosixPath) -> bool:
     folders = {name.lower() for name in path.parts[:-1]}
     is_routed = path.suffix in ROUTING_SUFFIXES and not ROUTING_FOLDER_NAMES.isdisjoint(folders)
     is_prescribed = not PRESCRIBED_FOLDER_NAMES.isdisjoint(folders)
-    return is_routed or is_prescribed or path.suffix in PACKAGE_DIRECTORY_SUFFIXES
+    return is_routed or is_prescribed
 
 
 def entries_of(directory: PurePosixPath) -> list[PurePosixPath]:

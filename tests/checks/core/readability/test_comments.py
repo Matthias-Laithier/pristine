@@ -17,7 +17,7 @@ def test_comments_and_docstrings_are_errors_and_directives_are_allowed(run_prist
 
 
 def test_doc_comments_are_errors(run_pristine: RunPristine) -> None:
-    _, report = run_pristine({"total.rs": "/// Sums the lines.\nfn total() {}\n"})
+    _, report = run_pristine({"total.ts": "/** Sums the lines. */\nfunction total() {}\n"})
     assert rule_findings(report, "CR-3") == [(1, "error")]
 
 
@@ -27,8 +27,14 @@ def test_directives_count_only_at_the_start_of_a_comment(run_pristine: RunPristi
     assert rule_findings(report, "CR-3") == [(2, "error")]
 
 
+def test_removed_language_directives_are_comments_in_supported_sources(run_pristine: RunPristine) -> None:
+    source = "// go:build linux\n// nolint\n// swiftlint:disable all\n// rustfmt:skip\nconst value = 1;\n"
+    _, report = run_pristine({"source.ts": source})
+    assert rule_findings(report, "CR-3") == [(1, "error"), (2, "error"), (3, "error"), (4, "error")]
+
+
 def test_python_string_shape_is_no_docstring_elsewhere(run_pristine: RunPristine) -> None:
-    _, report = run_pristine({"total.rs": 'fn total() -> &str {\n    "lines"\n}\n'})
+    _, report = run_pristine({"total.ts": 'function total(): string {\n    "lines";\n    return "lines";\n}\n'})
     assert rule_findings(report, "CR-3") == []
 
 

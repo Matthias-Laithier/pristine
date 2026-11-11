@@ -46,11 +46,13 @@ Before coding, run pristine guide. Run pristine check on touched directories and
 
 Text groups findings by file, ranked by distinct check IDs then path. JSON retains full paths and lines and includes ranked `triage` evidence. `--max N` caps displayed findings, not totals or file overviews. `--exclude <glob>` skips matching paths. Use command `--help` for options.
 
-`project` recognizes Python, JavaScript/TypeScript, Go, and Rust repositories. It reads the root Makefile, manifests, lockfiles, and supported static-tool configurations without running the project's gate. Python's annotation capability requires strict mypy or Ruff's ANN001/002/003/201/202/204/205/206 rules; inference alone is insufficient. Recognized suppressions disable that capability, and unsupported overrides or incomplete source scope produce verification findings.
+`project` recognizes Python and JavaScript/TypeScript repositories. It reads the root Makefile, manifests, lockfiles, and supported static-tool configurations without running the project's gate. Python's annotation capability requires strict mypy or Ruff's ANN001/002/003/201/202/204/205/206 rules; inference alone is insufficient. Recognized suppressions disable that capability, and unsupported overrides or incomplete source scope produce verification findings.
 
 Exit codes: **0** complete without errors (warnings may remain), **1** error findings, **2** invalid usage, **3** incomplete verification. Incomplete verification takes priority over findings. Complete verification refers only to the checks performed.
 
 ## Python and TypeScript coverage
+
+Source analysis supports Python (`.py`, `.pyi`), JavaScript/JSX (`.js`, `.jsx`, `.mjs`, `.cjs`) and TypeScript/TSX (`.ts`, `.tsx`, `.mts`, `.cts`). Other source languages are reported as unsupported and never download grammars. Secret scanning still covers every discovered file. Makefiles and manifests receive project checks; Python/Prisma SQL migrations retain committed-history checks. Version 0.11.0 removes other language detectors and Go/Rust project tooling.
 
 Every language-applicable source check has Python and JS/TS detection, including TSX. TypeScript adds settings reads, known dropped promise operations, async blocking calls, concurrent fan-out, log interpolation, composition patterns, function clones, model settings, and test-quality patterns. Detectors use language-specific evidence and exemptions. This is check-family coverage, not identical recall or whole-program verification.
 

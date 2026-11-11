@@ -2,7 +2,7 @@ lazy from tree_sitter import Node
 
 from pristine.syntax.parsing import node_text
 
-STRING_LITERAL_KINDS = frozenset({"string", "interpreted_string_literal", "raw_string_literal"})
+STRING_LITERAL_KINDS = frozenset({"string"})
 
 
 def string_content(node: Node | None) -> str | None:

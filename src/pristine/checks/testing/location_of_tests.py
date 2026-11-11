@@ -4,11 +4,11 @@ from pathlib import PurePosixPath
 from pristine.checks.definitions import PathCheck
 from pristine.files.path_roles import PYTEST_CONFTEST, is_test_file, is_test_folder
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import LANGUAGE_BY_SUFFIX
 
 RULE_ID = "TST-4"
 SOURCE_FOLDER = "src"
 SOURCE_SIBLING_TEST_FOLDERS = frozenset({"test", "tests"})
-COLOCATED_TEST_SUFFIXES = frozenset({".go"})
 HIDDEN_PREFIX = "."
 SCRIPTS_FOLDER = "scripts"
 PYTEST_ROOT_MARKERS = ("pyproject.toml", "setup.py", "setup.cfg", "pytest.ini", "tox.ini", ".git")
@@ -56,12 +56,14 @@ def conftest_finding(path: str, folders: tuple[str, ...]) -> Finding | None:
 
 def location_finding(path: str) -> Finding | None:
     file_path = PurePosixPath(path)
+    if file_path.suffix.lower() not in LANGUAGE_BY_SUFFIX:
+        return None
     folders = file_path.parts[:-1]
     if any(is_tooling_folder(name) for name in folders):
         return None
     if file_path.name == PYTEST_CONFTEST:
         return conftest_finding(path, folders)
-    if is_test_file(file_path) and file_path.suffix not in COLOCATED_TEST_SUFFIXES:
+    if is_test_file(file_path):
         return test_file_finding(path, folders)
     return None
 
@@ -73,9 +75,6 @@ def check_test_location(paths: list[str]) -> list[Finding]:
 CHECK = PathCheck(
     rule_id=RULE_ID,
     title="Tests Live in a Dedicated tests Folder",
-    summary=(
-        "Test files (test_*.py, *_test.py/js/ts/rb, *.test.js/ts, *.spec.js/ts, *_spec.rb, anything in __tests__) "
-        "outside a dedicated test folder such as tests/, test/, or spec/. Go and Rust tests are exempt."
-    ),
+    summary="Python, JavaScript/JSX and TypeScript/TSX test files outside a dedicated test folder such as tests/, test/, or spec/.",
     run=check_test_location,
 )

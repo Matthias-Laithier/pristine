@@ -28,7 +28,7 @@
 
 ## Quality gate and pins
 
-- `make check` checks formatting, lint, types, tests, and pristine's own source/tests/Makefile; it must pass with zero findings. `pristine project .` must also report zero findings.
+- `make check` checks formatting, lint, types, tests, and pristine's own Python/JS/TS source and tests; it must pass with zero findings. `pristine project .` checks the Makefile and manifests and must report zero findings.
 - Run `make check-all` before pushing; it adds a gitleaks history scan. CI syncs locked dependencies, caches grammars, and runs this gate.
 - Tests parse real grammars, so first use needs network access. Native scanner tests replay reviewed responses and fake process/download boundaries; live advisory lookup and release downloads stay outside the gate.
 - Keep `tree-sitter<0.26`: 0.26.0 segfaulted or bus-faulted on TSX/TypeScript trees, while 0.25.2 parsed them cleanly. Lift the pin only after large-codebase validation.

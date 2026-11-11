@@ -23,11 +23,10 @@ def test_vague_bucket_is_reported_once(run_pristine: RunPristine, bucket: str) -
         "billing/src/pricing",
         "billing/node_modules/acme/utils",
         "billing/tests/helpers",
-        "android/src/main/java/ai/helpers",
     ],
 )
 def test_named_vendored_and_test_folders_are_not_buckets(run_pristine: RunPristine, folder: str) -> None:
-    _, report = run_pristine(tree(folder, ["Dates.java" if "java" in folder else "dates.py", "money.py"]))
+    _, report = run_pristine(tree(folder, ["dates.py", "money.py"]))
     assert rule_findings(report, RULE_ID) == []
 
 

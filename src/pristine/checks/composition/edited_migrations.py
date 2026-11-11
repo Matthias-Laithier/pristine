@@ -9,7 +9,6 @@ from pristine.services.git import edited_since_default_branch, repository_root
 RULE_ID = "CO-14"
 MIGRATIONS_FOLDER = "migrations"
 ALEMBIC_FOLDERS = (("alembic", "versions"), ("migrations", "versions"))
-RAILS_FOLDERS = ("db", "migrate")
 PYTHON_PACKAGE_MARKER = "__init__.py"
 NUMBERED_PYTHON_MIGRATION = re.compile(r"\d+_\w+\.py")
 NUMBERED_SQL_MIGRATION = re.compile(r"\d+[_.-].*\.sql")
@@ -39,8 +38,7 @@ def is_numbered_migration(path: PurePath) -> bool:
 def is_migration(path: PurePath) -> bool:
     if is_test_path(path) or is_vendored(path):
         return False
-    is_rails = path.suffix == ".rb" and path.parts[-3:-1] == RAILS_FOLDERS
-    return is_rails or is_alembic_revision(path) or is_numbered_migration(path) or is_prisma_migration(path)
+    return is_alembic_revision(path) or is_numbered_migration(path) or is_prisma_migration(path)
 
 
 def edited_in_repository(location: Path, root: Path | None, edited: dict[Path, frozenset[str] | None]) -> bool:
@@ -65,7 +63,7 @@ CHECK = PathCheck(
     rule_id=RULE_ID,
     title="Changes to Merged Migrations",
     summary=(
-        "Migration files (Alembic versions/, Django and SQL numbered migrations/, Rails db/migrate/, Prisma "
+        "Migration files (Alembic versions/, Django and SQL numbered migrations/, Prisma "
         "migration.sql) that exist on the origin default branch and whose content differs from it in the working "
         "tree or on the current branch; whitespace-only edits and unknown git state are not reported."
     ),

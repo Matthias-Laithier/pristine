@@ -16,14 +16,6 @@ from tests.project.conftest import RunProject, rule_findings
             {"package.json": "{}"},
             "the Node.js version is not pinned; set engines.node in package.json or add one of .nvmrc, .node-version",
         ),
-        (
-            {"go.mod": "module example.com/app\n"},
-            "the Go version is not pinned; set the go directive in go.mod",
-        ),
-        (
-            {"Cargo.toml": '[package]\nname = "app"\n'},
-            "the Rust version is not pinned; set rust-version in Cargo.toml",
-        ),
     ],
 )
 def test_unpinned_runtime_is_a_warning(run_project: RunProject, files: dict[str, str], expected: str) -> None:
@@ -41,8 +33,6 @@ def test_unpinned_runtime_is_a_warning(run_project: RunProject, files: dict[str,
         {"package.json": json.dumps({"packageManager": "bun@1.3.0"})},
         {"package.json": "{}", ".nvmrc": "22\n"},
         {"package.json": "{}", ".node-version": "22\n"},
-        {"go.mod": "module example.com/app\n\ngo 1.24\n"},
-        {"Cargo.toml": '[workspace]\nmembers = ["crates/app"]\n\n[workspace.package]\nrust-version = "1.84"\n'},
     ],
 )
 def test_pinned_runtime_passes(run_project: RunProject, files: dict[str, str]) -> None:

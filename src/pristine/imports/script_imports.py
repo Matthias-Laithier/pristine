@@ -58,7 +58,8 @@ def relative_specifiers(text: str) -> Iterator[tuple[str, int]]:
 
 
 def candidate_paths(target: str) -> Iterator[str]:
-    yield target
+    if posixpath.splitext(target)[1] in SCRIPT_SUFFIXES:
+        yield target
     yield from (f"{target}{suffix}" for suffix in SCRIPT_SUFFIXES)
     yield from (posixpath.join(target, f"{INDEX_MODULE}{suffix}") for suffix in SCRIPT_SUFFIXES)
     stem, suffix = posixpath.splitext(target)

@@ -3,13 +3,9 @@ from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
-from pristine.clients.go_imports import go_import_modules
-from pristine.clients.injection import no_injected_clients
 from pristine.clients.injection.python import python_injected_clients
 from pristine.clients.injection.script import script_injected_clients
 from pristine.clients.libraries import (
-    GO_CLIENTS,
-    GO_MODEL_CLIENTS,
     PYTHON_CLIENTS,
     PYTHON_MODEL_CLIENTS,
     SCRIPT_CLIENTS,
@@ -57,7 +53,6 @@ class ClientTable:
 SCRIPT_TABLE = ClientTable(SCRIPT_CLIENTS, SCRIPT_MODEL_CLIENTS, "/", script_import_modules, script_injected_clients)
 CLIENT_TABLES = {
     "python": ClientTable(PYTHON_CLIENTS, PYTHON_MODEL_CLIENTS, ".", python_import_targets, python_injected_clients),
-    "go": ClientTable(GO_CLIENTS, GO_MODEL_CLIENTS, "/", go_import_modules, no_injected_clients),
     **dict.fromkeys(SCRIPT_LANGUAGES, SCRIPT_TABLE),
 }
 

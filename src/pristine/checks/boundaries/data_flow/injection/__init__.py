@@ -1,7 +1,6 @@
 from collections.abc import Callable, Iterator
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
-from pristine.checks.boundaries.data_flow.injection.go_injection import scan_go
 from pristine.checks.boundaries.data_flow.injection.python.execution import scan_execution
 from pristine.checks.boundaries.data_flow.injection.python.sql import scan_sql
 from pristine.checks.boundaries.data_flow.injection.scripts.injection import scan_script
@@ -20,7 +19,6 @@ def scan_python(parsed: ParsedFile) -> Iterator[Injection]:
 
 SCANNERS: dict[str, Callable[[ParsedFile], Iterator[Injection]]] = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {
     "python": scan_python,
-    "go": scan_go,
 }
 
 
@@ -38,8 +36,8 @@ CHECK = FileCheck(
     title="Safe Interpreter Boundaries",
     summary=(
         "Injection-prone construction: Python SQL built by formatting or concatenation, shell commands, eval, "
-        "pickle, and unsafe yaml.load; JS/TS non-literal markup, child_process exec of built strings, "
-        "Prisma raw unsafe queries, and eval; Go SQL built with Sprintf or concatenation, and sh -c."
+        "pickle, and unsafe yaml.load; JS/TS/JSX/TSX non-literal markup, child_process exec of built strings, "
+        "Prisma raw unsafe queries, and eval."
     ),
     run=check_injection,
 )

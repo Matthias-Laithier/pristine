@@ -28,4 +28,4 @@ test:
 	uv run pytest -q
 
 selfcheck:
-	uv run pristine check src tests Makefile
+	uv run pristine check src tests

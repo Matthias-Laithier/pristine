@@ -81,17 +81,6 @@ const sanitizedBody = comment.body;
 element.innerHTML = sanitizedBody;
 element.innerHTML = sanitize(comment.body);
 """
-GO_SOURCE = """package billing
-func load(ctx context.Context) {
-	db.QueryContext(ctx, fmt.Sprintf("SELECT * FROM invoices WHERE id = %s", invoiceID))
-	db.Exec("DELETE FROM invoices WHERE id = " + invoiceID)
-	db.Query("SELECT * FROM invoices WHERE id = $1", invoiceID)
-	db.Exec(fmt.Sprintf("SET search_path = %s", schema))
-	exec.Command("sh", "-c", "git log "+branch)
-	exec.Command("sh", "-c", "exit "+strconv.Itoa(code))
-	exec.Command("git", "log", branch)
-}
-"""
 
 
 def test_python_sql_built_from_values(run_pristine: RunPristine) -> None:
@@ -112,11 +101,6 @@ def test_python_shell_eval_and_deserialization(run_pristine: RunPristine) -> Non
 def test_script_markup_processes_and_raw_queries(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"invoices.tsx": SCRIPT_SOURCE})
     assert rule_findings(report, RULE_ID) == [(line, "error") for line in (5, 10, 13, 15, 17, 18, 22, 23)]
-
-
-def test_go_sql_and_shell(run_pristine: RunPristine) -> None:
-    _, report = run_pristine({"billing.go": GO_SOURCE})
-    assert [line for line, _ in rule_findings(report, RULE_ID)] == [3, 4, 7]
 
 
 def test_a_comprehension_reusing_its_loop_name_is_resolved_without_recursion(run_pristine: RunPristine) -> None:

@@ -25,15 +25,6 @@ STDLIB_HTTP = "import json\nfrom urllib.request import urlopen\n\nurlopen(url)\n
 STDLIB_FREE_PORT = (
     "import socket\nfrom urllib.request import getproxies\n\nwith socket.socket() as probe:\n    probe.bind(('', 0))\n"
 )
-GO_MESSAGES_ONLY = (
-    'package parse\n\nimport "cloud.google.com/go/aiplatform/apiv1beta1/aiplatformpb"\n\n'
-    "var request = &aiplatformpb.PredictRequest{}\n"
-)
-GO_CLIENT = (
-    'package store\n\nimport (\n\t"context"\n\ts3 "github.com/aws/aws-sdk-go-v2/service/s3"\n)\n\n'
-    "var client = s3.NewFromConfig(config)\n"
-)
-GO_VERSIONED_CLIENT = 'package cache\n\nimport "github.com/redis/go-redis/v9"\n\nvar client = redis.NewClient(nil)\n'
 REDIS_ERRORS_ONLY = (
     "import redis\nfrom redis.exceptions import ConnectionError\n\n"
     "try:\n    store()\nexcept (ConnectionError, redis.RedisError):\n    raise redis.RedisError('down')\n"
@@ -95,10 +86,6 @@ SCRIPT_PASSED_THROUGH = (
         ("web/storage.ts", NAMED_CLIENT, [(1, "warning")]),
         ("web/orders.tsx", OWN_BACKEND_FETCH, []),
         ("web/db.js", REQUIRED_DRIVER, [(1, "warning")]),
-        ("store/s3.go", GO_CLIENT, [(5, "warning")]),
-        ("parse/vertex.go", GO_MESSAGES_ONLY, []),
-        ("cache/redis.go", GO_VERSIONED_CLIENT, []),
-        ("cmd/store/main.go", GO_CLIENT, []),
     ],
 )
 def test_client_imports_outside_services(

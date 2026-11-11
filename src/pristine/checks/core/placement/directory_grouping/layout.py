@@ -7,10 +7,7 @@ from pristine.reports.findings import Finding, Severity
 
 RULE_ID = "CR-15"
 HEADER_BYTES = 8192
-CODE_SUFFIXES = frozenset(
-    {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts", ".vue", ".svelte"}
-    | {".go", ".rs", ".java", ".kt", ".scala", ".rb", ".php", ".swift", ".cs", ".c", ".cc", ".cpp", ".h", ".hpp"}
-)
+CODE_SUFFIXES = frozenset({".py", ".pyi", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"})
 TYPE_DECLARATION_SUFFIX = ".d.ts"
 STORY_MARKER = ".stories."
 GENERATED_FOLDER_MARKERS = ("generated", "__generated__")

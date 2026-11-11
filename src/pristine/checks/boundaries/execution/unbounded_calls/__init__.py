@@ -1,4 +1,3 @@
-from pristine.checks.boundaries.execution.unbounded_calls.go_calls import scan_go
 from pristine.checks.boundaries.execution.unbounded_calls.python_calls import scan_python
 from pristine.checks.boundaries.execution.unbounded_calls.script_calls import scan_script
 from pristine.checks.definitions import FileCheck
@@ -7,7 +6,7 @@ from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, line_of
 
 RULE_ID = "BS-3"
-SCANNERS = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {"python": scan_python, "go": scan_go}
+SCANNERS = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {"python": scan_python}
 
 
 def check_unbounded_calls(parsed: ParsedFile) -> list[Finding]:
@@ -30,7 +29,7 @@ CHECK = FileCheck(
     title="Bound Every External Call",
     summary=(
         "Known external calls without a timeout: Python requests, subprocess, urlopen, socket, and smtplib; "
-        "server-side JS/TS fetch without signal and axios without timeout; Go http.Get and http.Client."
+        "server-side JS/TS/JSX/TSX fetch without signal and axios without timeout."
     ),
     run=check_unbounded_calls,
 )

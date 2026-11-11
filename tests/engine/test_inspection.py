@@ -84,11 +84,20 @@ def test_prose_prone_markers_count_only_in_the_first_five_lines(run_pristine: Ru
     assert report["skipped"] == []
 
 
-def test_ruby_files_without_the_rb_suffix_are_checked(run_pristine: RunPristine) -> None:
+def test_removed_languages_are_explicitly_unsupported(run_pristine: RunPristine) -> None:
     ruby = "source 'https://rubygems.org'\n"
-    _, report = run_pristine({"Gemfile": ruby, "Podfile": ruby, "app.gemspec": ruby, "config.ru": "run App\n"})
-    assert report["unchecked"] == []
-    assert report["summary"]["checked_files"] == 4
+    files = {
+        "Gemfile": ruby,
+        "app.gemspec": ruby,
+        "config.ru": "run App\n",
+        "app.go": "package app\n",
+        "app.rs": "fn main() {}\n",
+        "App.java": "class App {}\n",
+    }
+    _, report = run_pristine(files)
+    assert set(report["unsupported"]) == set(files)
+    assert report["summary"]["checked_files"] == 0
+    assert not report["findings"]
 
 
 def test_project_and_interface_data_files_are_skipped(run_pristine: RunPristine) -> None:
