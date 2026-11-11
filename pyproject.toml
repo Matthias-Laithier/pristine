@@ -1,6 +1,6 @@
 [project]
 name = "pristine"
-version = "0.9.0"
+version = "0.10.0"
 description = "Predictable code structure and defect checks for AI coding agents."
 readme = "README.md"
 authors = [{name = "Matthias Laithier", email = "matthias.laithier@gmail.com"}]

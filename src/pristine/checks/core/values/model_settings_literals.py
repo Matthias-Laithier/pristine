@@ -4,10 +4,12 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
+from pristine.checks.core.values.model_settings_script import hardcoded_settings as script_settings
 from pristine.checks.definitions import FileCheck
 from pristine.clients.libraries import PYTHON_MODEL_CLIENTS
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import callee_of, calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings, keyword_values, qualified_callee
@@ -113,7 +115,11 @@ def setting_finding(parsed: ParsedFile, name: str, value: Node, literals: dict[s
 
 
 def check_model_settings_literals(parsed: ParsedFile) -> list[Finding]:
-    if parsed.language != "python" or is_test_path(PurePath(parsed.path)) or parsed.text.startswith(SHEBANG):
+    if is_test_path(PurePath(parsed.path)) or parsed.text.startswith(SHEBANG):
+        return []
+    if parsed.language in SCRIPT_LANGUAGES:
+        return [setting_finding(parsed, name, value, {}) for name, value in script_settings(parsed)]
+    if parsed.language != "python":
         return []
     literals = module_literals(parsed)
     bindings = import_bindings(parsed)
@@ -130,7 +136,7 @@ CHECK = FileCheck(
     rule_id=RULE_ID,
     title="Model Settings Belong in Configuration",
     summary=(
-        "Python calls passing a literal model identifier or a literal temperature or top_p, directly or "
+        "Python and JS/TS calls passing a literal model identifier or a literal temperature or top_p/topP, directly or "
         "through a same-module literal constant. Any literal model counts on a call to a model SDK client "
         "(openai, anthropic, mistralai, google.generativeai, cohere) resolved through imports, assignments, "
         "annotations, and with-statements; elsewhere, a literal naming a known model family or a vendor-prefixed "

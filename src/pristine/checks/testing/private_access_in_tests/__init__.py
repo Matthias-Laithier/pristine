@@ -3,6 +3,7 @@ import re
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.testing.private_access_in_tests.typescript import typescript_private_accesses
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -67,7 +68,8 @@ def private_accesses(source: Node | ParsedFile) -> list[Node]:
 
 
 def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
-    if not is_python_test_module(parsed):
+    accesses = private_accesses(parsed) if is_python_test_module(parsed) else typescript_private_accesses(parsed)
+    if not accesses:
         return []
     return [
         Finding(
@@ -78,7 +80,7 @@ def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
             f"test reaches into private attribute '{node_text(node)}'; "
             "assert on the public outcome instead: return values, persisted state, emitted events, or calls to fakes",
         )
-        for node in private_accesses(parsed)
+        for node in accesses
     ]
 
 
@@ -88,7 +90,9 @@ CHECK = FileCheck(
     summary=(
         "Python test modules (test paths that define test functions or classes, and conftest.py) reading or "
         "writing a single-underscore private attribute of an object other than self or cls. Mock and monkeypatch targets, mock* and fake* variables, and framework privates such as "
-        "_meta, _asdict, _replace, _fields, sys._getframe, and os._exit are exempt."
+        "_meta, _asdict, _replace, _fields, sys._getframe, and os._exit are exempt. "
+        "JS/TS/TSX .test/.spec callbacks also check single-underscore members, exempting this, mock/fake "
+        "receivers, framework privates and Jest/Vitest spyOn targets."
     ),
     run=check_private_access_in_tests,
 )

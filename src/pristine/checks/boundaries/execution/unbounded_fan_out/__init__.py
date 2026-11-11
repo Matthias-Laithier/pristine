@@ -10,6 +10,7 @@ from pristine.checks.boundaries.execution.unbounded_fan_out.fanned_collections i
     unbounded_collection,
 )
 from pristine.checks.boundaries.execution.unbounded_fan_out.limiters import Limiters, holds_limiter, limiters_of
+from pristine.checks.boundaries.execution.unbounded_fan_out.scripts import script_fan_out
 from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -106,6 +107,8 @@ def fan_out_finding(parsed: ParsedFile, call: Node, collection: Node) -> Finding
 
 
 def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
+    if parsed.language in {"javascript", "typescript", "tsx"}:
+        return script_fan_out(parsed)
     if parsed.language != "python":
         return []
     bindings = import_bindings(parsed)
@@ -131,6 +134,9 @@ CHECK = FileCheck(
         "from one, and every assignment of the iterated name must be a load. Parameters, functions and methods "
         "of the same file, fields and items of a loaded record, slices, literals, loads that pass a size, "
         "tests, and durable workflow modules are exempt."
+        " JS/TS Promise.all(items.map(async ...)) over a variable assigned only awaited imported loads, "
+        "with awaited callback work. Parameters, local loads, sized loads, tests and durable workflows are exempt. "
+        "Callbacks using an imported p-limit factory's limiter are exempt."
     ),
     run=check_unbounded_fan_out,
 )

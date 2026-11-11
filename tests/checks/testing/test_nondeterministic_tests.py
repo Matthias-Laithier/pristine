@@ -1,3 +1,5 @@
+import pytest
+
 from tests.conftest import RunPristine, rule_findings
 
 RULE_ID = "TST-6"
@@ -97,3 +99,76 @@ def test_seeds_patched_sleeps_and_production_code_are_exempt(run_pristine: RunPr
     }
     _, report = run_pristine(files)
     assert rule_findings(report, RULE_ID) == []
+
+
+@pytest.mark.parametrize("extension", ["test.ts", "spec.tsx"])
+def test_typescript_random_and_real_timer_calls(run_pristine: RunPristine, extension: str) -> None:
+    source = """import {it as check, vi as clock} from "vitest";
+function helper() { setTimeout(done, 10); }
+check("real", async () => {
+  const value = Math.random();
+  await new Promise(resolve => setTimeout(resolve, 20));
+  clock.useFakeTimers();
+  setTimeout(done, 20);
+  Math.random();
+  clock.useRealTimers();
+  setTimeout(done, 20);
+});
+check("other", () => setTimeout(done, 20));
+"""
+    _, report = run_pristine({f"tests/orders.{extension}": source})
+    assert rule_findings(report, RULE_ID) == [
+        (4, "warning"),
+        (5, "warning"),
+        (8, "warning"),
+        (10, "warning"),
+        (12, "warning"),
+    ]
+
+
+def test_typescript_timer_hooks_are_suite_scoped(run_pristine: RunPristine) -> None:
+    source = """import {describe, test, beforeEach, vi} from "vitest";
+describe("fake", () => {
+  beforeEach(() => vi.useFakeTimers());
+  test("fake", () => setTimeout(done, 2));
+  test("restored", () => { vi.useRealTimers(); setTimeout(done, 2); });
+});
+describe("real", () => {
+  test("real", () => setTimeout(done, 2));
+});
+test("top", () => setTimeout(done, 2));
+"""
+    _, report = run_pristine({"tests/orders.test.ts": source})
+    assert rule_findings(report, RULE_ID) == [(5, "warning"), (8, "warning"), (10, "warning")]
+
+
+def test_typescript_shadowed_or_conditional_fakes_do_not_exempt(run_pristine: RunPristine) -> None:
+    source = """import {test, vi} from "vitest";
+test("shadow", (vi) => { vi.useFakeTimers(); setTimeout(done, 2); });
+test("conditional", () => { if (ready) vi.useFakeTimers(); setTimeout(done, 2); });
+test("nested", () => { const helper = () => vi.useFakeTimers(); setTimeout(done, 2); });
+test("globals", (Math, setTimeout) => { Math.random(); setTimeout(done, 2); });
+function helper(test) { test("custom", () => Math.random()); }
+"""
+    _, report = run_pristine({"tests/orders.test.ts": source, "orders.ts": 'test("x", () => Math.random());'})
+    assert rule_findings(report, RULE_ID) == [(2, "warning"), (3, "warning"), (4, "warning")]
+
+
+def test_typescript_unproven_timer_setup_is_not_owned(run_pristine: RunPristine) -> None:
+    source = """import {test, beforeEach, vi} from "@jest/globals";
+import {jest as clock} from "@jest/globals";
+beforeEach(() => { ready && clock.useFakeTimers(); });
+test("logical", () => setTimeout(done, 2));
+test("deferred", () => { helper(() => clock.useFakeTimers()); setTimeout(done, 2); });
+test("late", () => { setTimeout(done, 2); clock.useFakeTimers(); });
+test("real", () => { clock.useFakeTimers(); if (ready) clock.useRealTimers(); setTimeout(done, 2); });
+test("replaced", () => { clock = custom; clock.useFakeTimers(); setTimeout(done, 2); });
+"""
+    _, report = run_pristine({"tests/orders.test.ts": source})
+    assert rule_findings(report, RULE_ID) == [
+        (4, "warning"),
+        (5, "warning"),
+        (6, "warning"),
+        (7, "warning"),
+        (8, "warning"),
+    ]

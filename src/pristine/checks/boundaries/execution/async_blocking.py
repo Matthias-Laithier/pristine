@@ -3,6 +3,11 @@ from collections.abc import Iterator
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.clients.script_calls import (
+    enclosing_function,
+    qualified_script_call,
+    script_bindings,
+)
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
@@ -14,6 +19,51 @@ BLOCKING_CALLS = frozenset(EXTERNAL_CALLS) | {"time.sleep", "psycopg2.connect"}
 OFFLOAD_CALLS = frozenset({"asyncio.to_thread", "anyio.to_thread.run_sync"})
 EXECUTOR_METHOD = ".run_in_executor"
 FUNCTION_KIND = "function_definition"
+SYNC_FS_METHODS = frozenset(
+    {
+        "readFileSync",
+        "writeFileSync",
+        "appendFileSync",
+        "readdirSync",
+        "statSync",
+        "lstatSync",
+        "accessSync",
+        "existsSync",
+        "unlinkSync",
+        "mkdirSync",
+        "rmSync",
+        "renameSync",
+        "copyFileSync",
+        "openSync",
+        "closeSync",
+        "readSync",
+        "writeSync",
+        "realpathSync",
+        "readlinkSync",
+        "fsyncSync",
+    }
+)
+
+
+def is_script_async(function: Node | None) -> bool:
+    return function is not None and any(child.type == "async" for child in function.children)
+
+
+def script_blocking_findings(parsed: ParsedFile) -> list[Finding]:
+    bindings = script_bindings(parsed)
+    findings = []
+    for call in (node for node in all_nodes(parsed) if node.type == "call_expression"):
+        function = enclosing_function(call)
+        if not is_script_async(function):
+            continue
+        target = qualified_script_call(call, bindings)
+        module, _, method = (target or "").replace("/default/", "/").partition("/")
+        if module in {"fs", "node:fs"} and method in SYNC_FS_METHODS:
+            message = (
+                f"'{callee_of(call)}' blocks the event loop inside an async function; await a Node fs/promises API"
+            )
+            findings.append(Finding(parsed.path, line_of(call), RULE_ID, Severity.ERROR, message))
+    return findings
 
 
 def is_offload(callee: str, qualified: str | None) -> bool:
@@ -45,6 +95,8 @@ def async_function_findings(path: str, function: Node, bindings: dict[str, str])
 
 
 def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
+    if parsed.language in {"javascript", "typescript", "tsx"}:
+        return script_blocking_findings(parsed)
     if parsed.language != "python":
         return []
     bindings = import_bindings(parsed)
@@ -59,6 +111,7 @@ CHECK = FileCheck(
     summary=(
         "Python blocking calls made directly in an async def: time.sleep, requests, urlopen, subprocess, "
         "smtplib, socket.create_connection, and psycopg2.connect. Calls offloaded to a thread are exempt."
+        " JS/TS imported Node fs synchronous IO in async functions; nested synchronous callbacks are exempt."
     ),
     run=check_async_blocking,
 )

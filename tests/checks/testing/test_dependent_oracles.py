@@ -1,3 +1,5 @@
+import pytest
+
 from tests.conftest import RunPristine, rule_findings
 
 RULE_ID = "TST-7"
@@ -106,3 +108,52 @@ def test_production_code_is_exempt(run_pristine: RunPristine) -> None:
 def test_only_resolved_raising_contexts_exempt_assertions(run_pristine: RunPristine) -> None:
     _, report = run_pristine({"tests/test_invoice.py": RAISING})
     assert rule_findings(report, RULE_ID) == [(20, "error"), (27, "error")]
+
+
+@pytest.mark.parametrize("extension", ["test.ts", "spec.tsx"])
+def test_typescript_literal_and_identity_oracles(run_pristine: RunPristine, extension: str) -> None:
+    source = """import {test as check, expect as verify} from "vitest";
+import assert from "node:assert/strict";
+import {equal as compare} from "node:assert";
+check("oracle", () => {
+  verify(42).toBe(42);
+  verify(value).toEqual(value);
+  verify([1, -2]).toEqual([1,-2]);
+  assert.strictEqual(value, value);
+  compare("EUR", "EUR");
+  verify(load()).toBe(load());
+  verify(service.value).toBe(service.value);
+  verify([]).toBe([]);
+  assert.equal({}, {});
+  verify(-1).toBe(+1);
+  verify("a b").toBe("ab");
+  verify(value).not.toBe(value);
+  verify(1).toBe(2);
+});
+"""
+    _, report = run_pristine({f"tests/orders.{extension}": source})
+    assert rule_findings(report, RULE_ID) == [(5, "error"), (6, "error"), (7, "error"), (8, "error"), (9, "error")]
+
+
+def test_typescript_oracles_require_owned_assertion_and_callback(run_pristine: RunPristine) -> None:
+    source = """import {test, expect} from "vitest";
+import assert from "node:assert";
+expect(1).toBe(1);
+test("shadow", (expect, assert) => { expect(1).toBe(1); assert.equal(1, 1); });
+function helper(test) { test("custom", () => expect(1).toBe(1)); }
+test("local", () => { const expect = custom; expect(1).toBe(1); });
+"""
+    _, report = run_pristine({"tests/orders.test.ts": source, "orders.ts": 'test("x", () => expect(1).toBe(1));'})
+    assert rule_findings(report, RULE_ID) == []
+
+
+def test_jest_namespace_aliases_and_function_callbacks(run_pristine: RunPristine) -> None:
+    source = """import * as framework from "@jest/globals";
+import {strictEqual as compare} from "node:assert";
+framework.it.only("oracle", function () {
+  framework.expect(1).toBe(1);
+  compare(value, value);
+});
+"""
+    _, report = run_pristine({"tests/orders.test.tsx": source})
+    assert rule_findings(report, RULE_ID) == [(4, "error"), (5, "error")]

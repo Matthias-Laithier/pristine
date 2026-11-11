@@ -3,6 +3,7 @@ from pathlib import Path, PurePath
 
 from pristine.checks.core.readability.function_clones.blocks import repeated_blocks, text_blocks
 from pristine.checks.core.readability.function_clones.bodies import MINIMUM_STATEMENTS, FunctionBody, function_bodies
+from pristine.checks.core.readability.function_clones.scripts import SCRIPT_SUFFIXES, ScriptBody, script_groups
 from pristine.checks.definitions import PathCheck
 from pristine.files.classification import is_generated
 from pristine.files.path_roles import is_test_path, is_vendored
@@ -28,7 +29,7 @@ def is_exempt_folder(name: str) -> bool:
 def is_compared(path: str) -> bool:
     pure = PurePath(path)
     exempt = is_test_path(pure) or is_vendored(pure) or any(is_exempt_folder(name) for name in pure.parts[:-1])
-    return pure.suffix == PYTHON_SUFFIX and not exempt
+    return pure.suffix in {PYTHON_SUFFIX, *SCRIPT_SUFFIXES} and not exempt
 
 
 def read_source(path: str) -> str:
@@ -40,7 +41,12 @@ def read_source(path: str) -> str:
 
 
 def repeated_block_keys(paths: list[str]) -> BlockKeys:
-    blocks = [block for path in paths if is_compared(path) for block in text_blocks(path, read_source(path))]
+    blocks = [
+        block
+        for path in paths
+        if path.endswith(PYTHON_SUFFIX) and is_compared(path)
+        for block in text_blocks(path, read_source(path))
+    ]
     return {(block.path, block.line): block.key for block in repeated_blocks(blocks)}
 
 
@@ -59,11 +65,11 @@ def clone_groups(paths: list[str]) -> list[list[FunctionBody]]:
     return [sorted(group, key=lambda body: (body.path, body.line)) for group in groups.values() if len(group) > 1]
 
 
-def location(body: FunctionBody) -> str:
+def location(body: FunctionBody | ScriptBody) -> str:
     return f"{body.name} at {body.path}:{body.line}"
 
 
-def clone_finding(group: list[FunctionBody], checked: set[str]) -> Finding | None:
+def clone_finding(group: list[FunctionBody] | list[ScriptBody], checked: set[str]) -> Finding | None:
     reported = next((body for body in group if body.path in checked), None)
     if reported is None:
         return None
@@ -73,13 +79,16 @@ def clone_finding(group: list[FunctionBody], checked: set[str]) -> Finding | Non
 
 
 def compared_paths(paths: list[str]) -> list[str]:
-    return [path for path in with_repository_files(paths) if path.endswith(PYTHON_SUFFIX)]
+    return [path for path in with_repository_files(paths) if is_compared(path)]
 
 
 def check_function_clones(paths: list[str]) -> list[Finding]:
     checked = set(paths)
-    findings = (clone_finding(group, checked) for group in clone_groups(compared_paths(paths)))
-    return [finding for finding in findings if finding is not None]
+    compared = compared_paths(paths)
+    scripts = [path for path in compared if PurePath(path).suffix in SCRIPT_SUFFIXES and read_source(path)]
+    groups, failures = script_groups(scripts)
+    findings = (clone_finding(group, checked) for group in [*clone_groups(compared), *groups])
+    return [finding for finding in findings if finding is not None] + failures
 
 
 CHECK = PathCheck(
@@ -89,7 +98,8 @@ CHECK = PathCheck(
         f"Python functions and methods whose bodies of at least {MINIMUM_STATEMENTS} statements are identical "
         "after parsing, identifiers included, across the repository. Test, generated, vendored, migration, and "
         "template files, overloads, abstract methods, and protocol stubs are exempt. Each group is reported once, "
-        "on its first checked member."
+        "on its first checked member. JS/TS functions, methods, and block-bodied arrows use exact syntax trees, "
+        "including identifiers and literal spelling, with comments and optional semicolons ignored, at the same threshold."
     ),
     run=check_function_clones,
 )

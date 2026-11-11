@@ -3,6 +3,7 @@ from collections.abc import Iterator
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.testing.dependent_oracles.typescript import typescript_dependent_assertions
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -130,11 +131,12 @@ def dependent_assertions(source: Node | ParsedFile) -> Iterator[tuple[Node, str]
 
 
 def check_dependent_oracles(parsed: ParsedFile) -> list[Finding]:
-    if not is_python_test_module(parsed):
-        return []
+    assertions = (
+        dependent_assertions(parsed) if is_python_test_module(parsed) else typescript_dependent_assertions(parsed)
+    )
     return [
         Finding(parsed.path, line_of(node), RULE_ID, Severity.ERROR, f"{problem}, so it cannot fail; {FIX}")
-        for node, problem in dependent_assertions(parsed)
+        for node, problem in assertions
     ]
 
 
@@ -143,7 +145,9 @@ CHECK = FileCheck(
     title="No Tautological Assertions",
     summary=(
         "Python test functions asserting == between two identical literals, or is between two identical names "
-        "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt."
+        "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt. "
+        "JS/TS/TSX .test/.spec callbacks check Jest/Vitest expect.toBe/toEqual and node:assert equal/strictEqual "
+        "with identical literals or the same identifier; repeated effectful expressions are not reported."
     ),
     run=check_dependent_oracles,
 )

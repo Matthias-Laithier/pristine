@@ -1,3 +1,5 @@
+import pytest
+
 from tests.conftest import RunPristine, rule_findings
 
 RULE_ID = "TST-1"
@@ -52,3 +54,32 @@ def test_files_without_tests_are_exempt_unless_they_are_conftest(run_pristine: R
     files = {"benchmark/load_test.py": load_script, "tests/conftest.py": load_script}
     _, report = run_pristine(files)
     assert {finding["path"] for finding in report["findings"] if finding["rule_id"] == RULE_ID} == {"tests/conftest.py"}
+
+
+@pytest.mark.parametrize("extension", ["test.ts", "spec.tsx"])
+def test_typescript_private_state_in_callbacks(run_pristine: RunPristine, extension: str) -> None:
+    source = """import { test as check, vi as clock } from "vitest";
+function helper() { return service._hidden; }
+check("state", () => {
+  expect(service._state).toBe("ready");
+  service.client._session = null;
+  expect(service._state._retries).toBe(2);
+  fakeStore._state = 1;
+  mock.client._session = null;
+  this._state = 1;
+  expect(Invoice._meta.table).toBe("invoice");
+  clock.spyOn(service._client, "send");
+  expect(service.__state__).toBe(1);
+});
+"""
+    _, report = run_pristine({f"tests/orders.{extension}": source})
+    assert rule_findings(report, RULE_ID) == [(4, "warning"), (5, "warning"), (6, "warning")]
+
+
+def test_typescript_private_state_requires_test_path_and_callback(run_pristine: RunPristine) -> None:
+    source = """import {test as check} from "other";
+check("state", () => service._state);
+function helper() { return service._state; }
+"""
+    _, report = run_pristine({"tests/orders.test.ts": source, "orders.ts": 'test("state", () => service._state);'})
+    assert rule_findings(report, RULE_ID) == []

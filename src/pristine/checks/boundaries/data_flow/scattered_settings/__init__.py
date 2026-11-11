@@ -5,6 +5,9 @@ from pathlib import PurePath
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.scattered_settings.composition_roots import is_composition_root, is_within
+from pristine.checks.boundaries.data_flow.scattered_settings.scripts import (
+    environment_reads as script_environment_reads,
+)
 from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -107,6 +110,18 @@ def environment_reads(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[
 
 
 def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
+    if parsed.language in {"javascript", "typescript", "tsx"}:
+        message = (
+            "environment read inside a function; validate settings once at startup and pass the typed settings value in"
+        )
+        lines = sorted(
+            {
+                line_of(node)
+                for node, key in script_environment_reads(parsed)
+                if VARIABLE_NAME.fullmatch(key) and PROCESS_VARIABLES.fullmatch(key) is None
+            }
+        )
+        return [Finding(parsed.path, line, RULE_ID, Severity.WARNING, message) for line in lines]
     if parsed.language != "python":
         return []
     bindings = import_bindings(parsed)
@@ -128,6 +143,8 @@ CHECK = FileCheck(
         "subclass, tests, pytest hooks, process variables such as PATH or HOME, and composition roots are exempt: "
         "modules with a __main__ guard or a shebang, __main__.py and the modules it imports, the modules that "
         "pyproject.toml scripts name, and modules defining invoke or nox tasks."
+        " JS/TS literal process.env property/index reads in functions; tests, shebangs, named startup/config "
+        "modules and functions, process variables, NODE_ENV/NODE_OPTIONS and framework public-env prefixes are exempt."
     ),
     run=check_scattered_settings,
 )

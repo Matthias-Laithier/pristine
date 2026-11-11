@@ -3,6 +3,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
+from pristine.checks.boundaries.execution.task_ownership.scripts import dropped_operations
 from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
@@ -124,6 +125,8 @@ def swallowed_cancellations(parsed: ParsedFile, bindings: dict[str, str]) -> Ite
 
 
 def check_task_ownership(parsed: ParsedFile) -> list[Finding]:
+    if parsed.language in {"javascript", "typescript", "tsx"}:
+        return dropped_operations(parsed)
     if parsed.language != "python":
         return []
     bindings = import_bindings(parsed)
@@ -137,6 +140,9 @@ CHECK = FileCheck(
     summary=(
         "Python asyncio tasks created and dropped as a bare statement, and except clauses that catch "
         "CancelledError, or BaseException in an async def, without re-raising it."
+        " JS/TS bare calls to imported axios, node-fetch/undici fetch, and Node fs/timers promise APIs; "
+        "assigned, returned, awaited and explicitly handled promises are exempt. Generic floating promises "
+        "and cancellation equivalence are not inferred."
     ),
     run=check_task_ownership,
 )

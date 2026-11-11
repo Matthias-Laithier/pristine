@@ -5,6 +5,7 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
+from pristine.checks.composition.script_eager import eager_children
 from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -106,6 +107,8 @@ def is_main_guard(node: Node) -> bool:
 
 
 def import_time_children(node: Node, language: str) -> list[Node]:
+    if language in SCRIPT_LANGUAGES and (children := eager_children(node)) is not None:
+        return children
     if language == "python" and node.type == "generator_expression":
         first_clause = next((child for child in node.named_children if child.type == "for_in_clause"), None)
         iterable = None if first_clause is None else first_clause.child_by_field_name("right")
@@ -167,7 +170,8 @@ CHECK = FileCheck(
     title="Imports Do Not Perform External Work",
     summary=(
         "Known env, file, network, process, signal, dotenv, and output work in eager module expressions. "
-        "Python class bodies, defaults and decorators are included. Main guards, tests and recognized entrypoints are exempt."
+        "Python eager class expressions and JS/TS static fields, blocks and computed names are included. "
+        "Main guards, tests and recognized entrypoints are exempt."
     ),
     run=check_import_time_work,
 )

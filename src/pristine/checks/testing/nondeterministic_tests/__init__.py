@@ -3,6 +3,7 @@ import re
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.testing.nondeterministic_tests.typescript import typescript_nondeterministic_calls
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -30,6 +31,14 @@ FIXES = {
     SLEEP_KIND: "wait on an explicit signal from a fake, or poll for the condition with a deadline, instead of guessing a delay",
     RANDOM_KIND: "seed it with random.seed or random.Random(seed), or inject fixed values",
 }
+
+
+def fix_for(parsed: ParsedFile, kind: str) -> str:
+    return (
+        "inject fixed values or a seeded random generator"
+        if parsed.language in {"javascript", "typescript", "tsx"} and kind == RANDOM_KIND
+        else FIXES[kind]
+    )
 
 
 def implicit_module_names(source: Node | ParsedFile, heads: set[str]) -> frozenset[str]:
@@ -108,7 +117,10 @@ def nondeterministic_calls(parsed: ParsedFile) -> list[tuple[Node, str, str]]:
 
 
 def check_nondeterministic_tests(parsed: ParsedFile) -> list[Finding]:
-    if not is_python_test_module(parsed):
+    calls = (
+        nondeterministic_calls(parsed) if is_python_test_module(parsed) else typescript_nondeterministic_calls(parsed)
+    )
+    if not calls:
         return []
     return [
         Finding(
@@ -116,9 +128,9 @@ def check_nondeterministic_tests(parsed: ParsedFile) -> list[Finding]:
             line_of(node),
             RULE_ID,
             Severity.WARNING,
-            f"test reads the outside world through '{callee}()'; {FIXES[kind]}",
+            f"test reads the outside world through '{callee}()'; {fix_for(parsed, kind)}",
         )
-        for node, callee, kind in nondeterministic_calls(parsed)
+        for node, callee, kind in calls
     ]
 
 
@@ -128,7 +140,9 @@ CHECK = FileCheck(
     summary=(
         "Python test modules (test paths that define test functions or classes, and conftest.py) that sleep "
         "directly in a test function outside loops, or call module-level random functions without a seed. "
-        "Files that patch sleep exempt sleeps, a zero sleep is a yield, and a seeded file exempts randomness."
+        "Files that patch sleep exempt sleeps, a zero sleep is a yield, and a seeded file exempts randomness. "
+        "JS/TS/TSX .test/.spec callbacks check global Math.random and setTimeout; proven Jest/Vitest fake timers "
+        "in the same callback or enclosing beforeEach/beforeAll hook exempt timers only."
     ),
     run=check_nondeterministic_tests,
 )

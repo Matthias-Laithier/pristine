@@ -76,7 +76,8 @@ CHECK = FileCheck(
     title="Timezone-Aware Instants",
     summary=(
         "Python naive datetimes for instants: datetime.utcnow, utcfromtimestamp, today, and now or "
-        "fromtimestamp without a timezone. date.today is allowed."
+        "fromtimestamp without a timezone. date.today is allowed. "
+        "JS/TS Date already represents an instant, so this Python-specific check is inapplicable there."
     ),
     run=check_naive_datetimes,
 )

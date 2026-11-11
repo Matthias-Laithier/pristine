@@ -50,6 +50,12 @@ Text groups findings by file, ranked by distinct check IDs then path. JSON retai
 
 Exit codes: **0** complete without errors (warnings may remain), **1** error findings, **2** invalid usage, **3** incomplete verification. Incomplete verification takes priority over findings. Complete verification refers only to the checks performed.
 
+## Python and TypeScript coverage
+
+Every language-applicable source check has Python and JS/TS detection, including TSX. TypeScript adds settings reads, known dropped promise operations, async blocking calls, concurrent fan-out, log interpolation, composition patterns, function clones, model settings, and test-quality patterns. Detectors use language-specific evidence and exemptions. This is check-family coverage, not identical recall or whole-program verification.
+
+CR-22's naive-datetime check is Python-specific. JavaScript `Date` already represents an instant. Generic floating promises need type-aware `@typescript-eslint/no-floating-promises`; pristine detects only recognized promise-producing APIs. Import cycles resolve known local edges, not arbitrary TypeScript path aliases. Untyped JavaScript mutation, custom test frameworks, and arbitrary client aliases are not inferred. Use `pristine checks` for each detector's precise scope.
+
 ## Installation and native tools
 
 Install with [uv](https://docs.astral.sh/uv/), which obtains Python 3.15+ when needed. The `pristine` package on PyPI is unrelated. `tree-sitter` remains below 0.26 because 0.26.0 crashed while walking TSX and TypeScript trees.

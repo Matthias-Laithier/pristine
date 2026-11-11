@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 lazy from tree_sitter import Node
 
 from pristine.checks.core.placement.global_placement.references import bound_names, identifiers, module_references
+from pristine.checks.core.placement.global_placement.script_references import references as script_references
 from pristine.checks.core.placement.global_placement.type_expressions import is_type_expression
 from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
@@ -124,7 +125,8 @@ def record_definition(item: Node, spec: LanguageSpec, state: ModuleState) -> Non
     if state.started and not bindings(item, spec):
         names = {name for holder in [item, *item.named_children] for name in bound_names(holder)}
         if names:
-            state.declarations.append((names, module_references(item) - names))
+            references = script_references(item) if spec is SCRIPT_SPEC else module_references(item)
+            state.declarations.append((names, references - names))
 
 
 def check_global_placement(parsed: ParsedFile) -> list[Finding]:
