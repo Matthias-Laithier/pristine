@@ -5,16 +5,14 @@ from dataclasses import replace
 
 from pristine.cli.arguments import parser
 lazy from pristine.audit.osv_json import parse_osv_json
-lazy from pristine.catalog.rule_documents import UnknownRule, rule_documents, select_rules
-lazy from pristine.catalog.rule_listing import render_guide, render_rules_json, render_rules_text
+lazy from pristine.catalog.check_listing import render_checks_json, render_checks_text
+lazy from pristine.catalog.guide import GUIDE
 lazy from pristine.checks.registry import path_checks
 lazy from pristine.cli.audit import render_json as render_audit_json
 lazy from pristine.cli.audit import render_text as render_audit_text
 lazy from pristine.cli.rendering import render_json, render_text
 lazy from pristine.engine.grammar_downloads import grammar_download_notices
 lazy from pristine.files.discovery import discover_files, missing_paths
-lazy from pristine.growth.account import GrowthError, growth_since
-lazy from pristine.growth.rendering import render_growth_json, render_growth_text
 lazy from pristine.project.inspection import inspect_project
 lazy from pristine.reports.findings import Severity
 lazy from pristine.reports.report import Report, build_report
@@ -89,34 +87,13 @@ def run_audit(arguments: argparse.Namespace) -> int:
     return EXIT_ERRORS_FOUND if report.findings else EXIT_CLEAN
 
 
-def run_growth(arguments: argparse.Namespace) -> int:
-    try:
-        growth = growth_since(arguments.path, arguments.base)
-    except GrowthError as error:
-        print(f"pristine: {error}", file=sys.stderr)
-        return EXIT_USAGE
-    print(render_growth_json(growth) if arguments.json else render_growth_text(growth))
-    return EXIT_CLEAN
-
-
-def run_rules(arguments: argparse.Namespace) -> int:
-    print(render_rules_json() if arguments.json else render_rules_text())
+def run_checks(arguments: argparse.Namespace) -> int:
+    print(render_checks_json() if arguments.json else render_checks_text())
     return EXIT_CLEAN
 
 
 def run_guide(_: argparse.Namespace) -> int:
-    print(render_guide(), end="")
-    return EXIT_CLEAN
-
-
-def run_rule(arguments: argparse.Namespace) -> int:
-    try:
-        documents = [document for selector in arguments.selectors for document in select_rules(selector)]
-    except UnknownRule as error:
-        known = ", ".join(document.rule_id for document in rule_documents())
-        print(f"pristine: unknown rule ID or chapter: {error}. Known IDs: {known}", file=sys.stderr)
-        return EXIT_USAGE
-    print("\n".join(document.text for document in documents), end="")
+    print(GUIDE, end="")
     return EXIT_CLEAN
 
 
@@ -125,10 +102,8 @@ def command_handlers() -> dict[str, CommandHandler]:
         "check": run_check,
         "project": run_project,
         "audit": run_audit,
-        "growth": run_growth,
         "guide": run_guide,
-        "rule": run_rule,
-        "rules": run_rules,
+        "checks": run_checks,
     }
 
 

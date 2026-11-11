@@ -84,6 +84,7 @@ def check_function_clones(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="Identical Function Bodies",
     summary=(
         f"Python functions and methods whose bodies of at least {MINIMUM_STATEMENTS} statements are identical "
         "after parsing, identifiers included, across the repository. Test, generated, vendored, migration, and "

@@ -25,6 +25,15 @@ DEFERRED_OR_DECLARATIVE_KINDS = frozenset(
     {"class_definition", "class_declaration", "abstract_class_declaration", "class", "decorator", "generator_function"}
 )
 STOP_KINDS = FUNCTION_KINDS | DEFERRED_OR_DECLARATIVE_KINDS
+PYTHON_EAGER_FIELDS = {
+    "assignment": ("left", "right"),
+    "class_definition": ("superclasses", "body"),
+    "function_definition": ("parameters",),
+    "lambda": ("parameters",),
+    "default_parameter": ("value",),
+    "typed_default_parameter": ("value",),
+    "typed_parameter": (),
+}
 BUNDLER_INLINED_ENV = r"(?!NEXT_PUBLIC_|NODE_ENV\b)"
 
 
@@ -96,14 +105,27 @@ def is_main_guard(node: Node) -> bool:
     return node.type == "if_statement" and bool(MAIN_GUARD.fullmatch(condition))
 
 
-def import_time_nodes(root: Node) -> Iterator[Node]:
+def import_time_children(node: Node, language: str) -> list[Node]:
+    if language == "python" and node.type == "generator_expression":
+        first_clause = next((child for child in node.named_children if child.type == "for_in_clause"), None)
+        iterable = None if first_clause is None else first_clause.child_by_field_name("right")
+        return [] if iterable is None else [iterable]
+    fields = PYTHON_EAGER_FIELDS.get(node.type) if language == "python" else None
+    if fields is not None:
+        return [child for field in fields if (child := node.child_by_field_name(field)) is not None]
+    if language == "python" and node.type == "decorator":
+        return node.named_children
+    return [] if node.type in STOP_KINDS else node.named_children
+
+
+def import_time_nodes(root: Node, language: str) -> Iterator[Node]:
     pending = list(reversed(root.named_children))
     while pending:
         node = pending.pop()
-        if node.type in STOP_KINDS or is_main_guard(node):
+        if is_main_guard(node):
             continue
         yield node
-        pending.extend(reversed(node.named_children))
+        pending.extend(reversed(import_time_children(node, language)))
 
 
 def subject_of(node: Node) -> Node | None:
@@ -133,7 +155,7 @@ def check_import_time_work(parsed: ParsedFile) -> list[Finding]:
     if language_patterns is None or is_entrypoint_or_test(parsed):
         return []
     findings: dict[int, Finding] = {}
-    for node in import_time_nodes(parsed.root):
+    for node in import_time_nodes(parsed.root, parsed.language):
         work = work_of(node, language_patterns)
         if work is not None and line_of(node) not in findings:
             findings[line_of(node)] = work_finding(parsed, node, work)
@@ -142,6 +164,10 @@ def check_import_time_work(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
-    summary="Module-level env, file, network, process, signal, dotenv, and output work outside main guards.",
+    title="Imports Do Not Perform External Work",
+    summary=(
+        "Known env, file, network, process, signal, dotenv, and output work in eager module expressions. "
+        "Python class bodies, defaults and decorators are included. Main guards, tests and recognized entrypoints are exempt."
+    ),
     run=check_import_time_work,
 )

@@ -33,13 +33,6 @@ class Requirement:
     applies: Callable[[Project, list[Manifest]], bool]
 
 
-@dataclass(frozen=True)
-class FastGate:
-    rule: Rule
-    commands: tuple[str, ...]
-    invocations: frozenset[Invocation]
-
-
 def every_project(_: Project, __: list[Manifest]) -> bool:
     return True
 
@@ -47,6 +40,15 @@ def every_project(_: Project, __: list[Manifest]) -> bool:
 def is_typescript(project: Project, manifests: list[Manifest]) -> bool:
     declared = any(TYPESCRIPT_PACKAGE in manifest.dependencies for manifest in manifests)
     return declared or bool(project.files_named((TYPESCRIPT_CONFIG,))) or TYPESCRIPT_CONFIG in project.entries
+
+
+def declares(manifest: Manifest, tool: Tool) -> bool:
+    return bool(tool.packages & manifest.dependencies or manifest.settings.keys() & set(tool.settings_keys))
+
+
+def is_configured(tool: Tool, manifests: list[Manifest], file_names: frozenset[str]) -> bool:
+    has_config_file = any(fnmatchcase(name, pattern) for name in file_names for pattern in tool.config_files)
+    return has_config_file or any(declares(manifest, tool) for manifest in manifests)
 
 
 def has_architecture_contract(project: Project, manifests: list[Manifest]) -> bool:
@@ -70,6 +72,13 @@ REQUIREMENTS = (
     Requirement(Ecosystem.RUST, Role.LINTER, every_project),
     Requirement(Ecosystem.RUST, Role.TYPE_CHECKER, every_project),
 )
+
+
+@dataclass(frozen=True)
+class FastGate:
+    rule: Rule
+    commands: tuple[str, ...]
+    invocations: frozenset[Invocation]
 
 
 def invocations(commands: Iterable[str]) -> frozenset[Invocation]:
@@ -102,15 +111,6 @@ def fast_gate(project: Project) -> FastGate | None:
     javascript = project.root_manifest(Ecosystem.JAVASCRIPT)
     commands = with_package_scripts(reach(makefile, FAST_GATE).commands, javascript.scripts if javascript else {})
     return FastGate(makefile.rules[FAST_GATE], tuple(commands), invocations(commands))
-
-
-def declares(manifest: Manifest, tool: Tool) -> bool:
-    return bool(tool.packages & manifest.dependencies or manifest.settings.keys() & set(tool.settings_keys))
-
-
-def is_configured(tool: Tool, manifests: list[Manifest], file_names: frozenset[str]) -> bool:
-    has_config_file = any(fnmatchcase(name, pattern) for name in file_names for pattern in tool.config_files)
-    return has_config_file or any(declares(manifest, tool) for manifest in manifests)
 
 
 def unmet(project: Project, requirement: Requirement, gate: FastGate | None) -> list[Finding]:

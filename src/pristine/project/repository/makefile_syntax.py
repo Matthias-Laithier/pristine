@@ -28,11 +28,11 @@ def keep_existing(current: str | None, value: str) -> str:
     return value if current is None else current
 
 
+ASSIGNMENT_COMBINERS: dict[str, Combine] = {"+=": append_value, "?=": keep_existing}
+
+
 def replace_value(_: str | None, value: str) -> str:
     return value
-
-
-ASSIGNMENT_COMBINERS: dict[str, Combine] = {"+=": append_value, "?=": keep_existing}
 
 
 @dataclass

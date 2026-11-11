@@ -55,6 +55,7 @@ def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Async Code Never Blocks the Event Loop",
     summary=(
         "Python blocking calls made directly in an async def: time.sleep, requests, urlopen, subprocess, "
         "smtplib, socket.create_connection, and psycopg2.connect. Calls offloaded to a thread are exempt."

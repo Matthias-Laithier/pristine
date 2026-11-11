@@ -32,7 +32,8 @@ def test_audit_help_runs_without_parser_packages() -> None:
     assert (exit_code, stderr) == (0, "")
     output = " ".join(stdout.split())
     assert "usage: pristine audit [-h] [--json] [--max N] PATH" in output
-    assert "Before finishing, review your change against every review rule it touches." in output
+    assert "review rule" not in output
+    assert "incomplete verification" in output
 
 
 @pytest.mark.parametrize(

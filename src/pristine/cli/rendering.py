@@ -8,10 +8,8 @@ from pristine.reports.triage import FileTriage, ranked_files
 _FILE_LEVEL_RULES = frozenset({"CR-1", "CR-9", "CR-15", "CO-14", "TL-1"})
 _FILE_LEVEL_FIRST_LINE_RULES = frozenset({"TL-3", "TL-4"})
 NEXT_STEP = (
-    "next: fix every finding or report it by rule ID as a deliberate break with its reason. "
-    "Read a rule in full with 'pristine rule <ID>' when a finding cites it. "
-    "Before finishing, review your change against every review rule it touches, listed in 'pristine guide'. "
-    "Checks cover only the mechanical part of the checked rules."
+    "Resolve errors and verification gaps. Warnings need judgment. "
+    "A clean scan establishes only the patterns listed by pristine checks."
 )
 
 
@@ -66,7 +64,6 @@ def render_text(report: Report, limit: int | None) -> str:
     if lines:
         lines.append("")
     lines += _render_summary(report)
-    lines += ["", *_review_guidance()]
     return "\n".join(lines)
 
 
@@ -88,11 +85,6 @@ def _render_summary(report: Report) -> list[str]:
         + f", {report.verification_failures} failures"
     )
     return lines
-
-
-def _review_guidance() -> list[str]:
-    sentences = NEXT_STEP.removeprefix("next: ").split(". ")
-    return ["Required agent review", *(f"  - {sentence.rstrip('.')}." for sentence in sentences)]
 
 
 def _triage_record(file: FileTriage) -> dict[str, object]:

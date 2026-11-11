@@ -32,6 +32,12 @@ class PyrightFlavor:
     default_is_strict: bool
 
 
+PYRIGHT = PyrightFlavor(("pyright",), frozenset({STRICT_MODE}), default_is_strict=False)
+BASEDPYRIGHT = PyrightFlavor(
+    ("basedpyright", "pyright"), frozenset({STRICT_MODE, "recommended", "all"}), default_is_strict=True
+)
+
+
 def ini_strict(project: Project, path: str) -> bool | None:
     text = project.reader.text(path)
     if text is None:
@@ -82,10 +88,6 @@ def pyright_check(flavor: PyrightFlavor) -> StrictnessCheck:
     return check
 
 
-PYRIGHT = PyrightFlavor(("pyright",), frozenset({STRICT_MODE}), default_is_strict=False)
-BASEDPYRIGHT = PyrightFlavor(
-    ("basedpyright", "pyright"), frozenset({STRICT_MODE, "recommended", "all"}), default_is_strict=True
-)
 PYTHON_PROBES = {
     MYPY: Probe(MYPY, mypy_shortfall),
     "pyright": Probe("pyright", pyright_check(PYRIGHT)),

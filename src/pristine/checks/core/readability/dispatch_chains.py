@@ -146,6 +146,7 @@ def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Value Dispatch Through a Registry",
     summary=f"Dispatch on {DISPATCH_CASE_MINIMUM}+ constants: if/else-if chain (error), switch or match (warning).",
     run=check_dispatch_chains,
 )

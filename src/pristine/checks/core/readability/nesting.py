@@ -114,6 +114,7 @@ def check_nesting(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Nesting Depth",
     summary=(
         f"Control-flow nesting depth per function ({NESTING_LIMIT.describe()}); else-if adds no level, "
         "a comprehension or lambda adds one."

@@ -172,6 +172,7 @@ def check_parameter_mutation(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Localize Mutation",
     summary=(
         "Public, undecorated Python module-level functions outside tests, never passed as a callback in their module, "
         "that write or delete an item of one of their "

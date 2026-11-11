@@ -3,7 +3,7 @@ import json
 from tests.conftest import run_python
 
 
-def test_rules_metadata_does_not_import_native_parsers() -> None:
+def test_checks_metadata_does_not_import_native_parsers() -> None:
     observer = r"""
 import json
 import sys
@@ -19,7 +19,7 @@ def observe_import(event, args):
 sys.addaudithook(observe_import)
 from pristine.cli.main import main
 
-exit_code = main(["rules", "--json"])
+exit_code = main(["checks", "--json"])
 print(json.dumps({"exit_code": exit_code, "native_imports": native_imports}), file=sys.stderr)
 """
     exit_code, stdout, stderr = run_python(observer)

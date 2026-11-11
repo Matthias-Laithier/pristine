@@ -72,6 +72,7 @@ def check_test_location(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="Tests Live in a Dedicated tests Folder",
     summary=(
         "Test files (test_*.py, *_test.py/js/ts/rb, *.test.js/ts, *.spec.js/ts, *_spec.rb, anything in __tests__) "
         "outside a dedicated test folder such as tests/, test/, or spec/. Go and Rust tests are exempt."

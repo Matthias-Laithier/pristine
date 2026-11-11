@@ -3,7 +3,7 @@ from collections import Counter
 from dataclasses import asdict
 
 from pristine.audit.models import AuditReport, DependencyFinding
-from pristine.cli.rendering import NEXT_STEP, counted
+from pristine.cli.rendering import counted
 
 __all__ = ["render_json", "render_text"]
 
@@ -27,7 +27,7 @@ def render_json(report: AuditReport, limit: int | None) -> str:
             "findings": [asdict(finding) for finding in shown],
             "sources": [asdict(source) for source in report.sources],
             "problems": report.problems,
-            "next_step": NEXT_STEP,
+            "next_step": "Assess advisory findings and resolve verification gaps within the stated audit scope.",
         },
         indent=2,
     )
@@ -44,8 +44,6 @@ def render_text(report: AuditReport, limit: int | None) -> str:
         lines.append("No known advisory matches; not proof of security.")
     lines.append("summary: " + ", ".join(f"{count} {name.replace('_', ' ')}" for name, count in report.counts.items()))
     lines.append("verification: " + ("incomplete" if report.verification_failed else "complete"))
-    lines.extend(["", "Required agent review"])
-    lines.extend(f"  - {sentence.rstrip('.')}." for sentence in NEXT_STEP.removeprefix("next: ").split(". "))
     return "\n".join(lines)
 
 

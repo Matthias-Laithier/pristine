@@ -117,7 +117,7 @@ class _ProcessRunner(Protocol):
 
 
 class NativeToolResolver:
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         cache_directory: Path,
         system: str,

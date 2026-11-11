@@ -133,6 +133,7 @@ def check_task_ownership(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Task Ownership and Cancellation",
     summary=(
         "Python asyncio tasks created and dropped as a bare statement, and except clauses that catch "
         "CancelledError, or BaseException in an async def, without re-raising it."

@@ -136,6 +136,7 @@ def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Functions Where Possible, Classes Where Needed",
     summary=(
         "Python module-level classes that only group static or class methods, with one public method or "
         "private helpers, no bases, decorators, attributes, or instances."

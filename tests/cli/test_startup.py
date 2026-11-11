@@ -9,15 +9,14 @@ from tests.conftest import run_cli
         (("--version",), "pristine ", ""),
         (
             ("--help",),
-            "usage: pristine [-h] [--version]\n                {check,project,audit,growth,guide,rule,rules} ...\n",
+            "usage: pristine [-h] [--version] {check,project,audit,guide,checks} ...\n",
             "",
         ),
-        (("rule", "CR-20"), "# CR-20 Minimize the Resulting Codebase\n", ""),
-        (("guide",), "# Coding rules\n", ""),
-        (("rules",), "BS-1 Validate Untrusted Input at the Boundary (check): ", ""),
-        (("rules", "--json"), '[\n  {\n    "rule_id": "BS-1",', ""),
+        (("guide",), "# Pristine guide\n", ""),
+        (("checks",), "BS-1 Centralize Settings Acquisition (check): ", ""),
+        (("checks", "--json"), '[\n  {\n    "rule_id": "BS-1",', ""),
     ],
-    ids=["version", "help", "rule", "guide", "rules", "rules-json"],
+    ids=["version", "help", "guide", "checks", "checks-json"],
 )
 def test_light_commands_run_without_parser_packages(
     arguments: tuple[str, ...], expected_stdout: str, expected_stderr: str

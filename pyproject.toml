@@ -1,7 +1,7 @@
 [project]
 name = "pristine"
-version = "0.8.0"
-description = "Opinionated coding rules for AI coding agents, with a CLI that serves them and checks their mechanical part."
+version = "0.9.0"
+description = "Predictable code structure and defect checks for AI coding agents."
 readme = "README.md"
 authors = [{name = "Matthias Laithier", email = "matthias.laithier@gmail.com"}]
 license = "MIT"
@@ -42,7 +42,8 @@ dev = [
 line-length = 120
 
 [tool.ruff.lint]
-extend-select = ["I", "B", "UP", "SIM", "PL", "ERA", "FBT", "BLE", "ARG", "S", "ASYNC", "DTZ", "G", "T20", "ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "ANN204", "ANN205", "ANN206"]
+extend-select = ["E402", "I", "B", "UP", "SIM", "PL", "ERA", "FBT", "BLE", "ARG", "S", "ASYNC", "DTZ", "G", "T20", "ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "ANN204", "ANN205", "ANN206"]
+ignore = ["PLR0913", "PLR0917"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004", "S101"]

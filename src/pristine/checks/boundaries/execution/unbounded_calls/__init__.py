@@ -27,6 +27,7 @@ def check_unbounded_calls(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Bound Every External Call",
     summary=(
         "Known external calls without a timeout: Python requests, subprocess, urlopen, socket, and smtplib; "
         "server-side JS/TS fetch without signal and axios without timeout; Go http.Get and http.Client."

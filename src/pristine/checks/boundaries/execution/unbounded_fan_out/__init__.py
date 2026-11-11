@@ -122,6 +122,7 @@ def check_unbounded_fan_out(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Bound Concurrent Fan-Out",
     summary=(
         "Python asyncio.gather over a spread comprehension or map, and TaskGroup spawns in a loop, that start "
         "work per item of an awaited load, where neither the fanned coroutine nor the loop body holds an "

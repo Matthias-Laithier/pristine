@@ -128,6 +128,7 @@ def check_model_settings_literals(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Model Settings Belong in Configuration",
     summary=(
         "Python calls passing a literal model identifier or a literal temperature or top_p, directly or "
         "through a same-module literal constant. Any literal model counts on a call to a model SDK client "

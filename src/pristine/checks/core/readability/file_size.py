@@ -16,6 +16,7 @@ def check_file_size(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Code File Size",
     summary=f"Code file length in lines, all lines counted (hard limit {FILE_LINE_LIMIT}).",
     run=check_file_size,
 )

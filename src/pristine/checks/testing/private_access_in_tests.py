@@ -84,6 +84,7 @@ def check_private_access_in_tests(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Tests Avoid Private State",
     summary=(
         "Python test modules (test paths that define test functions or classes, and conftest.py) reading or "
         "writing a single-underscore private attribute of an object other than self or cls. Mock and monkeypatch targets, mock* and fake* variables, and framework privates such as "

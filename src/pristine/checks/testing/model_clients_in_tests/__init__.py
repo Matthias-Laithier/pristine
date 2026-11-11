@@ -49,6 +49,7 @@ def check_model_clients_in_tests(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="No Live Model Clients in Tests",
     summary=(
         "Test files constructing a real LLM SDK client (Python openai, anthropic, mistralai Mistral, "
         "google.generativeai, cohere; JS/TS openai, @anthropic-ai/sdk, @mistralai/mistralai) whose API key "

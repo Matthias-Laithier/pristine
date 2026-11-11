@@ -85,6 +85,7 @@ def check_asset_location(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="Assets Live in an Organized assets Folder",
     summary=(
         "Images, icons, fonts, audio, and video outside an assets/ folder, or loose at the root of assets/. "
         "Framework locations (public/, static/, Android res/, *.xcassets, Next.js app icons), documentation, "

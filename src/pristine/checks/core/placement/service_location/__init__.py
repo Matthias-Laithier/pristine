@@ -53,6 +53,7 @@ def check_service_location(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Services Live in a Dedicated services Folder",
     summary=(
         "Files importing an external-system client library (HTTP, cloud SDK, database, broker, LLM, mail) outside "
         "a services/ folder. Tests, composition roots, and type-only imports are exempt."

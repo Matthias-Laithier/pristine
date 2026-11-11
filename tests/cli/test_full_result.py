@@ -50,10 +50,8 @@ EXPECTED_JSON_REPORT = {
     "unsupported": [],
     "missing": [],
     "next_step": (
-        "next: fix every finding or report it by rule ID as a deliberate break with its reason. "
-        "Read a rule in full with 'pristine rule <ID>' when a finding cites it. "
-        "Before finishing, review your change against every review rule it touches, listed in 'pristine guide'. "
-        "Checks cover only the mechanical part of the checked rules."
+        "Resolve errors and verification gaps. Warnings need judgment. "
+        "A clean scan establishes only the patterns listed by pristine checks."
     ),
 }
 

@@ -77,6 +77,7 @@ def check_import_cycles(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="No Circular Dependencies",
     summary=(
         "Import cycles between files. Python imports, including lazy, dynamic with literal names, and "
         "TYPE_CHECKING ones, and relative TS and JS imports, including type-only ones, that resolve with "

@@ -4,5 +4,5 @@ title = "pristine"
 useDefault = true
 
 [[allowlists]]
-description = "The BS-2 rule document shows a fake committed credential as its Bad example."
+description = "The archived BS-2 example in git history contains a fake credential."
 paths = ['''(^|/)rules/bs-2-keep-secrets-out-of-code-and-output\.md$''']

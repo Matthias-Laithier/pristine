@@ -35,9 +35,10 @@ def check_secrets(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="Keep Secrets Out of Code and Output",
     summary=(
         "Secrets in every discovered file, skipped data and lockfiles included, detected by gitleaks with its "
-        "default rules or the project's .gitleaks.toml; a scan that cannot run is reported as a warning."
+        "default rules or the project's .gitleaks.toml; a failed scan is an incomplete-verification finding."
     ),
     run=check_secrets,
 )

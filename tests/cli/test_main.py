@@ -115,18 +115,18 @@ def test_version_prints_the_package_version(capsys: pytest.CaptureFixture[str]) 
     assert capsys.readouterr().out == f"pristine {pyproject['project']['version']}\n"
 
 
-@pytest.mark.parametrize("command", [[], ["guide"], ["rule"], ["rules"], ["check"], ["project"], ["growth"]])
-def test_help_requires_targeted_reading_and_review(capsys: pytest.CaptureFixture[str], command: list[str]) -> None:
+@pytest.mark.parametrize("command", [[], ["guide"], ["checks"], ["check"], ["project"], ["audit"]])
+def test_help_has_no_rulebook_obligation(capsys: pytest.CaptureFixture[str], command: list[str]) -> None:
     with pytest.raises(SystemExit) as exit_info:
         main([*command, "--help"])
     assert exit_info.value.code == 0
     output = " ".join(capsys.readouterr().out.split())
-    assert "Read 'pristine guide' before coding, and read in full every review rule your change touches." in output
-    assert "Before finishing, review your change against every review rule it touches." in output
+    assert "review rule" not in output
+    assert "pristine rule" not in output
 
 
 @pytest.mark.parametrize("command", ["check", "project"])
-def test_clean_reports_still_require_review(
+def test_clean_reports_are_concise(
     run_pristine: RunPristine, tmp_path: Path, capsys: pytest.CaptureFixture[str], command: str
 ) -> None:
     run_pristine({"invoice.py": "invoice_total = 1\n"})
@@ -138,10 +138,7 @@ def test_clean_reports_still_require_review(
     assert document["verification_status"] == "complete"
     assert main(arguments) == 0
     output = capsys.readouterr().out
-    review = output.partition("\n\nRequired agent review\n")[2]
-    sentences = [line.removeprefix("  - ") for line in review.splitlines()]
-    assert len(sentences) == 4
+    assert "Required agent review" not in output
     assert "\x1b" not in output
-    next_step = "next: " + " ".join(sentences)
-    assert document["next_step"] == next_step
-    assert "review your change against every review rule it touches" in next_step
+    assert "Warnings need judgment" in document["next_step"]
+    assert "pristine rule" not in document["next_step"]

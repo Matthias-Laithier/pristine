@@ -5,12 +5,10 @@ from pathlib import Path
 from pristine.cli.help import (
     AUDIT_DESCRIPTION,
     CHECK_DESCRIPTION,
+    CHECKS_DESCRIPTION,
     DESCRIPTION,
-    GROWTH_DESCRIPTION,
     GUIDE_DESCRIPTION,
     PROJECT_DESCRIPTION,
-    RULE_DESCRIPTION,
-    RULES_DESCRIPTION,
 )
 
 
@@ -25,8 +23,9 @@ def parser() -> argparse.ArgumentParser:
     project.add_argument("path", nargs="?", default=Path("."), type=Path, help="repository root, default '.'")
     add_report_options(project)
     add_audit_command(commands)
-    add_growth_command(commands)
-    add_rule_commands(commands)
+    commands.add_parser("guide", help="print the short implementation guide", description=GUIDE_DESCRIPTION)
+    checks = commands.add_parser("checks", help="list executable checks", description=CHECKS_DESCRIPTION)
+    checks.add_argument("--json", action="store_true", help="print check metadata as JSON")
     return root
 
 
@@ -68,20 +67,6 @@ def add_audit_command(commands: argparse._SubParsersAction[argparse.ArgumentPars
     add_report_options(audit)
 
 
-def add_growth_command(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    growth = commands.add_parser(
-        "growth", help="count maintained lines added and removed for CR-20", description=GROWTH_DESCRIPTION
-    )
-    growth.add_argument(
-        "base",
-        nargs="?",
-        default=None,
-        help="git revision to compare with; default: merge base with the default branch",
-    )
-    growth.add_argument("--path", type=Path, default=Path("."), help="a directory inside the repository, default '.'")
-    growth.add_argument("--json", action="store_true", help="print the counts as JSON")
-
-
 def add_report_options(command: argparse.ArgumentParser) -> None:
     command.add_argument("--json", action="store_true", help="print a JSON report instead of text lines")
     command.add_argument(
@@ -91,18 +76,3 @@ def add_report_options(command: argparse.ArgumentParser) -> None:
         help="print at most N findings, then a line counting the omitted ones; the summary still counts every "
         "finding, and --json truncates the findings list and reports the rest as summary.omitted; default: all",
     )
-
-
-def add_rule_commands(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    commands.add_parser("guide", help="print the rules hub to read before coding", description=GUIDE_DESCRIPTION)
-    rule = commands.add_parser(
-        "rule", help="print rules by ID, by chapter, or all of them", description=RULE_DESCRIPTION
-    )
-    rule.add_argument(
-        "selectors",
-        nargs="+",
-        metavar="ID",
-        help="rule IDs such as CR-13, chapter prefixes such as BS, or all, case-insensitive",
-    )
-    rules = commands.add_parser("rules", help="list every rule and how it is checked", description=RULES_DESCRIPTION)
-    rules.add_argument("--json", action="store_true", help="print the list as JSON")

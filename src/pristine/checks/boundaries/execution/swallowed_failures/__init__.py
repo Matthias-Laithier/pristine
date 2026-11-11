@@ -30,6 +30,7 @@ def check_swallowed_failures(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Do Not Swallow Failures",
     summary=(
         "Handlers that hide a failure: silent Python excepts, empty or empty-returning catches, "
         "and Go error checks that drop the error or return a nil error."

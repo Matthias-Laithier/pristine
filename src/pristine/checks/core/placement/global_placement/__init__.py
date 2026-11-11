@@ -4,12 +4,13 @@ from dataclasses import dataclass, field
 
 lazy from tree_sitter import Node
 
+from pristine.checks.core.placement.global_placement.references import bound_names, identifiers, module_references
 from pristine.checks.core.placement.global_placement.type_expressions import is_type_expression
 from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.nodes import ANONYMOUS_FUNCTION_KINDS, CALL_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings
 
 RULE_ID = "CR-6"
@@ -17,13 +18,11 @@ PYTHON = "python"
 BINDING_LIST_KINDS = frozenset({"var_spec_list", "const_spec_list"})
 VALUE_LIST_KINDS = frozenset({"expression_list"})
 REFERENCE_FIELDS = ("value", "right", "type")
-NAME_FIELDS = ("name", "left")
 TYPE_ALIAS_ANNOTATION = "TypeAlias"
 IMPORT_CALL_PREFIXES = ("require(", "import(", "await import(")
 BLANK_NAME = re.compile(r"_")
 SPECIAL_NAME = re.compile(r"_|__\w*")
 MESSAGE = "global '{names}' sits below a function or class; move it to the top of the file, right after the imports"
-MUTATION_TARGET_KINDS = frozenset({"attribute", "subscript", "member_expression", "subscript_expression"})
 RUST_STARTS = ("function_item", "impl_item", "struct_item", "enum_item", "trait_item")
 
 
@@ -32,13 +31,6 @@ class LanguageSpec:
     binding_kinds: tuple[str, ...]
     start_kinds: tuple[str, ...]
     exempt_name: re.Pattern[str] = SPECIAL_NAME
-
-
-@dataclass
-class ModuleState:
-    imports: dict[str, str]
-    started: bool = False
-    known_names: set[str] = field(default_factory=set)
 
 
 SCRIPT_SPEC = LanguageSpec(
@@ -51,6 +43,13 @@ LANGUAGE_SPECS = dict.fromkeys(SCRIPT_LANGUAGES, SCRIPT_SPEC) | {
 }
 
 
+@dataclass
+class ModuleState:
+    imports: dict[str, str]
+    started: bool = False
+    declarations: list[tuple[set[str], set[str]]] = field(default_factory=list)
+
+
 def bindings(node: Node, spec: LanguageSpec) -> list[Node]:
     if node.type in spec.binding_kinds:
         return [node]
@@ -58,19 +57,8 @@ def bindings(node: Node, spec: LanguageSpec) -> list[Node]:
     return [binding for child in children for binding in child.named_children if binding.type in spec.binding_kinds]
 
 
-def identifiers(node: Node) -> set[str]:
-    return {node_text(child) or "" for child in all_nodes(node) if "identifier" in child.type}
-
-
 def field_identifiers(node: Node, field_name: str) -> set[str]:
     return {name for child in node.children_by_field_name(field_name) for name in identifiers(child)}
-
-
-def bound_names(binding: Node) -> set[str]:
-    targets = [target for field_name in NAME_FIELDS for target in binding.children_by_field_name(field_name)]
-    if any(target.type in MUTATION_TARGET_KINDS for target in targets):
-        return set()
-    return {name for target in targets for name in identifiers(target)}
 
 
 def value_of(binding: Node) -> Node | None:
@@ -93,9 +81,30 @@ def is_exempt(binding: Node, names: set[str], spec: LanguageSpec, imports: dict[
     return is_alias or is_type or is_import or all(spec.exempt_name.fullmatch(name) for name in names)
 
 
-def reads_known_name(binding: Node, state: ModuleState) -> bool:
+def reads_adjacent_dependencies(binding: Node, state: ModuleState) -> bool:
     referenced = {name for field_name in REFERENCE_FIELDS for name in field_identifiers(binding, field_name)}
-    return bool(referenced & state.known_names)
+    known_names = {name for names, _ in state.declarations for name in names}
+    dependencies = referenced & known_names
+    if not dependencies:
+        return False
+    related = dependencies | bound_names(binding)
+    while True:
+        expanded = related | {
+            name
+            for names, references in state.declarations
+            if related & (names | references)
+            for name in names | (references & known_names)
+        }
+        if expanded == related:
+            break
+        related = expanded
+    for names, _ in reversed(state.declarations):
+        if not related & names:
+            return False
+        dependencies -= names
+        if not dependencies:
+            return True
+    return False
 
 
 def misplaced_bindings(item: Node, spec: LanguageSpec, state: ModuleState) -> Iterator[tuple[Node, set[str]]]:
@@ -103,20 +112,19 @@ def misplaced_bindings(item: Node, spec: LanguageSpec, state: ModuleState) -> It
         names = bound_names(binding)
         is_definition = is_function_valued(value_of(binding))
         is_exempt_binding = is_definition or not names or is_exempt(binding, names, spec, state.imports)
-        if state.started and not is_exempt_binding and not reads_known_name(binding, state):
+        if state.started and not is_exempt_binding and not reads_adjacent_dependencies(binding, state):
             yield binding, names
-            continue
         state.started = state.started or is_definition
-        if state.started:
-            state.known_names |= names
+        if state.started and names:
+            state.declarations.append((names, identifiers(binding) - names))
 
 
 def record_definition(item: Node, spec: LanguageSpec, state: ModuleState) -> None:
-    if bindings(item, spec):
-        return
     state.started = state.started or item.type in spec.start_kinds
-    if state.started:
-        state.known_names |= {name for holder in [item, *item.named_children] for name in bound_names(holder)}
+    if state.started and not bindings(item, spec):
+        names = {name for holder in [item, *item.named_children] for name in bound_names(holder)}
+        if names:
+            state.declarations.append((names, module_references(item) - names))
 
 
 def check_global_placement(parsed: ParsedFile) -> list[Finding]:
@@ -135,9 +143,10 @@ def check_global_placement(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Globals Follow the Opening Import Block",
     summary=(
-        "Module-level variables and constants defined below the first function or class. A value that reads "
-        "an earlier definition, __all__, and type aliases (TypeAlias annotations, typing generics, unions, "
+        "Module-level variables and constants defined below the first function or class. Values immediately beside "
+        "their dependencies, __all__, and type aliases (TypeAlias annotations, typing generics, unions, "
         "TypeVar, NewType, TypedDict and pydantic create_model calls) are allowed."
     ),
     run=check_global_placement,

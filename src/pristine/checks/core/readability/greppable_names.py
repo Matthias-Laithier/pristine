@@ -82,6 +82,7 @@ def check_greppable_names(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Code Is Greppable",
     summary=(
         "Python and TypeScript: attribute and module lookups by a name built from a string template "
         "or concatenation, wildcard imports, and TypeScript re-exports outside a "

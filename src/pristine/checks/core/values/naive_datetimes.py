@@ -73,6 +73,7 @@ def check_naive_datetimes(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Timezone-Aware Instants",
     summary=(
         "Python naive datetimes for instants: datetime.utcnow, utcfromtimestamp, today, and now or "
         "fromtimestamp without a timezone. date.today is allowed."

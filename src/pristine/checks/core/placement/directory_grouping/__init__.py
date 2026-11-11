@@ -24,6 +24,7 @@ def check_directory_grouping(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="Group Files by Cohesive Responsibility",
     summary=(
         "Directories holding more than 8 code files directly (error above 15), folders holding a single code "
         "file, and vague bucket directories (common/, misc/, helpers/, utils/, util/). Empty __init__.py files, "

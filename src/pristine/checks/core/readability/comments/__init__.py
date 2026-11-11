@@ -36,6 +36,7 @@ def check_comments(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="No Comments Except Machine-Read Text",
     summary=(
         "Every comment, doc comment, and docstring. Shebangs and comments that start with a toolchain directive, "
         "such as noqa, type: ignore, eslint-disable, or //go:build, are allowed, and so are Python docstrings "

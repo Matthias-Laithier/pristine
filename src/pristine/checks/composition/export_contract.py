@@ -132,6 +132,7 @@ def check_export_contract(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Export Only the Public Contract",
     summary=(
         "Python: a package __init__.py that re-exports names without __all__, and __all__ entries that are "
         "undefined or private. JS/TS: export * from a relative module in an index file. Tests are exempt."

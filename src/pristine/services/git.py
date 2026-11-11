@@ -8,7 +8,6 @@ GIT_ENTRY = ".git"
 DEFAULT_BRANCH_HEAD = "refs/remotes/origin/HEAD"
 DEFAULT_BRANCH_FALLBACKS = ("refs/remotes/origin/main", "refs/remotes/origin/master")
 UNCHANGED_LINE_COUNTS = ("0", "0")
-BINARY_COUNT = "-"
 EDITED_DIFF_OPTIONS = (
     "--numstat",
     "-z",
@@ -88,20 +87,3 @@ def edited_since_default_branch(root: Path) -> frozenset[str] | None:
         return None
     entries = [entry for entry in output.split("\0") if entry]
     return frozenset(entry.split("\t", 2)[2] for entry in entries if content_edited(entry))
-
-
-def line_changes(root: Path, base: str) -> list[tuple[str, int, int]] | None:
-    output = git_output(root, "diff", "--numstat", "-z", "--no-renames", base, "--")
-    if output is None:
-        return None
-    entries = [entry.split("\t", 2) for entry in output.split("\0") if entry]
-    return [(path, int(added), int(deleted)) for added, deleted, path in entries if added != BINARY_COUNT]
-
-
-def untracked_files(root: Path) -> list[str] | None:
-    return ls_files(root, "--others", "--exclude-standard")
-
-
-def changed_names(root: Path, base: str, status: str) -> list[str]:
-    output = git_output(root, "diff", "--name-only", "-z", "--no-renames", f"--diff-filter={status}", base, "--")
-    return [] if output is None else [name for name in output.split("\0") if name]

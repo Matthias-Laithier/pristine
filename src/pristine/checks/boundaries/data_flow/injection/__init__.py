@@ -35,6 +35,7 @@ def check_injection(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Safe Interpreter Boundaries",
     summary=(
         "Injection-prone construction: Python SQL built by formatting or concatenation, shell commands, eval, "
         "pickle, and unsafe yaml.load; JS/TS non-literal markup, child_process exec of built strings, "

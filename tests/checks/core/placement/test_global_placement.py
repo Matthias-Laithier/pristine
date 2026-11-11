@@ -31,6 +31,20 @@ SCRIPT_CAPWORDS_VALUES = (
     "export function send(invoice) {\n  return invoice;\n}\nexport const InvoiceStatus = { paid: 'paid' };\n"
 )
 RUST_PLACEMENT = "const RETRY_COUNT: u32 = 3;\n\nfn send() {}\n\nstatic SMTP_PORT: u32 = 587;\n"
+DEPENDENT_PLACEMENT = (
+    "def send():\n    pass\ndef cancel():\n    pass\n"
+    "HANDLERS = (send, cancel)\nDEFAULT = HANDLERS[0]\n"
+    "def unrelated():\n    pass\nLATE = build_registry(send)\n"
+)
+INTERRUPTED_REGISTRY = (
+    "def send():\n    pass\ndef unrelated():\n    pass\ndef cancel():\n    pass\nHANDLERS = (send, cancel)\n"
+)
+RELATED_DECLARATIONS = (
+    "class Pattern:\n    pass\nclass Rule:\n    pattern: Pattern\n"
+    "FIRST = Pattern('first')\nSECOND = Pattern('second')\nRULES = (Rule(FIRST), Rule(SECOND))\n"
+    "def first():\n    return helper()\ndef helper():\n    return 0\n"
+    "def second():\n    return first()\nCHECKS = (first, second)\n"
+)
 
 
 @pytest.mark.parametrize(
@@ -44,10 +58,41 @@ RUST_PLACEMENT = "const RETRY_COUNT: u32 = 3;\n\nfn send() {}\n\nstatic SMTP_POR
         ("billing.ts", SCRIPT_CAPWORDS_VALUES, [(4, "warning")]),
         ("billing.go", GO_PLACEMENT, [(10, "warning")]),
         ("billing.rs", RUST_PLACEMENT, [(5, "warning")]),
+        ("billing.py", DEPENDENT_PLACEMENT, [(9, "warning")]),
+        ("billing.py", INTERRUPTED_REGISTRY, [(7, "warning")]),
+        ("billing.py", RELATED_DECLARATIONS, []),
+        ("billing.ts", "function send() {}\nfunction cancel() {}\nconst DEFAULT = send();\n", [(3, "warning")]),
     ],
 )
 def test_global_defined_below_first_definition(
     run_pristine: RunPristine, file_name: str, source: str, expected: list[tuple[int, str]]
 ) -> None:
     _, report = run_pristine({file_name: source})
+    assert rule_findings(report, "CR-6") == expected
+
+
+@pytest.mark.parametrize(
+    ("declaration", "expected"),
+    [
+        ("def unrelated(send):\n    return send\n", [(5, "warning")]),
+        ("def unrelated():\n    send = 1\n    return send\n", [(6, "warning")]),
+        ("def unrelated():\n    for send in (1,):\n        pass\n", [(6, "warning")]),
+        ("def unrelated():\n    from billing import send\n    return send\n", [(6, "warning")]),
+        ("def unrelated():\n    def send():\n        return 1\n    return send\n", [(7, "warning")]),
+        ("def unrelated():\n    return invoice.send\n", [(5, "warning")]),
+        ("def callback():\n    return send(1)\n", []),
+        ("def callback(send=send):\n    return send(1)\n", []),
+        ("class Callback:\n    send = None\n    def execute(self):\n        return send(1)\n", []),
+        (
+            "def callback():\n    def nested():\n        from billing import send\n        return send(1)\n    return send(1)\n",
+            [],
+        ),
+        ("def unrelated():\n    return [send for send in (1,)]\n", [(5, "warning")]),
+    ],
+)
+def test_only_module_references_connect_declarations(
+    run_pristine: RunPristine, declaration: str, expected: list[tuple[int, str]]
+) -> None:
+    source = f"def send(invoice):\n    return invoice\n{declaration}HANDLERS = (send,)\n"
+    _, report = run_pristine({"billing.py": source})
     assert rule_findings(report, "CR-6") == expected

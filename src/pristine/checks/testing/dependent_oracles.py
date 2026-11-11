@@ -140,6 +140,7 @@ def check_dependent_oracles(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="No Tautological Assertions",
     summary=(
         "Python test functions asserting == between two identical literals, or is between two identical names "
         "or singletons (True, False, None, ...). Assertions inside pytest.raises blocks, or assertRaises blocks of unittest TestCase classes, are exempt."

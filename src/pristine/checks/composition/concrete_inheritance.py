@@ -96,6 +96,7 @@ def check_concrete_inheritance(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Favor Composition Over Inheritance",
     summary=(
         "Python classes outside tests whose only base is a plain concrete class of the same module, one with no "
         "bases, decorators, abstract or stub methods, extension name, or other subclass there, and that override "

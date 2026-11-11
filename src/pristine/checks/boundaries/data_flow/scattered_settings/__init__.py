@@ -113,8 +113,7 @@ def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
     if is_exempt(parsed, bindings):
         return []
     message = (
-        "environment read inside a function; parse every setting once at startup into a pydantic-settings "
-        "BaseSettings model and pass the settings value in"
+        "environment read inside a function; validate settings once at startup and pass the typed settings value in"
     )
     lines = sorted({line_of(node) for node in environment_reads(parsed, bindings)})
     return [Finding(parsed.path, line, RULE_ID, Severity.WARNING, message) for line in lines]
@@ -122,6 +121,7 @@ def check_scattered_settings(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Centralize Settings Acquisition",
     summary=(
         "Python reads of a named setting (os.environ[...], os.environ.get, os.getenv) inside functions, keyed by "
         "a string literal or a same-module string constant. Modules defining a pydantic-settings BaseSettings "

@@ -55,6 +55,7 @@ def check_interpolated_logs(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Constant Log Messages",
     summary=(
         "Python logging calls whose message is built by an f-string, %-formatting, str.format, or string "
         "concatenation, on logger, log, and logging."

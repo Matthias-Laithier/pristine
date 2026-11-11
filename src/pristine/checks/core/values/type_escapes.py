@@ -131,6 +131,7 @@ def check_type_escapes(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Never Escape the Type Checker",
     summary=(
         "Type checker escape hatches: Python Any in annotations and bare type: ignore or pyright: ignore "
         "(error), typing.cast (warning); TypeScript any, @ts-ignore, and @ts-nocheck (error), and non-null "

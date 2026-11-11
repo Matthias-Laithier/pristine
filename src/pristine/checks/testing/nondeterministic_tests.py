@@ -124,6 +124,7 @@ def check_nondeterministic_tests(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Nondeterministic Test Patterns",
     summary=(
         "Python test modules (test paths that define test functions or classes, and conftest.py) that sleep "
         "directly in a test function outside loops, or call module-level random functions without a seed. "

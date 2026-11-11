@@ -13,12 +13,19 @@ SIZE_KINDS = frozenset({"integer"})
 SIZE_TYPE = "int"
 SIZE_CLAMPS = frozenset({"min", "max"})
 ANNOTATED_FORMS = frozenset({"Annotated", "typing.Annotated"})
+TIMEOUT_ARGUMENTS = frozenset(
+    {"timeout", "deadline", "connect_timeout", "read_timeout", "write_timeout", "pool_timeout"}
+)
 
 
 def passes_size(call: Node) -> bool:
     arguments = call.child_by_field_name("arguments")
     values = [] if arguments is None else arguments.named_children
-    unwrapped = (value.child_by_field_name("value") or value for value in values)
+    unwrapped = (
+        value.child_by_field_name("value") or value
+        for value in values
+        if node_text(value.child_by_field_name("name")) not in TIMEOUT_ARGUMENTS
+    )
     return any(is_size(value) for value in unwrapped)
 
 

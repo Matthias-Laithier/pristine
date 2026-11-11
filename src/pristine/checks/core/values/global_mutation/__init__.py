@@ -93,6 +93,7 @@ def check_global_mutation(parsed: ParsedFile) -> list[Finding]:
 
 CHECK = FileCheck(
     rule_id=RULE_ID,
+    title="Global Variables Are Config, Never Mutated",
     summary=(
         "Module-level state written from functions: Python 'global' and in-place writes to module-level "
         "collections; JS/TS reassignment of top-level let/var and writes to top-level array, object, Map, "

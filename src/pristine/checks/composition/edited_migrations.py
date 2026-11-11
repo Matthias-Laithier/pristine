@@ -63,6 +63,7 @@ def check_edited_migrations(paths: list[str]) -> list[Finding]:
 
 CHECK = PathCheck(
     rule_id=RULE_ID,
+    title="Changes to Merged Migrations",
     summary=(
         "Migration files (Alembic versions/, Django and SQL numbered migrations/, Rails db/migrate/, Prisma "
         "migration.sql) that exist on the origin default branch and whose content differs from it in the working "

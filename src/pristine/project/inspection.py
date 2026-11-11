@@ -5,15 +5,23 @@ from pristine.project.repository.loading import load_project
 from pristine.reports.outcomes import Checked, Outcome, Unchecked
 from pristine.reports.report import Report, build_report
 
-PROJECT_CHECKS = (
-    *layout.CHECKS,
-    *gates.CHECKS,
-    *automation.CHECKS,
-    *strict_mode.CHECKS,
-    *lockfiles.CHECKS,
-    *installs.CHECKS,
-    *runtimes.CHECKS,
+CHECK_GROUPS = (
+    ("TL-1", "Makefile Contract", "Root Makefile targets and component Makefile locations.", layout.CHECKS),
+    ("TL-2", "Verification Gates", "The complete gate includes the fast gate.", gates.CHECKS),
+    (
+        "TL-3",
+        "Static Analysis",
+        "Supported formatter, lint, type-checker configuration and gate commands.",
+        (*automation.CHECKS, *strict_mode.CHECKS),
+    ),
+    (
+        "TL-4",
+        "Reproducible Dependencies",
+        "Supported lockfiles, frozen installs and runtime declarations.",
+        (*lockfiles.CHECKS, *installs.CHECKS, *runtimes.CHECKS),
+    ),
 )
+PROJECT_CHECKS = tuple(check for _, _, _, checks in CHECK_GROUPS for check in checks)
 
 
 def inspect_project(directory: Path) -> Report:
