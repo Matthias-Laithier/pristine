@@ -36,8 +36,6 @@ For an agent's `AGENTS.md` or `CLAUDE.md`:
 Before coding, run pristine guide. Run pristine check on touched directories and pristine project on the root, then the project's gate before finishing. Report failures, meaningful exceptions, and unverified behavior.
 ```
 
-**Breaking change in 0.9.0:** `rule`, `rules`, and `growth` are removed. Use `guide` for principles and `checks [--json]` for mechanical coverage. Rule documents were archived outside the package and removed; check IDs remain stable finding identifiers, not a prose compliance checklist.
-
 ## Checks and reports
 
 `pristine checks` lists enabled file, path, and project checks from executable metadata. Its JSON form contains `rule_id`, `title`, `checked_by`, and `summary`. Coverage varies by language and pattern: a clean scan is not assurance about all defects or security properties.
@@ -50,11 +48,11 @@ Text groups findings by file, ranked by distinct check IDs then path. JSON retai
 
 Exit codes: **0** complete without errors (warnings may remain), **1** error findings, **2** invalid usage, **3** incomplete verification. Incomplete verification takes priority over findings. Complete verification refers only to the checks performed.
 
-## Python and TypeScript coverage
+## Supported languages
 
-Source analysis supports Python (`.py`, `.pyi`), JavaScript/JSX (`.js`, `.jsx`, `.mjs`, `.cjs`) and TypeScript/TSX (`.ts`, `.tsx`, `.mts`, `.cts`). Other source languages are reported as unsupported and never download grammars. Secret scanning still covers every discovered file. Makefiles and manifests receive project checks; Python/Prisma SQL migrations retain committed-history checks. Version 0.11.0 removes other language detectors and Go/Rust project tooling.
+Source analysis supports Python (`.py`, `.pyi`), JavaScript/JSX (`.js`, `.jsx`, `.mjs`, `.cjs`) and TypeScript/TSX (`.ts`, `.tsx`, `.mts`, `.cts`). Other source languages are reported as unsupported and never download grammars. Secret scanning covers every discovered file. Makefiles and manifests receive project checks; Python/Prisma SQL migrations retain committed-history checks.
 
-Every language-applicable source check has Python and JS/TS detection, including TSX. TypeScript adds settings reads, known dropped promise operations, async blocking calls, concurrent fan-out, log interpolation, composition patterns, function clones, model settings, and test-quality patterns. Detectors use language-specific evidence and exemptions. This is check-family coverage, not identical recall or whole-program verification.
+Detectors use language-specific evidence and exemptions. Shared check families have different detection depth. Use `pristine checks` for precise coverage.
 
 CR-22's naive-datetime check is Python-specific. JavaScript `Date` already represents an instant. Generic floating promises need type-aware `@typescript-eslint/no-floating-promises`; pristine detects only recognized promise-producing APIs. Import cycles resolve known local edges, not arbitrary TypeScript path aliases. Untyped JavaScript mutation, custom test frameworks, and arbitrary client aliases are not inferred. Use `pristine checks` for each detector's precise scope.
 
@@ -82,19 +80,6 @@ Online lookup sends package identities to OSV. Results describe known advisory m
 Text and JSON retain source evidence, verification problems, full counts, and scope. JSON includes `scope`, `verification_status`, `summary`, `findings`, `sources`, and `problems`. `--max N` is a positive integer and caps only advisory rows; `summary.omitted` counts the rest. Counts refer to native advisory records, not distinct vulnerabilities inferred from aliases. A complete scan without findings means no known advisory matches. Audit uses the same exit codes; incomplete verification takes priority over vulnerabilities.
 
 Tests replay reviewed native responses and fake process/download boundaries. Live advisory lookup and release downloads stay outside `make check` and CI tests. Audit supplements source and project checks; it does not replace the project gate or human judgment.
-
-## Performance
-
-Historical wall time before the 0.9.0 checker repairs, on open-source repositories at the linked revisions, using Python 3.15.2 on an Apple silicon laptop with the default 9 workers (half the cores). Times are medians of 5 runs after a warmup, with cached grammars and bytecode. Files and lines count successfully analyzed code files. Time covers the full repository scan. These measurements have not been rerun for 0.9.0.
-
-| Repository | Language | Files | Lines | Time |
-| --- | --- | ---: | ---: | ---: |
-| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 48 | 12,490 | 1.2 s |
-| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 1.0 s |
-| [cobra](https://github.com/spf13/cobra/tree/adbc8813901bba65827259daa8e22ff94ec1f30e) | Go | 38 | 16,810 | 0.6 s |
-| [fd](https://github.com/sharkdp/fd/tree/24d90b28d25438af2a8f2e7f7e46d03d6828da94) | Rust | 33 | 9,598 | 0.5 s |
-| [gson](https://github.com/google/gson/tree/65df6e5a99747f73d386f3a61d887a0257255e0f) | Java | 270 | 58,076 | 1.1 s |
-| [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json/tree/52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa) | C# | 884 | 144,617 | 3.7 s |
 
 ## Contributing
 

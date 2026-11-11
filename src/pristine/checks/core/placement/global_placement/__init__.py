@@ -16,7 +16,6 @@ from pristine.syntax.python_calls import import_bindings
 
 RULE_ID = "CR-6"
 PYTHON = "python"
-BINDING_LIST_KINDS = frozenset({"var_spec_list", "const_spec_list"})
 VALUE_LIST_KINDS = frozenset({"expression_list"})
 REFERENCE_FIELDS = ("value", "right", "type")
 TYPE_ALIAS_ANNOTATION = "TypeAlias"
@@ -50,8 +49,7 @@ class ModuleState:
 def bindings(node: Node, spec: LanguageSpec) -> list[Node]:
     if node.type in spec.binding_kinds:
         return [node]
-    children = [child for child in node.named_children if child.type in BINDING_LIST_KINDS] or [node]
-    return [binding for child in children for binding in child.named_children if binding.type in spec.binding_kinds]
+    return [binding for binding in node.named_children if binding.type in spec.binding_kinds]
 
 
 def field_identifiers(node: Node, field_name: str) -> set[str]:
