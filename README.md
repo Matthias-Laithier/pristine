@@ -14,7 +14,7 @@
   <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.15%2B-blue" alt="Python 3.15+"></a>
 </p>
 
-pristine checks code structure, supported defect patterns, and project tooling. A short guide covers decisions that need judgment; an executable check catalog describes what the scanner actually detects. Use it alongside your formatter, linter, type checker, and tests.
+Pristine checks code structure and defect patterns in Python, JavaScript and TypeScript. Findings include a stable ID, location and fix. A seven-bullet guide handles decisions that need judgment.
 
 ## Quick start
 
@@ -24,62 +24,71 @@ uv tool install --python 3.15 git+https://github.com/Matthias-Laithier/pristine
 
 ```sh
 pristine guide
-pristine checks --json
+pristine checks
 pristine check src tests
 pristine project .
-pristine audit .
 ```
 
-For an agent's `AGENTS.md` or `CLAUDE.md`:
+Add to `AGENTS.md` or `CLAUDE.md`:
 
 ```
 Before coding, run pristine guide. Run pristine check on touched directories and pristine project on the root, then the project's gate before finishing. Report failures, meaningful exceptions, and unverified behavior.
 ```
 
-## Checks and reports
+## What it checks
 
-`pristine checks` lists enabled file, path, and project checks from executable metadata. Its JSON form contains `rule_id`, `title`, `checked_by`, and `summary`. Coverage varies by language and pattern: a clean scan is not assurance about all defects or security properties.
+36 source checks cover file and function size, nesting, comments, placement, imports, mutation, external calls, injection patterns, async work and tests. Four project check families inspect the Makefile, verification gates, static tools and reproducible dependencies. `pristine checks --json` lists exact coverage from the implementations.
 
-`check` uses tree-sitter grammars, downloaded on first use, and isolated workers. A crashed or timed-out worker leaves its current file unchecked while the scan continues. `--jobs N` caps processes; the default is half the CPU cores. Discovery respects git ignores and skips vendored, generated, and data files where appropriate; the secret scan also includes discovered data and lockfiles. Unsupported formats, missing paths, and verification failures remain visible.
+Supported source: `.py`, `.pyi`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, `.cts`. Other languages are reported as unsupported. Secret scanning covers every discovered file, including data and lockfiles. Python and Prisma SQL migrations retain history checks.
 
-Text groups findings by file, ranked by distinct check IDs then path. JSON retains full paths and lines and includes ranked `triage` evidence. `--max N` caps displayed findings, not totals or file overviews. `--exclude <glob>` skips matching paths. Use command `--help` for options.
+Checks favor precision over recall. A clean scan establishes only the advertised patterns. Use Pristine alongside your formatter, linter, type checker and tests. Generic floating promises need type-aware ESLint; TypeScript path aliases, untyped JavaScript mutation and custom test frameworks remain outside the detected patterns.
 
-`project` recognizes Python and JavaScript/TypeScript repositories. It reads the root Makefile, manifests, lockfiles, and supported static-tool configurations without running the project's gate. Python's annotation capability requires strict mypy or Ruff's ANN001/002/003/201/202/204/205/206 rules; inference alone is insufficient. Recognized suppressions disable that capability, and unsupported overrides or incomplete source scope produce verification findings.
+## Reports
 
-Exit codes: **0** complete without errors (warnings may remain), **1** error findings, **2** invalid usage, **3** incomplete verification. Incomplete verification takes priority over findings. Complete verification refers only to the checks performed.
+Use `--json` for structured results, `--max N` to limit displayed findings, and `--exclude <glob>` to skip paths. Totals retain every finding. Workers run in isolation, with half the CPU cores by default; `--jobs N` sets the limit. Grammars download on first use. Discovery respects git ignores and skips vendored and generated code.
 
-## Supported languages
+Exit codes: **0** completed without errors, **1** error findings, **2** invalid usage, **3** incomplete verification. Warnings alone return 0. Scanner failures take priority over findings and never produce a clean verdict.
 
-Source analysis supports Python (`.py`, `.pyi`), JavaScript/JSX (`.js`, `.jsx`, `.mjs`, `.cjs`) and TypeScript/TSX (`.ts`, `.tsx`, `.mts`, `.cts`). Other source languages are reported as unsupported and never download grammars. Secret scanning covers every discovered file. Makefiles and manifests receive project checks; Python/Prisma SQL migrations retain committed-history checks.
+<details>
+<summary>Project-check coverage</summary>
 
-Detectors use language-specific evidence and exemptions. Shared check families have different detection depth. Use `pristine checks` for precise coverage.
+`pristine project` inspects configuration without executing the project's gate. Python annotation coverage requires strict mypy or Ruff's ANN001/002/003/201/202/204/205/206 rules. Unsupported configurations, overrides and incomplete source scope produce verification findings. It complements the project's formatter, linter, type checker and tests.
 
-CR-22's naive-datetime check is Python-specific. JavaScript `Date` already represents an instant. Generic floating promises need type-aware `@typescript-eslint/no-floating-promises`; pristine detects only recognized promise-producing APIs. Import cycles resolve known local edges, not arbitrary TypeScript path aliases. Untyped JavaScript mutation, custom test frameworks, and arbitrary client aliases are not inferred. Use `pristine checks` for each detector's precise scope.
+</details>
 
-## Installation and native tools
+## Dependency audit
 
-Install with [uv](https://docs.astral.sh/uv/), which obtains Python 3.15+ when needed. The `pristine` package on PyPI is unrelated. `tree-sitter` remains below 0.26 because 0.26.0 crashed while walking TSX and TypeScript trees.
-
-Native scanners prefer exactly compatible installed executables: [gitleaks](https://github.com/gitleaks/gitleaks) **8.30.1** and [OSV-Scanner](https://github.com/google/osv-scanner) **2.7.0**. Otherwise pristine downloads a pinned official release, verifies committed hashes, and caches it privately in `~/.pristine-native-tools`. Other installed versions are untouched. Provisioning supports macOS/Linux on arm64/aarch64 and x86_64 and needs HTTPS access to GitHub release assets on first use. Warm use rechecks executable integrity without downloading again.
-
-Provisioning, network, corrupt-cache, and unsafe-cache failures mean incomplete verification, never a clean scan. For a damaged cache, remove its affected private entry and retry. Downloads have a 64 MiB cap and finite deadline. No administrator access, package-manager operation, global PATH change, project-owned static-tool installation, or audited-project dependency installation is performed.
-
-## Optional dependency audit
+Optional known-advisory lookup through [OSV-Scanner](https://github.com/google/osv-scanner):
 
 ```sh
 pristine audit .
 pristine audit path/to/uv.lock --json --max 10
 ```
 
-`PATH` is required: one `uv.lock` or a directory's root `uv.lock`. Coverage is limited to the PyPI package/version records OSV-Scanner extracts. There is no recursive discovery, manifest resolution, source scanning, reachability analysis, package-origin assurance, or dependency installation. Unsupported inputs and platforms cannot produce a clean result.
+Supports one `uv.lock`, or a directory containing it. Online lookup sends package identities to OSV. Results cover native-extracted PyPI package/version advisory matches; they establish neither exploitability nor the absence of vulnerabilities. Reported fixed versions are advisory context, not upgrade recommendations.
 
-The target becomes an absolute path; leaf symlinks are refused and ancestors resolved. A complete scan requires exactly one matching source and a positive extraction count consistent with native JSON package evidence. Input and combined scanner output are capped at 8 MiB, with a 300-second scan deadline. Native warnings, errors, filters, skips, contradictory exits, and unknown diagnostics or output shapes fail closed, even when advisories are found. Experimental extraction flags are tied to the pinned scanner version.
+<details>
+<summary>Native tools and verification limits</summary>
 
-Online lookup sends package identities to OSV. Results describe known advisory matches at scan time, not guaranteed freshness, exploitability, or absence of undisclosed vulnerabilities. `aliases` includes native group and advisory aliases; `fixed_versions` gives contextual advisory releases, not applicable upgrade recommendations. Missing fixed-version evidence is explicit.
+[gitleaks](https://github.com/gitleaks/gitleaks) 8.30.1 and OSV-Scanner 2.7.0 use compatible installed binaries or verified official releases cached in `~/.pristine-native-tools`. macOS/Linux on arm64 and x86_64 are supported. First use requires network access; cached binaries are rechecked for integrity. No global installation or audited-project dependency installation occurs. Failed provisioning or unsafe caches produce incomplete verification.
 
-Text and JSON retain source evidence, verification problems, full counts, and scope. JSON includes `scope`, `verification_status`, `summary`, `findings`, `sources`, and `problems`. `--max N` is a positive integer and caps only advisory rows; `summary.omitted` counts the rest. Counts refer to native advisory records, not distinct vulnerabilities inferred from aliases. A complete scan without findings means no known advisory matches. Audit uses the same exit codes; incomplete verification takes priority over vulnerabilities.
+Audit input/output is capped at 8 MiB with a 300-second deadline. Downloads have a 64 MiB cap and finite deadline. Leaf symlinks are refused. Verification requires matching source evidence and a positive package count. Unknown diagnostics, skips, filters and contradictory exits remain failures. Advisory freshness, installed dependencies, package origins and reachability are outside the audit scope.
 
-Tests replay reviewed native responses and fake process/download boundaries. Live advisory lookup and release downloads stay outside `make check` and CI tests. Audit supplements source and project checks; it does not replace the project gate or human judgment.
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package named `pristine` is unrelated. `tree-sitter<0.26` avoids known parser crashes. Live advisory lookups and release downloads stay outside the test gate.
+
+</details>
+
+## Performance
+
+Full-repository `pristine check . --json`, including secret scanning and report generation. Measured 2026-11-11 with Pristine 0.11.0 ([3dbc7b7](https://github.com/Matthias-Laithier/pristine/commit/3dbc7b77278fbf5aea7212b7e74e4580b0353e37)), Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Nine workers, cached grammars, one warmup and five timed runs per completed repository. Times are medians; files and lines count successfully checked source.
+
+| Repository at revision | Language | Files | Lines | Time |
+| --- | --- | ---: | ---: | ---: |
+| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 1.20 s |
+| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 1.13 s |
+| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 3.44 s |
+
+All timed runs completed mechanical verification with findings, after the project test gate finished. Unsupported files are excluded from source counts. A separate [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) scan exceeded a 180-second external deadline during warmup while tests ran concurrently. It has no completed isolated timing result.
 
 ## Contributing
 
