@@ -1,7 +1,6 @@
 import ast
 import re
 import tomllib
-from functools import cache
 from pathlib import Path
 
 lazy from tree_sitter import Node
@@ -28,7 +27,6 @@ def table(value: object, key: str) -> dict[object, object]:
     return dict[object, object](entry) if isinstance(entry, dict) else {}
 
 
-@cache
 def manifest_entry_modules(directory: Path) -> frozenset[str]:
     try:
         manifest = tomllib.loads((directory / MANIFEST).read_text())
@@ -51,7 +49,6 @@ def import_sources(node: ast.ImportFrom, package: str) -> list[str]:
     )
 
 
-@cache
 def package_main_imports(directory: Path) -> frozenset[str]:
     try:
         tree = ast.parse((directory / PACKAGE_MAIN).read_text())

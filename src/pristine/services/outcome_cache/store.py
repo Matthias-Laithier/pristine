@@ -67,17 +67,18 @@ class OutcomeCache:
                 continue
             self.keys[path] = key
             outcome = valid_outcome(self.stored.get(path), path, key)
-            if outcome is None:
+            if outcome is None or not self.inputs.reusable(outcome):
                 misses.append(path)
             else:
                 hits[path] = outcome
+                self.inputs.observed(path, outcome)
                 self.fresh[path] = self.stored[path]
         return hits, misses
 
     def recorded(self, outcomes: Iterator[tuple[str, Outcome]]) -> Iterator[tuple[str, Outcome]]:
         for path, outcome in outcomes:
             key = self.keys.get(path)
-            if key is not None and isinstance(outcome, CACHEABLE):
+            if key is not None and isinstance(outcome, CACHEABLE) and self.inputs.observed(path, outcome):
                 self.fresh[path] = {"key": key, **outcome_record(outcome)}
             yield path, outcome
         self.save()
