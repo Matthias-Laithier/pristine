@@ -82,7 +82,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package nam
 
 ## Performance
 
-Full-repository `pristine check . --json --jobs 9`, including secret scanning and report generation. Measured 2026-11-12 with Pristine 0.12.0 ([4c4804d](https://github.com/Matthias-Laithier/pristine/commit/4c4804d062e8e77faab137311e6d4f675cffb29e)), Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Cached grammars, one warmup and five timed runs per repository, sequentially without concurrent test gates. Times are medians; files and lines count successfully checked source.
+`pristine check . --json --jobs 9`, measured 2026-11-12 with Pristine 0.12.0 ([4c4804d](https://github.com/Matthias-Laithier/pristine/commit/4c4804d062e8e77faab137311e6d4f675cffb29e)), Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Cached grammars, one warmup, medians of five runs. Files and lines count successfully checked source.
 
 | Repository at revision | Language | Files | Lines | Time |
 | --- | --- | ---: | ---: | ---: |
@@ -91,7 +91,7 @@ Full-repository `pristine check . --json --jobs 9`, including secret scanning an
 | [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 2.427 s |
 | [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) | TypeScript | 520 | 92,471 | 5.416 s |
 
-Full JSON reports were identical across the six runs within each repository. Requests, HTTPX and ky completed mechanical verification with findings (exit 1). Zod completed all runs with incomplete verification (exit 3): four files could not be parsed, producing eight grammar verification failures across file checks and clone extraction. Unsupported and skipped files are excluded from source counts.
+Zod returns exit 3: four files cannot be parsed, leaving eight grammar verification failures.
 
 ## Contributing
 
