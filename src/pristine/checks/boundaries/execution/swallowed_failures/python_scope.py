@@ -1,4 +1,5 @@
 from collections import Counter
+from dataclasses import dataclass
 
 lazy from tree_sitter import Node
 
@@ -18,10 +19,18 @@ PRINT = "print"
 DEFINITION_KINDS = frozenset({"function_definition", "class_definition"})
 
 
+type Assignments = list[tuple[str, Node]]
+
+
+@dataclass(frozen=True)
+class FileBindings:
+    assignments: Assignments
+    parameters: list[str]
+
+
 class LoggerResolver:
-    def __init__(self, source: Node | ParsedFile) -> None:
-        reassigned = {target for target, _ in assignments(source)}
-        shadowed = reassigned | set(all_parameter_names(root_of(source)))
+    def __init__(self, source: Node | ParsedFile, bound: FileBindings) -> None:
+        shadowed = {target for target, _ in bound.assignments} | set(bound.parameters)
         self.bindings = {name: module for name, module in import_bindings(source).items() if name not in shadowed}
         self.loggers: set[str] = set()
 
@@ -56,43 +65,41 @@ def assignments(source: Node | ParsedFile) -> list[tuple[str, Node]]:
     return [(callee_text(left), right) for left, right in pairs if left is not None and right is not None]
 
 
-def resolved_loggers(resolver: LoggerResolver, source: Node | ParsedFile) -> set[str]:
-    pairs = assignments(source)
+def resolved_loggers(resolver: LoggerResolver, bound: FileBindings) -> set[str]:
+    pairs = bound.assignments
     changed = True
     while changed:
         found = {target for target, value in pairs if resolver.is_logger(value)}
         changed = not found <= resolver.loggers
         resolver.loggers |= found
-    rebound = {target for target, value in pairs if not resolver.is_logger(value)} | set(
-        all_parameter_names(root_of(source))
-    )
+    rebound = {target for target, value in pairs if not resolver.is_logger(value)} | set(bound.parameters)
     return resolver.loggers - rebound
 
 
-def print_is_builtin(source: Node | ParsedFile, bindings: dict[str, str]) -> bool:
+def print_is_builtin(source: Node | ParsedFile, bindings: dict[str, str], bound: FileBindings) -> bool:
     definitions = (
         node_text(node.child_by_field_name("name")) for node in all_nodes(source) if node.type in DEFINITION_KINDS
     )
-    assigned = (target for target, _ in assignments(source))
-    return PRINT not in bindings and PRINT not in {*definitions, *assigned, *all_parameter_names(root_of(source))}
+    assigned = (target for target, _ in bound.assignments)
+    return PRINT not in bindings and PRINT not in {*definitions, *assigned, *bound.parameters}
 
 
-def logging_callees(source: Node | ParsedFile) -> frozenset[str]:
-    resolver = LoggerResolver(source)
-    resolver.loggers = resolved_loggers(resolver, source)
+def logging_callees(source: Node | ParsedFile, bound: FileBindings) -> frozenset[str]:
+    resolver = LoggerResolver(source, bound)
+    resolver.loggers = resolved_loggers(resolver, bound)
     functions = (node.child_by_field_name("function") for node in all_nodes(source) if node.type == "call")
     callees = {callee_text(function) for function in functions if function and resolver.is_logging_callee(function)}
-    if print_is_builtin(source, resolver.bindings):
+    if print_is_builtin(source, resolver.bindings, bound):
         callees.add(PRINT)
     return frozenset(callees)
 
 
-def default_constants(source: Node | ParsedFile, default_values: frozenset[str]) -> frozenset[str]:
+def default_constants(source: Node | ParsedFile, bound: FileBindings, default_values: frozenset[str]) -> frozenset[str]:
     statements = (statement for statement in module_statements(root_of(source)) if statement.type == "assignment")
     pairs = (
         (statement.child_by_field_name("left"), statement.child_by_field_name("right")) for statement in statements
     )
-    bound = Counter([target for target, _ in assignments(source)] + list(all_parameter_names(root_of(source))))
+    counts = Counter([target for target, _ in bound.assignments] + bound.parameters)
     return frozenset(
         node_text(left) or ""
         for left, right in pairs
@@ -100,9 +107,10 @@ def default_constants(source: Node | ParsedFile, default_values: frozenset[str])
         and left.type == "identifier"
         and right is not None
         and normalized(right) in default_values
-        and bound[node_text(left) or ""] == 1
+        and counts[node_text(left) or ""] == 1
     )
 
 
 def python_scope(source: Node | ParsedFile, default_values: frozenset[str]) -> HandlerScope:
-    return HandlerScope(logging_callees(source), default_constants(source, default_values))
+    bound = FileBindings(assignments(source), all_parameter_names(source))
+    return HandlerScope(logging_callees(source, bound), default_constants(source, bound, default_values))

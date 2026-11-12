@@ -7,14 +7,16 @@ from pristine.checks.boundaries.data_flow.injection.scripts.injection import sca
 from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
+from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, line_of
 
 CHECK_ID = "SAFE-6"
 
 
 def scan_python(parsed: ParsedFile) -> Iterator[Injection]:
-    yield from scan_sql(parsed)
-    yield from scan_execution(parsed)
+    calls = list(calls_of(parsed, "call"))
+    yield from scan_sql(calls)
+    yield from scan_execution(parsed, calls)
 
 
 SCANNERS: dict[str, Callable[[ParsedFile], Iterator[Injection]]] = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {

@@ -4,8 +4,7 @@ lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection, starts_with_sql
 from pristine.checks.boundaries.data_flow.injection.python.values import is_trusted
-from pristine.syntax.calls import calls_of
-from pristine.syntax.parsing import ParsedFile, node_text
+from pristine.syntax.parsing import node_text
 from pristine.syntax.python_calls import positional_arguments
 from pristine.syntax.python_strings import STRING_KINDS, built_string
 
@@ -29,8 +28,8 @@ def is_built_sql(node: Node) -> bool:
     return starts_with_sql(leading_text(built.template)) and not all(map(is_trusted, built.values))
 
 
-def scan_sql(parsed: ParsedFile) -> Iterator[Injection]:
-    for node, callee, arguments in calls_of(parsed, "call"):
+def scan_sql(calls: list[tuple[Node, str, list[Node]]]) -> Iterator[Injection]:
+    for node, callee, arguments in calls:
         positional = positional_arguments(arguments)
         is_sql_call = callee.rsplit(".", 1)[-1] in SQL_FUNCTIONS and bool(positional)
         if is_sql_call and is_built_sql(positional[0]):

@@ -1,4 +1,5 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from functools import cache
 
 lazy from tree_sitter import Node
 
@@ -12,6 +13,7 @@ from pristine.checks.boundaries.execution.swallowed_failures.handlers import (
     logged_default,
     normalized,
     returned_values,
+    statements_of,
     swallow,
 )
 from pristine.checks.boundaries.execution.swallowed_failures.python_scope import python_scope
@@ -60,15 +62,18 @@ def python_verdict(clause: Node, names: frozenset[str], body: str | None) -> tup
     return None
 
 
-def logged_verdict(names: frozenset[str], block: Node, scope: HandlerScope) -> tuple[Severity, str] | None:
-    result = logged_default(block, LOGGED_DEFAULTS, scope) if names & BROAD_EXCEPTIONS else None
+def logged_verdict(
+    names: frozenset[str], block: Node, scope: Callable[[], HandlerScope]
+) -> tuple[Severity, str] | None:
+    logs_first = names & BROAD_EXCEPTIONS and len(statements_of(block)) > 1
+    result = logged_default(block, LOGGED_DEFAULTS, scope()) if logs_first else None
     if result is None:
         return None
     return Severity.WARNING, f"only logs, then does '{result}', which hides the failure; {NARROW_HINT}"
 
 
 def python_swallows(parsed: ParsedFile) -> Iterator[Finding]:
-    scope = python_scope(parsed, returned_values(LOGGED_DEFAULTS))
+    scope = cache(lambda: python_scope(parsed, returned_values(LOGGED_DEFAULTS)))
     for clause in (node for node in all_nodes(parsed) if node.type == "except_clause"):
         caught = clause.child_by_field_name("value")
         names, block = caught_names(caught), clause.named_children[-1]
