@@ -59,9 +59,8 @@ def dynamic_lookups(parsed: ParsedFile, call_kind: str) -> Iterator[Finding]:
 
 
 def python_wildcards(parsed: ParsedFile) -> Iterator[Finding]:
-    for node in all_nodes(parsed):
-        if node.type == "wildcard_import":
-            yield Finding(parsed.path, line_of(node), CHECK_ID, Severity.ERROR, f"wildcard import; {WILDCARD_FIX}")
+    for node in parsed.nodes_of("wildcard_import"):
+        yield Finding(parsed.path, line_of(node), CHECK_ID, Severity.ERROR, f"wildcard import; {WILDCARD_FIX}")
 
 
 def script_reexports(parsed: ParsedFile) -> Iterator[Finding]:

@@ -67,5 +67,5 @@ def call_settings(call: Node, bindings: ModelBindings) -> Iterator[tuple[str, No
 
 def hardcoded_settings(parsed: ParsedFile) -> Iterator[tuple[str, Node]]:
     bindings = model_bindings(parsed)
-    for call in (node for node in parsed.nodes if node.type == "call_expression"):
+    for call in parsed.nodes_of("call_expression"):
         yield from call_settings(call, bindings)

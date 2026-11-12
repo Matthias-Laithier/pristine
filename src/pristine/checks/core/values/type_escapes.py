@@ -49,8 +49,7 @@ def resolves_to(node: Node | None, names: frozenset[str], bindings: dict[str, st
 
 def python_escapes(parsed: ParsedFile) -> Iterator[Escape]:
     bindings = import_bindings(parsed)
-    nodes = list(all_nodes(parsed))
-    annotations = [node for node in nodes if node.type == ANNOTATION_KIND]
+    annotations = parsed.nodes_of(ANNOTATION_KIND)
     any_uses = {
         inner.start_byte: inner
         for annotation in annotations
@@ -59,15 +58,15 @@ def python_escapes(parsed: ParsedFile) -> Iterator[Escape]:
     }
     for use in any_uses.values():
         yield Escape(line_of(use), Severity.ERROR, f"'{node_text(use)}' in an annotation; {ANY_FIX}")
-    for node in nodes:
-        if node.type == "call" and resolves_to(node.child_by_field_name("function"), CAST_NAMES, bindings):
+    for node in parsed.nodes_of("call"):
+        if resolves_to(node.child_by_field_name("function"), CAST_NAMES, bindings):
             yield Escape(
                 line_of(node), Severity.WARNING, f"'cast' asserts a type the checker cannot verify; {CAST_FIX}"
             )
 
 
 def script_escapes(parsed: ParsedFile) -> Iterator[Escape]:
-    for node in all_nodes(parsed):
+    for node in parsed.nodes_of("predefined_type", "non_null_expression", *ASSERTION_KINDS):
         if node.type == "predefined_type" and node_text(node) == SCRIPT_ANY:
             yield Escape(line_of(node), Severity.ERROR, f"'any' type; {ANY_FIX}")
         if node.type == "non_null_expression":

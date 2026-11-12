@@ -4,7 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, is_async, node_text, root_of
+from pristine.syntax.parsing import ParsedFile, all_nodes, is_async, node_text, root_of, typed_nodes
 from pristine.syntax.python_calls import keyword_values, positional_arguments, qualified_callee
 from pristine.syntax.python_scopes import (
     ASSIGNMENT_KIND,
@@ -34,7 +34,7 @@ def limiters_of(source: Node | ParsedFile, bindings: dict[str, str]) -> Limiters
     root = root_of(source)
     named: set[tuple[int, str]] = set()
     attributes: set[str] = set()
-    for assignment in (node for node in all_nodes(source) if node.type == ASSIGNMENT_KIND):
+    for assignment in typed_nodes(source, ASSIGNMENT_KIND):
         target = assignment.child_by_field_name("left")
         value = assignment.child_by_field_name("right")
         if target is None or value is None or not creates_limiter(value, bindings):

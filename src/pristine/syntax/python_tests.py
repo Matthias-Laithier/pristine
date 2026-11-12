@@ -3,7 +3,7 @@ from pathlib import PurePath
 lazy from tree_sitter import Node
 
 from pristine.files.path_roles import PYTEST_CONFTEST, is_test_path
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, node_text, typed_nodes
 
 TEST_PREFIXES = {"function_definition": "test", "class_definition": "Test"}
 
@@ -15,7 +15,7 @@ def is_test_definition(node: Node) -> bool:
 
 
 def defines_tests(source: Node | ParsedFile) -> bool:
-    return any(is_test_definition(node) for node in all_nodes(source))
+    return any(is_test_definition(node) for node in typed_nodes(source, *TEST_PREFIXES))
 
 
 def is_python_test_module(parsed: ParsedFile) -> bool:

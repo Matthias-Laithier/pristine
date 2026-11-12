@@ -7,7 +7,7 @@ from pristine.clients.script_calls import (
 )
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of
+from pristine.syntax.parsing import ParsedFile, line_of
 
 HTTP_METHODS = frozenset({"get", "post", "put", "patch", "delete", "head", "options", "request"})
 FS_METHODS = frozenset(
@@ -61,9 +61,8 @@ def dropped_operations(parsed: ParsedFile) -> list[Finding]:
             Severity.ERROR,
             f"'{callee_of(call)}(...)' drops a known asynchronous operation; await, return, or retain and handle its promise",
         )
-        for call in all_nodes(parsed)
-        if call.type == "call_expression"
-        and call.parent is not None
+        for call in parsed.nodes_of("call_expression")
+        if call.parent is not None
         and call.parent.type == "expression_statement"
         and is_known_operation(call, bindings, scopes)
     ]

@@ -63,9 +63,7 @@ def check_concrete_inheritance(parsed: ParsedFile) -> list[Finding]:
         return []
     classes = module_classes(parsed)
     counts = Counter(
-        base_name(node)
-        for node in all_nodes(parsed)
-        if node.type in {"class_declaration", "class", "abstract_class_declaration"}
+        base_name(node) for node in parsed.nodes_of("class_declaration", "class", "abstract_class_declaration")
     )
     findings = []
     for name, node in classes.items():

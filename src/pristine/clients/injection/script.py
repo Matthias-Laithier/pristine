@@ -6,7 +6,7 @@ from pristine.clients.injection import RECEIVER, InjectedClient, called_injectio
 from pristine.clients.libraries import SCRIPT_ENTRY_POINTS
 from pristine.clients.literals import string_content
 from pristine.clients.script_imports import bound_name, import_bindings
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text, typed_nodes
 from pristine.syntax.python_scopes import ancestors
 
 PARAMETER_KINDS = frozenset({"required_parameter", "optional_parameter"})
@@ -30,7 +30,7 @@ def binding_targets(binding: Node, source: str) -> Iterator[tuple[str, str]]:
 
 
 def type_bindings(source: Node | ParsedFile) -> dict[str, str]:
-    statements = (node for node in all_nodes(source) if node.type == "import_statement")
+    statements = typed_nodes(source, "import_statement")
     sources = ((statement, string_content(statement.child_by_field_name("source"))) for statement in statements)
     pairs = (
         binding_targets(binding, source)
@@ -83,7 +83,7 @@ def field_injections(field: Node, client: str) -> Iterator[InjectedClient]:
 
 def script_injections(source: Node | ParsedFile) -> Iterator[InjectedClient]:
     bindings = type_bindings(source)
-    for node in all_nodes(source):
+    for node in typed_nodes(source, *PARAMETER_KINDS, FIELD_KIND):
         client = entry_point(node.child_by_field_name("type"), bindings)
         if client is not None and node.type in PARAMETER_KINDS:
             yield from parameter_injections(node, client)

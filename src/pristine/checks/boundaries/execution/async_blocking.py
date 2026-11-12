@@ -12,7 +12,7 @@ from pristine.clients.script_calls import (
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, is_async, line_of
+from pristine.syntax.parsing import ParsedFile, function_name, is_async, line_of
 from pristine.syntax.python_calls import EXTERNAL_CALLS, import_bindings, qualified_callee
 
 CHECK_ID = "SAFE-7"
@@ -54,7 +54,7 @@ def script_blocking_findings(parsed: ParsedFile) -> list[Finding]:
     bindings = script_bindings(parsed)
     scopes = ScriptScopes()
     findings = []
-    for call in (node for node in all_nodes(parsed) if node.type == "call_expression"):
+    for call in parsed.nodes_of("call_expression"):
         function = enclosing_function(call)
         if not is_script_async(function):
             continue
@@ -102,7 +102,7 @@ def check_async_blocking(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python":
         return []
     bindings = import_bindings(parsed)
-    functions = [node for node in all_nodes(parsed) if node.type == FUNCTION_KIND and is_async(node)]
+    functions = [node for node in parsed.nodes_of(FUNCTION_KIND) if is_async(node)]
     findings = (async_function_findings(parsed.path, function, bindings) for function in functions)
     return sorted((finding for group in findings for finding in group), key=lambda finding: finding.line)
 

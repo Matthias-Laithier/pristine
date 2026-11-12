@@ -6,7 +6,7 @@ from pristine.checks.definitions import FileCheck
 from pristine.checks.testing.dependent_oracles.typescript import typescript_dependent_assertions
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_tests import is_python_test_module, is_test_definition
 
@@ -81,7 +81,7 @@ def enclosing_class(node: Node) -> Node | None:
 class RaisingContexts:
     def __init__(self, source: Node | ParsedFile) -> None:
         self.bindings = import_bindings(source)
-        definitions = (node for node in all_nodes(source) if node.type == "class_definition")
+        definitions = typed_nodes(source, "class_definition")
         self.classes = {node_text(node.child_by_field_name("name")) or "": node for node in definitions}
 
     def opens(self, statement: Node) -> bool:
@@ -123,7 +123,7 @@ def dependent_assertion(node: Node, contexts: RaisingContexts) -> str | None:
 
 def dependent_assertions(source: Node | ParsedFile) -> Iterator[tuple[Node, str]]:
     contexts = RaisingContexts(source)
-    tests = [node for node in all_nodes(source) if node.type == "function_definition" and is_test_definition(node)]
+    tests = [node for node in typed_nodes(source, "function_definition") if is_test_definition(node)]
     for node in (node for test in tests for node in all_nodes(test)):
         problem = dependent_assertion(node, contexts)
         if problem is not None:

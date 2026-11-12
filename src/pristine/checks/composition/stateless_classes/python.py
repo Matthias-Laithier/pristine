@@ -6,7 +6,7 @@ lazy from tree_sitter import Node
 from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
-from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text, typed_nodes
 
 CHECK_ID = "DEP-2"
 PLAIN_BASES = frozenset({"object"})
@@ -24,7 +24,7 @@ MESSAGE = "class '{name}' only groups functions that need no instance; make them
 
 
 def base_names(source: Node | ParsedFile) -> set[str]:
-    classes = [node for node in all_nodes(source) if node.type == "class_definition"]
+    classes = list(typed_nodes(source, "class_definition"))
     bases = [node.child_by_field_name("superclasses") for node in classes]
     names = [node_text(base) or "" for holder in bases if holder is not None for base in holder.named_children]
     return {name.rsplit(".", 1)[-1] for name in names}

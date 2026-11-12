@@ -130,12 +130,11 @@ def switch_finding(parsed: ParsedFile, switch: Node) -> Finding | None:
 
 
 def check_dispatch_chains(parsed: ParsedFile) -> list[Finding]:
-    nodes = parsed.nodes
-    if_nodes = [node for node in nodes if node.type in IF_KINDS]
+    if_nodes = parsed.nodes_of(*IF_KINDS)
     else_ifs = {else_if.start_byte for node in if_nodes if (else_if := else_if_of(node)) is not None}
     chains = [chain_finding(parsed, node) for node in if_nodes if node.start_byte not in else_ifs]
     switch_kinds = SWITCH_KINDS if parsed.language in SWITCH_LANGUAGES else frozenset()
-    switches = [switch_finding(parsed, node) for node in nodes if node.type in switch_kinds]
+    switches = [switch_finding(parsed, node) for node in parsed.nodes_of(*switch_kinds)]
     return [finding for finding in chains + switches if finding is not None]
 
 

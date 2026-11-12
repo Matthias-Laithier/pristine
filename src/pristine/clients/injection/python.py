@@ -4,7 +4,7 @@ lazy from tree_sitter import Node
 
 from pristine.clients.injection import RECEIVER, InjectedClient, called_injections, dotted_path
 from pristine.clients.libraries import PYTHON_ENTRY_POINTS
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_scopes import CLASS_KIND, ancestors, enclosing_functions, is_method, receiver_name
 
@@ -49,7 +49,7 @@ class PythonInjections:
             yield InjectedClient(attribute[0], (RECEIVER, attribute[1]), entry_point, line_of(assignment))
 
     def injections(self, source: Node | ParsedFile) -> Iterator[InjectedClient]:
-        for node in all_nodes(source):
+        for node in typed_nodes(source, *PARAMETER_KINDS, "assignment"):
             if node.type in PARAMETER_KINDS:
                 yield from self.parameters(node)
             elif node.type == "assignment":

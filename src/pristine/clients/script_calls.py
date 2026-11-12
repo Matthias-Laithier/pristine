@@ -4,7 +4,7 @@ from pristine.clients.injection.script import binding_targets
 from pristine.clients.literals import string_content
 from pristine.clients.script_imports import import_bindings, is_type_only_import
 from pristine.syntax.nodes import FUNCTION_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, node_text, typed_nodes
 
 LEXICAL_SCOPES = frozenset(
     {"program", "statement_block", "catch_clause", "for_statement", "for_in_statement", "switch_body"}
@@ -37,7 +37,7 @@ def runtime_binding_targets(binding: Node, source: str) -> dict[str, str]:
 
 def script_bindings(parsed: ParsedFile) -> dict[str, str]:
     targets = {}
-    for statement in all_nodes(parsed):
+    for statement in typed_nodes(parsed, "import_statement"):
         source = string_content(statement.child_by_field_name("source"))
         if statement.type != "import_statement" or source is None or is_type_only_import(statement):
             continue

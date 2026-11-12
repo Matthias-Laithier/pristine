@@ -1,6 +1,6 @@
 lazy from tree_sitter import Node
 
-from pristine.syntax.parsing import ParsedFile, all_nodes, is_docstring, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, is_docstring, line_of, node_text
 
 FRAMEWORK_DECORATOR_NAMES = frozenset(
     {
@@ -68,7 +68,7 @@ def is_module_docstring_read(node: Node) -> bool:
 
 def runtime_docstring_lines(parsed: ParsedFile) -> set[int]:
     first = parsed.root.named_children[:1]
-    if not first or not is_docstring(first[0]) or not any(map(is_module_docstring_read, all_nodes(parsed))):
+    if not first or not is_docstring(first[0]) or not any(map(is_module_docstring_read, parsed.nodes_of("identifier"))):
         return set()
     return {line_of(first[0])}
 
@@ -76,6 +76,6 @@ def runtime_docstring_lines(parsed: ParsedFile) -> set[int]:
 def machine_read_docstring_lines(parsed: ParsedFile) -> set[int]:
     if parsed.language != "python":
         return set()
-    decorated = [node for node in all_nodes(parsed) if node.type == "decorated_definition"]
+    decorated = parsed.nodes_of("decorated_definition")
     framework_lines = {line for line in map(framework_docstring_line, decorated) if line is not None}
     return framework_lines | runtime_docstring_lines(parsed)

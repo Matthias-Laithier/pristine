@@ -1,4 +1,7 @@
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from functools import cached_property
+from itertools import chain
 
 lazy from tree_sitter import Node, Tree
 
@@ -96,7 +99,28 @@ class ParsedFile:
     nodes: tuple[SyntaxNode, ...]
     functions: list[FunctionSpan]
     comments: list[CommentText]
+    derived: dict[object, object] = field(default_factory=dict, init=False, repr=False, compare=False)
 
     @property
     def root(self) -> Node:
         return self.tree.root_node
+
+    @cached_property
+    def positions_by_type(self) -> dict[str, list[int]]:
+        positions: dict[str, list[int]] = {}
+        for position, node in enumerate(self.nodes):
+            positions.setdefault(node.type, []).append(position)
+        return positions
+
+    def nodes_of(self, *kinds: str) -> list[SyntaxNode]:
+        groups = [self.positions_by_type[kind] for kind in set(kinds) if kind in self.positions_by_type]
+        positions = groups[0] if len(groups) == 1 else sorted(chain.from_iterable(groups))
+        return [self.nodes[position] for position in positions]
+
+    def shared[T](self, kind: type[T], compute: Callable[[ParsedFile], T]) -> T:
+        found = self.derived.get(compute)
+        if isinstance(found, kind):
+            return found
+        value = compute(self)
+        self.derived[compute] = value
+        return value

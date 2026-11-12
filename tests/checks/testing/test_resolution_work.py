@@ -25,6 +25,23 @@ def test_binding_work_is_reused_per_file(monkeypatch: pytest.MonkeyPatch) -> Non
     assert max(calls.values()) <= 3
 
 
+def test_test_resolution_is_shared_by_script_test_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    created: list[script_scopes.ScriptResolution] = []
+    original = script_scopes.ScriptResolution
+
+    def counted() -> script_scopes.ScriptResolution:
+        resolution = original()
+        created.append(resolution)
+        return resolution
+
+    monkeypatch.setattr(script_scopes, "ScriptResolution", counted)
+    source = 'test("é", () => { expect(1).toBe(1); thing._secret; Math.random(); });'
+    parsed = parse_file("tests/shared.test.ts", source, "typescript")
+    findings = [finding.check_id for check in file_checks() for finding in check.run(parsed)]
+    assert {"TEST-1", "TEST-3", "TEST-4"} <= set(findings)
+    assert len(created) == 1
+
+
 def test_hook_discovery_is_once_per_file(monkeypatch: pytest.MonkeyPatch) -> None:
     parsed = parse_file(
         "tests/repeated.test.ts",

@@ -3,7 +3,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 
 TYPE_CHECKING_CONDITIONS = frozenset({"TYPE_CHECKING", "typing.TYPE_CHECKING"})
 PLAIN_IMPORT_KIND = "import_statement"
@@ -30,7 +30,7 @@ def is_type_checking_only(node: Node) -> bool:
 
 def attribute_uses(source: Node | ParsedFile) -> AttributeUses:
     uses: AttributeUses = defaultdict(set)
-    for node in all_nodes(source):
+    for node in typed_nodes(source, "attribute"):
         owner = node_text(node.child_by_field_name("object")) if node.type == "attribute" else None
         if owner is not None:
             uses[owner].add(node_text(node.child_by_field_name("attribute")) or "")
@@ -50,9 +50,7 @@ def qualified(module: str, name: str) -> str:
 
 
 def called_references(source: Node | ParsedFile) -> set[str]:
-    calls = (
-        node for node in all_nodes(source) if node.type == "call" and node.parent and node.parent.type != RAISE_KIND
-    )
+    calls = (node for node in typed_nodes(source, "call") if node.parent and node.parent.type != RAISE_KIND)
     callees = ("".join((node_text(call.child_by_field_name("function")) or "").split()) for call in calls)
     segments = (callee.split("(", 1)[0].split(".") for callee in callees)
     return {".".join(parts[:end]) for parts in segments for end in range(1, len(parts) + 1)}
@@ -83,6 +81,6 @@ def statement_targets(statement: Node, uses: AttributeUses, called: set[str]) ->
 
 def python_import_targets(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
     uses, called = attribute_uses(source), called_references(source)
-    for statement in all_nodes(source):
+    for statement in typed_nodes(source, PLAIN_IMPORT_KIND, FROM_IMPORT_KIND):
         targets = statement_targets(statement, uses, called)
         yield from ((target, line_of(statement)) for target in targets)

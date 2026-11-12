@@ -6,7 +6,7 @@ from pristine.checks.definitions import FileCheck
 from pristine.checks.testing.nondeterministic_tests.typescript import typescript_nondeterministic_calls
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import calls_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_tests import is_python_test_module
 
@@ -45,9 +45,7 @@ def implicit_module_names(source: Node | ParsedFile, heads: set[str]) -> frozens
     if not heads:
         return frozenset[str]()
     module_uses = dict.fromkeys(heads, True)
-    for node in all_nodes(source):
-        if node.type != "identifier":
-            continue
+    for node in typed_nodes(source, "identifier"):
         name = node_text(node)
         if name in module_uses:
             module_uses[name] &= node.parent is not None and node.parent.child_by_field_name("object") == node

@@ -3,7 +3,7 @@ from collections.abc import Iterator
 lazy from tree_sitter import Node
 
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, node_text, typed_nodes
 
 FUNCTION_KIND = "function_definition"
 CLASS_KIND = "class_definition"
@@ -67,7 +67,7 @@ def parameter_names(function: Node) -> list[str]:
 
 
 def all_parameter_names(source: Node | ParsedFile) -> list[str]:
-    return [name for node in all_nodes(source) if node.type == FUNCTION_KIND for name in parameter_names(node)]
+    return [name for node in typed_nodes(source, FUNCTION_KIND) for name in parameter_names(node)]
 
 
 def is_method(function: Node) -> bool:

@@ -6,7 +6,7 @@ from pristine.checks.definitions import FileCheck
 from pristine.checks.testing.private_access_in_tests.typescript import typescript_private_accesses
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 from pristine.syntax.python_tests import is_python_test_module
 
 CHECK_ID = "TEST-1"
@@ -37,10 +37,8 @@ def is_private_access(node: Node) -> bool:
 
 
 def own_members(source: Node | ParsedFile) -> set[str]:
-    members = {
-        node_text(node.child_by_field_name("name")) or "" for node in all_nodes(source) if node.type == METHOD_KIND
-    }
-    accesses = (node for node in all_nodes(source) if node.type == "attribute")
+    members = {node_text(node.child_by_field_name("name")) or "" for node in typed_nodes(source, METHOD_KIND)}
+    accesses = typed_nodes(source, "attribute")
     receivers = ((node, node.child_by_field_name("object")) for node in accesses)
     own = (node for node, receiver in receivers if receiver is not None and node_text(receiver) in OWN_RECEIVERS)
     return members | {node_text(node.child_by_field_name("attribute")) or "" for node in own}
@@ -59,7 +57,7 @@ def is_exempt(access: Node, receiver: Node, exempt_names: frozenset[str]) -> boo
 
 def private_accesses(source: Node | ParsedFile) -> list[Node]:
     exempt_names = EFFECTIVELY_PUBLIC | own_members(source)
-    accesses = [node for node in all_nodes(source) if is_private_access(node)]
+    accesses = [node for node in typed_nodes(source, "attribute") if is_private_access(node)]
     return [
         node
         for node in accesses

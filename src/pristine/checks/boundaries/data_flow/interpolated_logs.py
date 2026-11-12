@@ -5,7 +5,7 @@ lazy from tree_sitter import Node
 from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.nodes import COMMENT_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text
 from pristine.syntax.python_strings import built_string
 
 CHECK_ID = "SAFE-9"
@@ -70,7 +70,7 @@ def script_message_builder(call: Node) -> str | None:
 def check_interpolated_logs(parsed: ParsedFile) -> list[Finding]:
     if parsed.language not in {"python", "javascript", "typescript", "tsx"}:
         return []
-    built = [(node, message_builder(node)) for node in all_nodes(parsed)]
+    built = [(node, message_builder(node)) for node in parsed.nodes_of("call", "call_expression")]
     return [
         Finding(
             parsed.path,

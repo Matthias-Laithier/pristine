@@ -6,7 +6,7 @@ from pathlib import Path
 
 lazy from tree_sitter import Node
 
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, node_text
 from pristine.syntax.python_calls import qualified_callee
 
 SHEBANG = "#!"
@@ -92,5 +92,5 @@ def is_composition_root(parsed: ParsedFile, bindings: dict[str, str]) -> bool:
     is_launched = parsed.text.startswith(SHEBANG) or MAIN_GUARD.search(parsed.text) is not None
     if is_launched or Path(parsed.path).name == PACKAGE_MAIN:
         return True
-    decorators = (node for node in all_nodes(parsed) if node.type == "decorator")
+    decorators = parsed.nodes_of("decorator")
     return any(is_task(decorator, bindings) for decorator in decorators) or is_named_entry(parsed.path)

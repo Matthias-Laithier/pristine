@@ -2,7 +2,7 @@ import re
 
 lazy from tree_sitter import Node
 
-from pristine.checks.testing.script_scopes import ScriptResolution, parents, test_callbacks
+from pristine.checks.testing.script_scopes import ScriptResolution, parents, script_tests
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 PRIVATE = re.compile(r"_[A-Za-z0-9]\w*(?<!_)")
@@ -42,10 +42,10 @@ def exempt(node: Node, resolution: ScriptResolution) -> bool:
 
 
 def typescript_private_accesses(parsed: ParsedFile) -> list[Node]:
-    resolution = ScriptResolution()
+    tests = script_tests(parsed)
     return [
         node
-        for test in test_callbacks(parsed, resolution)
+        for test in tests.callbacks
         for node in all_nodes(test)
-        if private_member(node) and not exempt(node, resolution)
+        if private_member(node) and not exempt(node, tests.resolution)
     ]

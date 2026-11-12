@@ -5,7 +5,7 @@ lazy from tree_sitter import Node
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.scripts.values import is_built, string_value
 from pristine.syntax.calls import calls_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, node_text
 
 CHILD_PROCESS_MODULES = frozenset({"child_process", "node:child_process"})
 IMPORT_OR_DECLARATOR_KINDS = frozenset({"import_statement", "variable_declarator"})
@@ -62,7 +62,7 @@ def promisified(node: Node, bindings: dict[str, str]) -> str | None:
 
 
 def child_process_bindings(parsed: ParsedFile) -> dict[str, str]:
-    nodes = [node for node in all_nodes(parsed) if node.type in IMPORT_OR_DECLARATOR_KINDS]
+    nodes = parsed.nodes_of(*IMPORT_OR_DECLARATOR_KINDS)
     bindings = dict(binding for node in nodes for binding in import_bindings(node))
     declarators = [node for node in nodes if node.type == "variable_declarator"]
     promises = {node_text(node.child_by_field_name("name")) or "": promisified(node, bindings) for node in declarators}

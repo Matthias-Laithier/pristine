@@ -7,7 +7,7 @@ from pristine.checks.core.values.global_mutation.scopes import SCOPE_KINDS
 from pristine.checks.core.values.global_mutation.writes import Mutation, find_mutation
 from pristine.checks.definitions import FileCheck
 from pristine.reports.findings import Finding, Severity
-from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text, typed_nodes
 
 CHECK_ID = "SAFE-10"
 TEST_HOOKS = frozenset({"beforeEach", "beforeAll", "afterEach", "afterAll"})
@@ -43,7 +43,7 @@ def is_test_setup(scope: Node) -> bool:
 
 
 def lazily_initialized(parsed: ParsedFile) -> set[str]:
-    writes = [node for node in all_nodes(parsed) if node.type == "augmented_assignment_expression"]
+    writes = list(typed_nodes(parsed, "augmented_assignment_expression"))
     lazy = [node for node in writes if node_text(node.child_by_field_name("operator")) in LAZY_OPERATORS]
     return {node_text(node.child_by_field_name("left")) or "" for node in lazy}
 
