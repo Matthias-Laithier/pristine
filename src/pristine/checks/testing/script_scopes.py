@@ -83,23 +83,40 @@ def scope_binding(scope: Node, name: str) -> tuple[bool, str | None]:
     return False, None
 
 
-def resolve(name: str, at: Node) -> str | None:
+class ScriptResolution:
+    def __init__(self) -> None:
+        self.bindings: dict[tuple[Node, str], tuple[bool, str | None]] = {}
+        self.calls: dict[Node, str] = {}
+
+    def binding(self, scope: Node, name: str) -> tuple[bool, str | None]:
+        key = scope, name
+        if key not in self.bindings:
+            self.bindings[key] = scope_binding(scope, name)
+        return self.bindings[key]
+
+    def qualified(self, call: Node) -> str:
+        if call not in self.calls:
+            self.calls[call] = qualified(call, self)
+        return self.calls[call]
+
+
+def resolve(name: str, at: Node, resolution: ScriptResolution) -> str | None:
     for scope in (holder for holder in parents(at) if holder.type in SCOPES):
-        found, value = scope_binding(scope, name)
+        found, value = resolution.binding(scope, name)
         if found:
             return value
     return name if name in GLOBALS else None
 
 
-def qualified(call: Node) -> str:
+def qualified(call: Node, resolution: ScriptResolution) -> str:
     callee = callee_of(call)
     head, separator, tail = callee.partition(".")
-    binding = resolve(head, call)
+    binding = resolve(head, call, resolution)
     return f"{binding}{separator}{tail}" if binding is not None else ""
 
 
-def framework_call(call: Node, names: frozenset[str]) -> bool:
-    name = qualified(call)
+def framework_call(call: Node, names: frozenset[str], resolution: ScriptResolution) -> bool:
+    name = resolution.qualified(call)
     parts = name.split(".")
     if parts[0] in FRAMEWORKS:
         parts = parts[1:]
@@ -117,7 +134,7 @@ def callback(call: Node) -> Node | None:
     return next((node for node in reversed(arguments.named_children) if node.type in FUNCTION_KINDS), None)
 
 
-def test_callbacks(parsed: ParsedFile) -> list[Node]:
+def test_callbacks(parsed: ParsedFile, resolution: ScriptResolution) -> list[Node]:
     if parsed.language not in {"javascript", "typescript", "tsx"} or not PurePath(parsed.path).name.endswith(
         (
             ".test.ts",
@@ -138,7 +155,7 @@ def test_callbacks(parsed: ParsedFile) -> list[Node]:
     return [
         body
         for call, _, _ in calls_of(parsed, "call_expression")
-        if framework_call(call, TEST_NAMES) and (body := callback(call)) is not None
+        if framework_call(call, TEST_NAMES, resolution) and (body := callback(call)) is not None
     ]
 
 
