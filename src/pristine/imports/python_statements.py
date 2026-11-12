@@ -1,8 +1,11 @@
 import ast
+import unicodedata
 from collections.abc import Iterator
 from dataclasses import dataclass
 
 DYNAMIC_IMPORT_FUNCTIONS = frozenset({"import_module", "__import__"})
+IDENTIFIER_NORMALIZATION = "NFKC"
+STATEMENT_BLOCKS = ("body", "orelse", "finalbody", "handlers", "cases")
 UNPARSABLE_SOURCE_ERRORS = (SyntaxError, ValueError, RecursionError, MemoryError)
 WILDCARD = "*"
 
@@ -51,9 +54,29 @@ def statement_imports(node: ast.AST) -> Iterator[PythonImport]:
     return read_dynamic_import(node) if isinstance(node, ast.Call) else iter(())
 
 
+def nested_statements(node: ast.AST) -> Iterator[ast.AST]:
+    blocks = (getattr(node, block, None) for block in STATEMENT_BLOCKS)
+    children = (child for block in blocks if isinstance(block, list) for child in block)
+    return (child for child in children if isinstance(child, ast.AST))
+
+
+def statement_nodes(tree: ast.AST) -> Iterator[ast.AST]:
+    pending = [tree]
+    while pending:
+        node = pending.pop()
+        yield node
+        pending.extend(nested_statements(node))
+
+
+def may_import_dynamically(text: str) -> bool:
+    identifiers = text if text.isascii() else unicodedata.normalize(IDENTIFIER_NORMALIZATION, text)
+    return any(function in identifiers for function in DYNAMIC_IMPORT_FUNCTIONS)
+
+
 def python_imports(text: str) -> list[PythonImport]:
     try:
         tree = ast.parse(text)
     except UNPARSABLE_SOURCE_ERRORS:
         return []
-    return [found for node in ast.walk(tree) for found in statement_imports(node)]
+    nodes = ast.walk(tree) if may_import_dynamically(text) else statement_nodes(tree)
+    return [found for node in nodes for found in statement_imports(node)]

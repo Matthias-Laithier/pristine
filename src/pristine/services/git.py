@@ -5,6 +5,7 @@ from pathlib import Path
 
 GIT_TIMEOUT_SECONDS = 30
 GIT_ENTRY = ".git"
+UNIGNORED_FILES = ("--cached", "--others", "--exclude-standard")
 DEFAULT_BRANCH_HEAD = "refs/remotes/origin/HEAD"
 DEFAULT_BRANCH_FALLBACKS = ("refs/remotes/origin/main", "refs/remotes/origin/master")
 UNCHANGED_LINE_COUNTS = ("0", "0")
@@ -40,11 +41,6 @@ def git_output(directory: Path, *arguments: str) -> str | None:
 def ls_files(directory: Path, *options: str) -> list[str] | None:
     output = git_output(directory, "ls-files", *options, "-z")
     return None if output is None else [name for name in output.split("\0") if name]
-
-
-def listed_files(directory: Path) -> list[Path] | None:
-    names = ls_files(directory, "--cached", "--others", "--exclude-standard")
-    return None if names is None else [directory / name for name in names if (directory / name).is_file()]
 
 
 def tracked_files(directory: Path) -> frozenset[str] | None:
