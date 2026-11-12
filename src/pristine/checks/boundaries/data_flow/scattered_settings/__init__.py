@@ -9,8 +9,10 @@ from pristine.checks.boundaries.data_flow.scattered_settings.scripts import (
     environment_reads as script_environment_reads,
 )
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import FUNCTION_KINDS
 from pristine.syntax.parsing import ParsedFile, function_name, line_of, module_statements, node_text
@@ -18,6 +20,7 @@ from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
 CHECK_ID = "SAFE-1"
+REQUIRED_TEXT = {"python": ("environ", "getenv"), **dict.fromkeys(SCRIPT_LANGUAGES, ("process.env",))}
 PYTEST_HOOK_PREFIX = "pytest_"
 SETTINGS_BASES = ("pydantic_settings", "pydantic.BaseSettings", "pydantic.v1.BaseSettings")
 ENVIRONMENT = "os.environ"
@@ -145,5 +148,5 @@ CHECK = FileCheck(
         " JS/TS literal process.env property/index reads in functions; tests, shebangs, named startup/config "
         "modules and functions, process variables, NODE_ENV/NODE_OPTIONS and framework public-env prefixes are exempt."
     ),
-    run=check_scattered_settings,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_scattered_settings),
 )

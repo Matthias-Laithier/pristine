@@ -3,14 +3,17 @@ import re
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.checks.testing.nondeterministic_tests.typescript import typescript_nondeterministic_calls
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_tests import is_python_test_module
 
 CHECK_ID = "TEST-3"
+REQUIRED_TEXT = {"python": ("sleep", "random"), **dict.fromkeys(SCRIPT_LANGUAGES, ("random", "setTimeout"))}
 SLEEP = "time.sleep"
 RANDOM_MODULE = "random"
 UNSEEDED_EXEMPT = frozenset(
@@ -142,5 +145,5 @@ CHECK = FileCheck(
         "JS/TS/TSX .test/.spec callbacks check global Math.random and setTimeout; proven Jest/Vitest fake timers "
         "in the same callback or enclosing beforeEach/beforeAll hook exempt timers only."
     ),
-    run=check_nondeterministic_tests,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_nondeterministic_tests),
 )

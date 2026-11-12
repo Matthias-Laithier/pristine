@@ -12,14 +12,20 @@ from pristine.checks.boundaries.execution.unbounded_fan_out.fanned_collections i
 from pristine.checks.boundaries.execution.unbounded_fan_out.limiters import Limiters, holds_limiter, limiters_of
 from pristine.checks.boundaries.execution.unbounded_fan_out.scripts import script_fan_out
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import callee_of, calls_of
 from pristine.syntax.nodes import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
 CHECK_ID = "SAFE-8"
+REQUIRED_TEXT = {
+    "python": ("gather", "TaskGroup", "create_task_group"),
+    **dict.fromkeys(SCRIPT_LANGUAGES, ("Promise",)),
+}
 GATHER = "asyncio.gather"
 MAP = "map"
 TASK_GROUPS = frozenset({"asyncio.TaskGroup", "anyio.create_task_group"})
@@ -138,5 +144,5 @@ CHECK = FileCheck(
         "with awaited callback work. Parameters, local loads, sized loads, tests and durable workflows are exempt. "
         "Callbacks using an imported p-limit factory's limiter are exempt."
     ),
-    run=check_unbounded_fan_out,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_unbounded_fan_out),
 )
