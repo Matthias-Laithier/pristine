@@ -82,6 +82,37 @@ def test_namespace_packages_resolve_without_shadowing_third_party_names(run_pris
     ]
 
 
+@pytest.mark.parametrize(
+    "orders",
+    [
+        "class Orders:\n    def total(self):\n        import invoices\n",
+        "for order in []:\n    pass\nelse:\n    import invoices\n",
+        "while False:\n    pass\nelse:\n    import invoices\n",
+        "try:\n    pass\nexcept ImportError:\n    pass\nelse:\n    pass\nfinally:\n    import invoices\n",
+        "try:\n    pass\nexcept* ImportError:\n    import invoices\n",
+        "async def load():\n    async with lock:\n        async for item in items:\n            import invoices\n",
+        "match mode:\n    case 'lazy':\n        import invoices\n",
+        "with lock:\n    if ready:\n        pass\n    else:\n        import invoices\n",
+        "loader = lambda: __import__('invoices')\n",
+    ],
+)
+def test_imports_in_any_nested_block_close_a_cycle(run_pristine: RunPristine, orders: str) -> None:
+    _, report = run_pristine({"orders.py": orders, "invoices.py": "import orders\n"})
+    assert [path for path, _, _ in reported_cycles(report)] == ["invoices.py"]
+
+
+def test_compatibility_spelled_dynamic_imports_join_cycles(run_pristine: RunPristine) -> None:
+    _, report = run_pristine(
+        {
+            "orders.py": "import importlib\nimport invoices\n\n\ndef load():\n    \uff49mportlib.\uff49mport_module('taxes')\n",
+            "invoices.py": "import orders\n",
+            "taxes.py": "import rates\nimport orders\n",
+            "rates.py": "import taxes\n",
+        }
+    )
+    assert [message.endswith("among 4 mutually dependent files") for _, _, message in reported_cycles(report)] == [True]
+
+
 def test_unresolvable_and_unparsable_imports_are_ignored(run_pristine: RunPristine) -> None:
     _, report = run_pristine(
         {

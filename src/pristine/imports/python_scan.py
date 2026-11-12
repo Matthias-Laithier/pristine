@@ -5,9 +5,10 @@ from pristine.imports.python_statements import WILDCARD, PythonImport
 
 CONTINUED_LINE = r"[^\n;]*(?:\\\n[^\n;]*)*"
 IMPORT_CANDIDATES = re.compile(
-    r"from\s+(?P<module>\.*[\w.]*)\s+import\s+(?P<names>\([^)]*\)|" + CONTINUED_LINE + ")"
+    r"(?=from|import|__import__)"
+    r"(?:from\s+(?P<module>\.*[\w.]*)\s+import\s+(?P<names>\([^)]*\)|" + CONTINUED_LINE + ")"
     r"|import\s+(?P<modules>" + CONTINUED_LINE + ")"
-    r"|(?:import_module|__import__)\s*\(\s*['\"](?P<dynamic>[\w.]+)['\"]"
+    r"|(?:import_module|__import__)\s*\(\s*['\"](?P<dynamic>[\w.]+)['\"])"
 )
 LINE_COMMENT = re.compile(r"#[^\n]*")
 NAME_SEPARATORS = "(),\\"
