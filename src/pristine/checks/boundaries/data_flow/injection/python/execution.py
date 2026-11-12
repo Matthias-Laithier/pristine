@@ -4,7 +4,6 @@ lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.python.values import is_trusted
-from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, node_text
 from pristine.syntax.python_calls import import_bindings, keyword_values, positional_arguments, qualified_callee
 
@@ -38,20 +37,22 @@ def has_unsafe_loader(arguments: list[Node]) -> bool:
 
 
 def call_injection(callee: str, qualified: str, arguments: list[Node]) -> str | None:
-    command = next(iter(positional_arguments(arguments)), None)
+    shell = runs_shell(qualified, arguments)
+    evaluates = callee in EVALUATING_BUILTINS and not qualified
+    command = next(iter(positional_arguments(arguments)), None) if shell or evaluates else None
     is_dynamic = command is not None and not is_trusted(command)
-    if is_dynamic and runs_shell(qualified, arguments):
+    if is_dynamic and shell:
         return f"'{callee}' runs a shell command built from non-literal values; {SHELL_FIX}"
-    if is_dynamic and callee in EVALUATING_BUILTINS and not qualified:
+    if is_dynamic and evaluates:
         return f"'{callee}' evaluates a non-literal value as code; {EVAL_FIX}"
     if qualified in UNSAFE_DESERIALIZERS or (qualified in LOADER_DESERIALIZERS and has_unsafe_loader(arguments)):
         return f"'{callee}' can construct arbitrary objects from its input; {DESERIALIZER_FIX}"
     return None
 
 
-def scan_execution(parsed: ParsedFile) -> Iterator[Injection]:
+def scan_execution(parsed: ParsedFile, calls: list[tuple[Node, str, list[Node]]]) -> Iterator[Injection]:
     bindings = import_bindings(parsed)
-    for node, callee, arguments in calls_of(parsed, "call"):
+    for node, callee, arguments in calls:
         message = call_injection(callee, qualified_callee(callee, bindings) or "", arguments)
         if message is not None:
             yield Injection(node, message)

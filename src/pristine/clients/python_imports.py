@@ -8,6 +8,8 @@ from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 TYPE_CHECKING_CONDITIONS = frozenset({"TYPE_CHECKING", "typing.TYPE_CHECKING"})
 PLAIN_IMPORT_KIND = "import_statement"
 FROM_IMPORT_KIND = "import_from_statement"
+IMPORT_KINDS = frozenset({PLAIN_IMPORT_KIND, FROM_IMPORT_KIND})
+IF_KIND = "if_statement"
 
 RAISE_KIND = "raise_statement"
 
@@ -17,8 +19,10 @@ type AttributeUses = dict[str, set[str]]
 def is_type_checking_only(node: Node) -> bool:
     ancestor = node.parent
     while ancestor is not None:
-        condition = node_text(ancestor.child_by_field_name("condition"))
-        if ancestor.type == "if_statement" and condition in TYPE_CHECKING_CONDITIONS:
+        if (
+            ancestor.type == IF_KIND
+            and node_text(ancestor.child_by_field_name("condition")) in TYPE_CHECKING_CONDITIONS
+        ):
             return True
         ancestor = ancestor.parent
     return False
@@ -68,7 +72,7 @@ def from_import_targets(statement: Node, called: set[str]) -> Iterator[str]:
 
 
 def statement_targets(statement: Node, uses: AttributeUses, called: set[str]) -> list[str]:
-    if is_type_checking_only(statement):
+    if statement.type not in IMPORT_KINDS or is_type_checking_only(statement):
         return []
     if statement.type == PLAIN_IMPORT_KIND:
         return list(plain_import_targets(statement, uses, called))

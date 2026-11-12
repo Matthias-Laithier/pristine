@@ -1,6 +1,7 @@
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
+from functools import cached_property, partial
 
 lazy from tree_sitter import Node
 
@@ -40,10 +41,20 @@ LANGUAGE_SPECS = dict.fromkeys(SCRIPT_LANGUAGES, SCRIPT_SPEC) | {
 
 
 @dataclass
+class Declaration:
+    names: set[str]
+    read_references: Callable[[], set[str]]
+
+    @cached_property
+    def references(self) -> set[str]:
+        return self.read_references() - self.names
+
+
+@dataclass
 class ModuleState:
     imports: dict[str, str]
     started: bool = False
-    declarations: list[tuple[set[str], set[str]]] = field(default_factory=list)
+    declarations: list[Declaration] = field(default_factory=list)
 
 
 def bindings(node: Node, spec: LanguageSpec) -> list[Node]:
@@ -78,7 +89,7 @@ def is_exempt(binding: Node, names: set[str], spec: LanguageSpec, imports: dict[
 
 def reads_adjacent_dependencies(binding: Node, state: ModuleState) -> bool:
     referenced = {name for field_name in REFERENCE_FIELDS for name in field_identifiers(binding, field_name)}
-    known_names = {name for names, _ in state.declarations for name in names}
+    known_names = {name for declaration in state.declarations for name in declaration.names}
     dependencies = referenced & known_names
     if not dependencies:
         return False
@@ -86,17 +97,17 @@ def reads_adjacent_dependencies(binding: Node, state: ModuleState) -> bool:
     while True:
         expanded = related | {
             name
-            for names, references in state.declarations
-            if related & (names | references)
-            for name in names | (references & known_names)
+            for declaration in state.declarations
+            if related & declaration.names or related & declaration.references
+            for name in declaration.names | (declaration.references & known_names)
         }
         if expanded == related:
             break
         related = expanded
-    for names, _ in reversed(state.declarations):
-        if not related & names:
+    for declaration in reversed(state.declarations):
+        if not related & declaration.names:
             return False
-        dependencies -= names
+        dependencies -= declaration.names
         if not dependencies:
             return True
     return False
@@ -106,12 +117,16 @@ def misplaced_bindings(item: Node, spec: LanguageSpec, state: ModuleState) -> It
     for binding in bindings(item, spec):
         names = bound_names(binding)
         is_definition = is_function_valued(value_of(binding))
-        is_exempt_binding = is_definition or not names or is_exempt(binding, names, spec, state.imports)
-        if state.started and not is_exempt_binding and not reads_adjacent_dependencies(binding, state):
+        is_candidate = state.started and not is_definition and bool(names)
+        if (
+            is_candidate
+            and not is_exempt(binding, names, spec, state.imports)
+            and not reads_adjacent_dependencies(binding, state)
+        ):
             yield binding, names
         state.started = state.started or is_definition
         if state.started and names:
-            state.declarations.append((names, identifiers(binding) - names))
+            state.declarations.append(Declaration(names, partial(identifiers, binding)))
 
 
 def record_definition(item: Node, spec: LanguageSpec, state: ModuleState) -> None:
@@ -119,8 +134,8 @@ def record_definition(item: Node, spec: LanguageSpec, state: ModuleState) -> Non
     if state.started and not bindings(item, spec):
         names = {name for holder in [item, *item.named_children] for name in bound_names(holder)}
         if names:
-            references = script_references(item) if spec is SCRIPT_SPEC else module_references(item)
-            state.declarations.append((names, references - names))
+            read_references = script_references if spec is SCRIPT_SPEC else module_references
+            state.declarations.append(Declaration(names, partial(read_references, item)))
 
 
 def check_global_placement(parsed: ParsedFile) -> list[Finding]:

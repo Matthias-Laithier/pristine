@@ -32,51 +32,45 @@ class Block:
     node: SyntaxNode
 
 
-def is_else_if(node: Node) -> bool:
-    parent = node.parent
-    if node.type not in IF_KINDS or parent is None:
-        return False
+def is_else_if(node: Node, parent: Node) -> bool:
     if parent.type in ELSE_CONTAINERS:
         return True
     return parent.type in IF_KINDS and parent.child_by_field_name("alternative") == node
 
 
-def is_test_framework_callback(node: Node) -> bool:
-    arguments = node.parent
-    call = arguments.parent if arguments is not None and arguments.type == "arguments" else None
+def is_test_framework_callback(arguments: Node) -> bool:
+    call = arguments.parent if arguments.type == "arguments" else None
     if call is None or call.type != "call_expression":
         return False
     return TEST_FRAMEWORK_CALL.fullmatch(node_text(call.child_by_field_name("function")) or "") is not None
 
 
-def opens_function_scope(node: Node) -> bool:
-    if node.type in NAMED_FUNCTION_KINDS:
+def opens_function_scope(kind: str, parent: Node) -> bool:
+    if kind in NAMED_FUNCTION_KINDS:
         return True
-    if node.type not in ANONYMOUS_FUNCTION_KINDS:
+    if kind not in ANONYMOUS_FUNCTION_KINDS:
         return False
-    is_bound = node.parent is not None and node.parent.type in NAME_BINDING_KINDS
-    return is_bound or is_test_framework_callback(node)
+    return parent.type in NAME_BINDING_KINDS or is_test_framework_callback(parent)
 
 
-def added_levels(node: Node) -> int:
-    if is_else_if(node):
+def added_levels(node: Node, kind: str, parent: Node) -> int:
+    if kind not in LEVEL_KINDS:
         return 0
-    return int(node.is_named and node.type in LEVEL_KINDS)
+    return int(kind not in IF_KINDS or not is_else_if(node, parent))
 
 
-def child_entries(node: Node, depth: int, scope: Node) -> Iterator[tuple[Node, int, Node]]:
-    for child in node.named_children:
-        if opens_function_scope(child):
-            yield child, 0, child
-        else:
-            yield child, depth + added_levels(child), scope
+def child_entry(child: Node, parent: Node, depth: int, scope: Node) -> tuple[Node, int, Node]:
+    kind = child.type
+    if opens_function_scope(kind, parent):
+        return child, 0, child
+    return child, depth + added_levels(child, kind, parent), scope
 
 
 def blocks(root: Node) -> Iterator[Block]:
     pending = [(root, 0, root)]
     while pending:
         node, depth, scope = pending.pop()
-        entries = list(child_entries(node, depth, scope))
+        entries = [child_entry(child, node, depth, scope) for child in node.named_children]
         yield from (
             Block(entry_scope, entry_depth, child) for child, entry_depth, entry_scope in entries if entry_depth > depth
         )
