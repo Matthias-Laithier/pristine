@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Literal
 
 import pytest
 
@@ -22,7 +21,7 @@ class NativeBoundary:
         self.download_error: OSError | None = None
 
     def find(self, name: str) -> str | None:
-        assert name in {"osv-scanner", "gitleaks"}
+        assert name == "osv-scanner"
         return self.installed
 
     def run(
@@ -40,16 +39,13 @@ class NativeBoundary:
             raise self.download_error
         return self.payload
 
-    def resolver(
-        self, name: Literal["osv-scanner", "gitleaks"] = "osv-scanner", artifact: ReleaseArtifact | None = None
-    ) -> NativeToolResolver:
-        artifact = artifact or ReleaseArtifact("Darwin", "arm64", FIXTURE_URL, FIXTURE_DIGEST, FIXTURE_DIGEST)
-        version = "2.7.0" if name == "osv-scanner" else "8.30.1"
+    def resolver(self, artifact: ReleaseArtifact | None = None) -> NativeToolResolver:
+        artifact = artifact or ReleaseArtifact("Darwin", "arm64", FIXTURE_URL, FIXTURE_DIGEST)
         return NativeToolResolver(
             self.root,
             "Darwin",
             "arm64",
-            releases=(ToolRelease(name, version, (artifact,)),),
+            releases=(ToolRelease("osv-scanner", "2.7.0", (artifact,)),),
             finder=self.find,
             process_runner=self.run,
             download=self.download,
