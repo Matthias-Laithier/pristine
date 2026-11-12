@@ -4,6 +4,7 @@ from collections import Counter
 from pathlib import PurePosixPath
 
 from pristine.checks.core.placement.directory_grouping.layout import directory_finding, is_code
+from pristine.files.path_roles import RESULT_CACHE_DIRECTORY
 from pristine.reports.findings import Finding
 
 WORD_BOUNDARY = re.compile(r"[_.\-\s()\[\]]+|(?<=[a-z0-9])(?=[A-Z])")
@@ -12,7 +13,7 @@ INDEX_STEM = "index"
 ROUTING_FOLDER_NAMES = frozenset({"app", "pages", "routes", "functions", "api"})
 ROUTING_SUFFIXES = frozenset({".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"})
 PRESCRIBED_FOLDER_NAMES = frozenset({"services", "scripts", "bin", "cmd", "static", "public"})
-IGNORED_ENTRIES = frozenset({"__pycache__"})
+IGNORED_ENTRIES = frozenset({"__pycache__", RESULT_CACHE_DIRECTORY})
 CURRENT_DIRECTORY = PurePosixPath(".")
 TEST_SUPPORT_WORD = "test"
 

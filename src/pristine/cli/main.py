@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -16,10 +17,13 @@ lazy from pristine.engine.grammar_downloads import grammar_download_notices
 lazy from pristine.files.discovery import discover_files, missing_paths
 lazy from pristine.project.inspection import inspect_project
 lazy from pristine.reports.findings import Severity
+lazy from pristine.reports.outcomes import Outcome
 lazy from pristine.reports.report import Report, build_report
 lazy from pristine.services import osv_scanner
-lazy from pristine.services.isolated_inspection import default_jobs, worker_outcomes
+lazy from pristine.services.isolated_inspection import WORKER_COMMAND, default_jobs, worker_outcomes
+lazy from pristine.services.outcome_cache import cache_locations, open_outcome_cache
 
+CACHE_DIRECTORY_SETTING = "PRISTINE_CACHE_DIR"
 EXIT_CLEAN = 0
 EXIT_ERRORS_FOUND = 1
 EXIT_USAGE = 2
@@ -39,6 +43,19 @@ def report_exit_code(report: Report) -> int:
     return EXIT_ERRORS_FOUND if report.count(Severity.ERROR) else EXIT_CLEAN
 
 
+def file_outcomes(files: list[str], jobs: int, arguments: argparse.Namespace) -> dict[str, Outcome]:
+    locations = (
+        None if arguments.no_cache else cache_locations(arguments.paths, os.environ.get(CACHE_DIRECTORY_SETTING))
+    )
+    cache = None if locations is None else open_outcome_cache(locations, WORKER_COMMAND)
+    if cache is None:
+        with worker_outcomes(files, jobs) as completed:
+            return dict(completed)
+    reused, unchecked = cache.lookup(files)
+    with worker_outcomes(unchecked, jobs) as completed:
+        return reused | dict(cache.recorded(completed))
+
+
 def run_check(arguments: argparse.Namespace) -> int:
     jobs = arguments.jobs if arguments.jobs is not None else default_jobs()
     files = discover_files(arguments.paths, arguments.exclude)
@@ -47,8 +64,7 @@ def run_check(arguments: argparse.Namespace) -> int:
     checks = path_checks()
     with ThreadPoolExecutor(max_workers=len(checks)) as executor:
         pending = [executor.submit(check.run, files) for check in checks]
-        with worker_outcomes(files, jobs) as completed:
-            outcomes = dict(completed)
+        outcomes = file_outcomes(files, jobs, arguments)
         path_findings = [finding for future in pending for finding in future.result()]
     missing = missing_paths(arguments.paths)
     report = build_report(outcomes, path_findings, missing)

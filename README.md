@@ -49,6 +49,8 @@ Checks favor precision over recall. A clean scan establishes only the advertised
 
 Use `--json` for structured results, `--max N` to limit displayed findings, and `--exclude <glob>` to skip paths. Totals retain every finding. Workers run in isolation, with half the CPU cores by default; `--jobs N` sets the limit. Grammars download on first use. Discovery respects git ignores and skips vendored and generated code.
 
+Results of unchanged files are reused from `.pristine_cache/` at the repository root, which ignores itself in git. A file is checked again when its content, path, an enclosing `pyproject.toml`, its directory's `__main__.py`, pristine, the parser packages, the grammars or Python change. Crashes and timeouts are never reused. `--no-cache` checks every file and leaves the cache untouched; `PRISTINE_CACHE_DIR` moves it. Without a writable location, every file is checked.
+
 Exit codes: **0** completed without errors, **1** error findings, **2** invalid usage, **3** incomplete verification. Warnings alone return 0. Scanner failures take priority over findings and never produce a clean verdict.
 
 <details>

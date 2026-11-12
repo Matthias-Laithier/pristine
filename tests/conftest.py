@@ -121,6 +121,13 @@ def parsed_report(output: str) -> JsonReport:
     )
 
 
+@pytest.fixture(autouse=True)
+def isolated_result_cache(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> Path:
+    location = tmp_path_factory.mktemp("result-cache")
+    monkeypatch.setenv("PRISTINE_CACHE_DIR", str(location))
+    return location
+
+
 @pytest.fixture
 def run_pristine(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> RunPristine:
     monkeypatch.chdir(tmp_path)

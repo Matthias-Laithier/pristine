@@ -9,6 +9,7 @@ CHECKS_DESCRIPTION = "List enabled check IDs, titles and detected patterns. --js
 CHECK_DESCRIPTION = (
     "Check files and directories. Discovery respects git ignores and excludes generated, vendored and data files. "
     "Known grammars are downloaded on first use. Files are checked in isolated parallel workers. "
+    "Results of unchanged files are reused from .pristine_cache/ at the repository root; --no-cache checks every file. "
     "--max caps findings while summaries retain full counts. --json includes coverage and verification status. "
     "Deleted paths are reported as missing. Unsupported formats are listed separately. "
     "A clean scan establishes only the detected patterns listed by 'pristine checks'."

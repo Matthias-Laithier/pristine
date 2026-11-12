@@ -5,6 +5,7 @@ VENDORED_DIRECTORIES = frozenset(
     {"node_modules", "bower_components", "vendor", "third_party", ".venv", "venv", "site-packages"}
 )
 CACHE_DIRECTORIES = frozenset({"__pycache__"})
+RESULT_CACHE_DIRECTORY = ".pristine_cache"
 TEST_FILE_NAME = re.compile(r"test_.+\.py|.+_test\.(py|[cm]?[jt]sx?)|.+\.(test|spec)\.[cm]?[jt]sx?")
 TEST_FOLDER = re.compile(r"(.+[-_.])?(tests?|e2e)|testing|specs?|__tests__")
 JEST_TEST_FOLDER = "__tests__"
