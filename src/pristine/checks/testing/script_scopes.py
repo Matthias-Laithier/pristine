@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import PurePath
 
 lazy from tree_sitter import Node
@@ -6,7 +7,7 @@ lazy from tree_sitter import Node
 from pristine.clients.script_calls import bound_names, function_var_names
 from pristine.clients.script_calls import local_nodes as lexical_nodes
 from pristine.syntax.calls import callee_of, calls_of
-from pristine.syntax.nodes import FUNCTION_KINDS
+from pristine.syntax.nodes import FUNCTION_KINDS, SyntaxNode
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
 LEXICAL_SCOPES = frozenset({"statement_block", "catch_clause", "for_statement", "for_in_statement"})
@@ -157,6 +158,21 @@ def test_callbacks(parsed: ParsedFile, resolution: ScriptResolution) -> list[Nod
         for call, _, _ in calls_of(parsed, "call_expression")
         if framework_call(call, TEST_NAMES, resolution) and (body := callback(call)) is not None
     ]
+
+
+@dataclass(frozen=True)
+class ScriptTests:
+    resolution: ScriptResolution
+    callbacks: list[SyntaxNode]
+
+
+def resolved_tests(parsed: ParsedFile) -> ScriptTests:
+    resolution = ScriptResolution()
+    return ScriptTests(resolution, test_callbacks(parsed, resolution))
+
+
+def script_tests(parsed: ParsedFile) -> ScriptTests:
+    return parsed.shared(ScriptTests, resolved_tests)
 
 
 def owned_calls(scope: Node) -> Iterator[Node]:

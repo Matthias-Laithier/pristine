@@ -6,7 +6,7 @@ lazy from tree_sitter import Node
 from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text
 from pristine.syntax.python_scopes import FUNCTION_KIND, named_parameters, own_nodes
 
 CHECK_ID = "SAFE-11"
@@ -137,8 +137,8 @@ def is_called_name(name: Node) -> bool:
     return holder is not None and holder.type == "call" and holder.child_by_field_name("function") == name
 
 
-def callback_names(root: Node) -> set[str]:
-    names = (node for node in all_nodes(root) if node.type == "identifier")
+def callback_names(parsed: ParsedFile) -> set[str]:
+    names = parsed.nodes_of("identifier")
     return {
         node_text(name) or ""
         for name in names
@@ -164,7 +164,7 @@ def mutation_findings(path: str, definition: Node, callbacks: set[str]) -> list[
 def check_parameter_mutation(parsed: ParsedFile) -> list[Finding]:
     if parsed.language != "python" or is_test_path(PurePath(parsed.path)):
         return []
-    callbacks = callback_names(parsed.root)
+    callbacks = callback_names(parsed)
     return [
         finding for node in parsed.root.named_children for finding in mutation_findings(parsed.path, node, callbacks)
     ]

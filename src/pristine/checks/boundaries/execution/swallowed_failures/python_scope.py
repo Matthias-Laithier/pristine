@@ -4,7 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures.handlers import HandlerScope, callee_text, normalized
-from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text, root_of
+from pristine.syntax.parsing import ParsedFile, module_statements, node_text, root_of, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_scopes import all_parameter_names
 
@@ -59,8 +59,7 @@ class LoggerResolver:
 def assignments(source: Node | ParsedFile) -> list[tuple[str, Node]]:
     pairs = (
         (node.child_by_field_name("left"), node.child_by_field_name("right"))
-        for node in all_nodes(source)
-        if node.type == "assignment"
+        for node in typed_nodes(source, "assignment")
     )
     return [(callee_text(left), right) for left, right in pairs if left is not None and right is not None]
 
@@ -77,9 +76,7 @@ def resolved_loggers(resolver: LoggerResolver, bound: FileBindings) -> set[str]:
 
 
 def print_is_builtin(source: Node | ParsedFile, bindings: dict[str, str], bound: FileBindings) -> bool:
-    definitions = (
-        node_text(node.child_by_field_name("name")) for node in all_nodes(source) if node.type in DEFINITION_KINDS
-    )
+    definitions = (node_text(node.child_by_field_name("name")) for node in typed_nodes(source, *DEFINITION_KINDS))
     assigned = (target for target, _ in bound.assignments)
     return PRINT not in bindings and PRINT not in {*definitions, *assigned, *bound.parameters}
 
@@ -87,7 +84,7 @@ def print_is_builtin(source: Node | ParsedFile, bindings: dict[str, str], bound:
 def logging_callees(source: Node | ParsedFile, bound: FileBindings) -> frozenset[str]:
     resolver = LoggerResolver(source, bound)
     resolver.loggers = resolved_loggers(resolver, bound)
-    functions = (node.child_by_field_name("function") for node in all_nodes(source) if node.type == "call")
+    functions = (node.child_by_field_name("function") for node in typed_nodes(source, "call"))
     callees = {callee_text(function) for function in functions if function and resolver.is_logging_callee(function)}
     if print_is_builtin(source, resolver.bindings, bound):
         callees.add(PRINT)

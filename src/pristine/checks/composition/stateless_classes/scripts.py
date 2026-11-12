@@ -48,21 +48,17 @@ def namespace_only(parsed: ParsedFile, node: Node, name: str) -> bool:
     declaration = node.child_by_field_name("name")
     references = [
         found
-        for found in all_nodes(parsed)
-        if found != declaration and found.type in {"identifier", "type_identifier"} and node_text(found) == name
+        for found in parsed.nodes_of("identifier", "type_identifier")
+        if found != declaration and node_text(found) == name
     ]
-    mentioned = any(found.type == "string" and name in (node_text(found) or "") for found in all_nodes(parsed))
+    mentioned = any(name in (node_text(found) or "") for found in parsed.nodes_of("string"))
     return not mentioned and all(namespace_reference(found) for found in references)
 
 
 def check_stateless_classes(parsed: ParsedFile) -> list[Finding]:
     if parsed.language not in SCRIPT_LANGUAGES or is_test_path(PurePath(parsed.path)):
         return []
-    extended = {
-        base_name(node)
-        for node in all_nodes(parsed)
-        if node.type in {"class_declaration", "class", "abstract_class_declaration"}
-    }
+    extended = {base_name(node) for node in parsed.nodes_of("class_declaration", "class", "abstract_class_declaration")}
     findings = []
     for name, node in module_classes(parsed).items():
         methods = members(node)

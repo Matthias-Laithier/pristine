@@ -5,7 +5,7 @@ lazy from tree_sitter import Node
 from pristine.checks.boundaries.data_flow.injection.constructed import Injection
 from pristine.checks.boundaries.data_flow.injection.scripts.processes import scan_processes
 from pristine.checks.boundaries.data_flow.injection.scripts.values import is_trusted
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, node_text
 
 MARKUP_PROPERTIES = frozenset({"innerHTML", "outerHTML"})
 ASSIGNMENT_KINDS = frozenset({"assignment_expression", "augmented_assignment_expression"})
@@ -64,7 +64,7 @@ def evaluation_injection(node: Node) -> str | None:
 
 def scan_script(parsed: ParsedFile) -> Iterator[Injection]:
     yield from scan_processes(parsed)
-    for node in all_nodes(parsed):
+    for node in parsed.nodes_of("jsx_attribute", *ASSIGNMENT_KINDS, "call_expression", "new_expression"):
         message = markup_injection(node) or evaluation_injection(node)
         if message is not None:
             yield Injection(node, message)

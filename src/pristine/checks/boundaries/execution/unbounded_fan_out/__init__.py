@@ -16,7 +16,7 @@ from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of, calls_of
 from pristine.syntax.nodes import COMPREHENSION_KINDS, NESTED_SCOPE_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
 CHECK_ID = "SAFE-8"
@@ -75,7 +75,7 @@ def spawns_in_task_group(statement: Node, alias: str) -> Iterator[tuple[Node, No
 
 
 def task_group_loops(source: Node | ParsedFile, bindings: dict[str, str]) -> Iterator[tuple[Node, Node]]:
-    for item in (node for node in all_nodes(source) if node.type == "with_item"):
+    for item in typed_nodes(source, "with_item"):
         alias = task_group_alias(item, bindings)
         statement = None if item.parent is None else item.parent.parent
         if alias is not None and statement is not None:

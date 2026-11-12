@@ -7,7 +7,7 @@ from pristine.checks.definitions import FileCheck
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text, typed_nodes
 
 CHECK_ID = "DEP-4"
 EXPORT_LIST = "__all__"
@@ -36,7 +36,12 @@ def binding_targets(node: Node) -> list[Node]:
 
 
 def defined_names(source: Node | ParsedFile) -> set[str]:
-    return {name for node in all_nodes(source) for target in binding_targets(node) for name in identifiers(target)}
+    return {
+        name
+        for node in typed_nodes(source, *BINDING_KINDS, *BINDING_FIELDS)
+        for target in binding_targets(node)
+        for name in identifiers(target)
+    }
 
 
 def export_sequence(node: Node) -> list[Node]:
@@ -49,13 +54,15 @@ def export_sequence(node: Node) -> list[Node]:
 
 def export_entries(source: Node | ParsedFile) -> list[tuple[Node, str]]:
     return [
-        (entry, node_text(entry.children[1]) or "") for node in all_nodes(source) for entry in export_sequence(node)
+        (entry, node_text(entry.children[1]) or "")
+        for node in typed_nodes(source, *BINDING_FIELDS)
+        for entry in export_sequence(node)
     ]
 
 
 def export_list_findings(parsed: ParsedFile) -> Iterator[Finding]:
     is_dynamic = any(marker in parsed.text for marker in DYNAMIC_NAMESPACE_MARKERS)
-    is_open = is_dynamic or any(node.type == "wildcard_import" for node in all_nodes(parsed))
+    is_open = is_dynamic or bool(parsed.nodes_of("wildcard_import"))
     defined = defined_names(parsed)
     for entry, name in export_entries(parsed):
         if not is_open and name not in defined:

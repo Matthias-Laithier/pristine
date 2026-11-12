@@ -8,7 +8,7 @@ from pristine.clients.script_calls import bound_names
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.nodes import FUNCTION_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, node_text, unwrapped
+from pristine.syntax.parsing import ParsedFile, function_name, line_of, node_text, unwrapped
 from pristine.syntax.python_scopes import own_nodes
 
 SCOPES = FUNCTION_KINDS | {"class_declaration", "class", "abstract_class_declaration"}
@@ -88,9 +88,8 @@ def mutation(node: Node, parameters: dict[str, str]) -> str | None:
 
 def identifier_uses(parsed: ParsedFile) -> dict[str, list[Node]]:
     uses: dict[str, list[Node]] = {}
-    for node in all_nodes(parsed):
-        if node.type in {"identifier", "shorthand_property_identifier"}:
-            uses.setdefault(node_text(node) or "", []).append(node)
+    for node in parsed.nodes_of("identifier", "shorthand_property_identifier"):
+        uses.setdefault(node_text(node) or "", []).append(node)
     return uses
 
 
@@ -132,7 +131,12 @@ def function_findings(
 def check_parameter_mutation(parsed: ParsedFile) -> list[Finding]:
     if parsed.language not in {"typescript", "tsx"} or is_test_path(PurePath(parsed.path)):
         return []
-    shadowed = {name for node in all_nodes(parsed) for name in declaration_names(node) if name in COLLECTION_TYPES}
+    shadowed = {
+        name
+        for node in parsed.nodes_of(*DECLARATIONS, "import_clause", "namespace_import")
+        for name in declaration_names(node)
+        if name in COLLECTION_TYPES
+    }
     functions = module_functions(parsed)
     uses = identifier_uses(parsed) if functions else {}
     return [finding for function in functions for finding in function_findings(parsed, function, shadowed, uses)]

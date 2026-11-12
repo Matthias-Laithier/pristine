@@ -5,7 +5,7 @@ lazy from tree_sitter import Node
 from pristine.checks.testing.model_clients_in_tests.live_clients import LiveClient, all_environment_reads, is_within
 from pristine.clients.libraries import PYTHON_MODEL_CLIENTS
 from pristine.syntax.calls import callee_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, line_of, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, keyword_values, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
@@ -17,7 +17,7 @@ ENVIRONMENT = "os.environ"
 class PythonEnvironment:
     def __init__(self, source: Node | ParsedFile) -> None:
         self.bindings = import_bindings(source)
-        assignments = (node for node in all_nodes(source) if node.type == "assignment")
+        assignments = typed_nodes(source, "assignment")
         self.assigned: dict[str, list[Node]] = {}
         for assignment in assignments:
             value = assignment.child_by_field_name("right")
@@ -51,7 +51,7 @@ def key_name(node: Node | None) -> str | None:
 
 def python_live_clients(source: Node | ParsedFile) -> Iterator[LiveClient]:
     environment = PythonEnvironment(source)
-    for call in (node for node in all_nodes(source) if node.type == "call" and environment.is_model_client(node)):
+    for call in (node for node in typed_nodes(source, "call") if environment.is_model_client(node)):
         arguments = call.child_by_field_name("arguments")
         key = None if arguments is None else keyword_values(arguments.named_children).get(API_KEY_ARGUMENT)
         is_read, name = (False, None) if key is None else environment.read_key(key)

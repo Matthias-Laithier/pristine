@@ -40,6 +40,12 @@ def all_nodes(source: Node | ParsedFile) -> Iterator[Node]:
     return subtree_nodes(source)
 
 
+def typed_nodes(source: Node | ParsedFile, *kinds: str) -> Iterator[Node]:
+    if isinstance(source, ParsedFile):
+        return iter(source.nodes_of(*kinds))
+    return (node for node in subtree_nodes(source) if node.type in kinds)
+
+
 def subtree_nodes(source: Node) -> Iterator[Node]:
     pending = [source]
     while pending:

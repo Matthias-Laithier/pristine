@@ -4,7 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.clients.literals import string_content
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text, typed_nodes
 
 SCRIPT_LOADER_NAMES = frozenset({"require", "import"})
 CALLING_KINDS = {"call_expression": "function", "new_expression": "constructor"}
@@ -26,7 +26,7 @@ class CalledReferences:
 
 
 def called_references(source: Node | ParsedFile) -> CalledReferences:
-    calls = (node for node in all_nodes(source) if node.type in CALLING_KINDS)
+    calls = typed_nodes(source, *CALLING_KINDS)
     callees = {
         "".join((node_text(call.child_by_field_name(CALLING_KINDS[call.type])) or "").split())
         for call in calls
@@ -90,7 +90,7 @@ def script_loader_targets(call: Node, called: CalledReferences) -> list[str]:
 
 def script_import_modules(source: Node | ParsedFile) -> Iterator[tuple[str, int]]:
     called = called_references(source)
-    for node in all_nodes(source):
+    for node in typed_nodes(source, "import_statement", "call_expression"):
         targets = list(script_import_targets(node, called)) if node.type == "import_statement" else []
         targets += script_loader_targets(node, called) if node.type == "call_expression" else []
         yield from ((target, line_of(node)) for target in targets)

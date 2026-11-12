@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.testing.script_scopes import ScriptResolution, test_callbacks
+from pristine.checks.testing.script_scopes import ScriptResolution, script_tests
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
@@ -90,8 +90,9 @@ def assertion_problem(call: Node, arguments: list[Node], resolution: ScriptResol
 
 
 def typescript_dependent_assertions(parsed: ParsedFile) -> Iterator[tuple[Node, str]]:
-    resolution = ScriptResolution()
-    calls = (item for test in test_callbacks(parsed, resolution) for item in calls_of(test, "call_expression"))
+    tests = script_tests(parsed)
+    resolution = tests.resolution
+    calls = (item for test in tests.callbacks for item in calls_of(test, "call_expression"))
     for call, _, arguments in calls:
         if (problem := assertion_problem(call, arguments, resolution)) is not None:
             yield call, problem

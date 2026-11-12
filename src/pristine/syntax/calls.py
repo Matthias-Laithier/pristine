@@ -4,7 +4,7 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.reports.findings import Severity
-from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
+from pristine.syntax.parsing import ParsedFile, node_text, typed_nodes
 
 UNKNOWN_ARGUMENT_KINDS = frozenset({"list_splat", "dictionary_splat", "spread_element"})
 
@@ -22,9 +22,7 @@ def callee_of(call: Node) -> str:
 
 
 def calls_of(source: Node | ParsedFile, call_kind: str) -> Iterator[tuple[Node, str, list[Node]]]:
-    for node in all_nodes(source):
-        if node.type != call_kind:
-            continue
+    for node in typed_nodes(source, call_kind):
         arguments = node.child_by_field_name("arguments")
         if arguments is not None:
             yield node, callee_of(node), arguments.named_children

@@ -122,11 +122,7 @@ def model_bindings(parsed: ParsedFile) -> ModelBindings:
             register_import(node, bindings)
         else:
             register_declaration(node, bindings)
-    assignments = (
-        node
-        for node in parsed.nodes
-        if node.type in {"assignment_expression", "augmented_assignment_expression", "update_expression"}
-    )
+    assignments = parsed.nodes_of("assignment_expression", "augmented_assignment_expression", "update_expression")
     assigned = {
         declaration.id
         for node in assignments

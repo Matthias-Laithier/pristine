@@ -12,7 +12,7 @@ from pristine.checks.boundaries.execution.swallowed_failures.handlers import (
 )
 from pristine.checks.boundaries.execution.swallowed_failures.script_scope import script_scope
 from pristine.reports.findings import Finding, Severity
-from pristine.syntax.parsing import ParsedFile, all_nodes
+from pristine.syntax.parsing import ParsedFile
 
 SCRIPT_EMPTY_BODIES = frozenset(
     {"", "return", "return null", "return undefined", "return []", "return {}", 'return ""', "return ''", "return ``"}
@@ -32,7 +32,7 @@ def hidden_shape(body: Node, scope: HandlerScope) -> str | None:
 
 def script_swallows(parsed: ParsedFile) -> Iterator[Finding]:
     scope = script_scope(parsed, returned_values(LOGGED_DEFAULTS))
-    for clause in (node for node in all_nodes(parsed) if node.type == "catch_clause"):
+    for clause in parsed.nodes_of("catch_clause"):
         shape = hidden_shape(clause.child_by_field_name("body") or clause, scope)
         if shape is not None:
             yield swallow(

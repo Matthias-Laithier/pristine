@@ -11,7 +11,7 @@ from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import callee_of, calls_of
-from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, module_statements, node_text, typed_nodes
 from pristine.syntax.python_calls import import_bindings, keyword_values, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
@@ -21,6 +21,8 @@ MODEL_KEYWORD = "model"
 NEUTRAL_SAMPLING = {"temperature": 0.0, "top_p": 1.0}
 NUMBER_KINDS = frozenset({"integer", "float"})
 TYPE_NAME_KINDS = frozenset({"identifier", "attribute", "string_content"})
+TYPED_PARAMETER_KINDS = frozenset({"typed_parameter", "typed_default_parameter"})
+BOUND_SOURCE_KINDS = TYPED_PARAMETER_KINDS | {"assignment", "as_pattern"}
 DECIMAL = re.compile(r"(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?")
 MODEL_FAMILY = re.compile(
     r"gpt|claude|mistral|gemini|llama|ministral|codestral|pixtral|magistral|devstral|voxtral|(?<![a-z0-9])o[134](?!\d)",
@@ -64,7 +66,7 @@ def bound_sources(node: Node) -> Iterator[tuple[Node | None, Node | None]]:
     if node.type == "assignment":
         yield node.child_by_field_name("left"), node.child_by_field_name("right")
         yield node.child_by_field_name("left"), node.child_by_field_name("type")
-    elif node.type in {"typed_parameter", "typed_default_parameter"}:
+    elif node.type in TYPED_PARAMETER_KINDS:
         name = node.child_by_field_name("name") or next(iter(node.named_children), None)
         yield name, node.child_by_field_name("type")
     elif node.type == "as_pattern":
@@ -79,7 +81,7 @@ def names_model_client(source: Node, bindings: dict[str, str]) -> bool:
 
 
 def model_clients(parsed: ParsedFile, bindings: dict[str, str]) -> set[str]:
-    pairs = (pair for node in all_nodes(parsed) for pair in bound_sources(node))
+    pairs = (pair for node in typed_nodes(parsed, *BOUND_SOURCE_KINDS) for pair in bound_sources(node))
     return {
         node_text(target) or ""
         for target, source in pairs

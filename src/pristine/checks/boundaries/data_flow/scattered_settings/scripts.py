@@ -5,7 +5,7 @@ lazy from tree_sitter import Node
 from pristine.clients.literals import string_content
 from pristine.clients.script_calls import ScriptScopes, enclosing_function
 from pristine.files.path_roles import is_test_path
-from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, node_text
+from pristine.syntax.parsing import ParsedFile, function_name, node_text
 
 PUBLIC_PREFIXES = ("NEXT_PUBLIC_", "REACT_APP_", "VITE_", "PUBLIC_")
 STARTUP_NAMES = frozenset({"main", "bootstrap", "startup", "configure", "loadSettings", "loadConfig", "getConfig"})
@@ -44,7 +44,7 @@ def environment_reads(parsed: ParsedFile) -> list[tuple[Node, str]]:
         return []
     scopes = ScriptScopes()
     reads = []
-    for node in all_nodes(parsed):
+    for node in parsed.nodes_of("member_expression", "subscript_expression"):
         key = environment_key(node, scopes)
         if key is None:
             continue

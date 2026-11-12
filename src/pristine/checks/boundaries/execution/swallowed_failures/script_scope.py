@@ -3,7 +3,7 @@ from collections import Counter
 lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.swallowed_failures.handlers import HandlerScope, callee_text, normalized
-from pristine.syntax.parsing import ParsedFile, all_nodes, module_statements, node_text, root_of
+from pristine.syntax.parsing import ParsedFile, module_statements, node_text, root_of, typed_nodes
 
 CONSOLE = "console"
 CONSTANT_KEYWORD = "const"
@@ -17,6 +17,7 @@ BINDING_FIELDS = {
 }
 BARE_BINDING_KINDS = frozenset({"formal_parameters", "import_clause", "namespace_import"})
 SHORTHAND_PATTERN = "shorthand_property_identifier_pattern"
+BINDING_KINDS = frozenset({"import_specifier", *BINDING_FIELDS, *BARE_BINDING_KINDS, SHORTHAND_PATTERN})
 
 
 def binding_nodes(node: Node) -> list[Node | None]:
@@ -30,14 +31,14 @@ def binding_nodes(node: Node) -> list[Node | None]:
 
 
 def bound_names(source: Node | ParsedFile) -> Counter[str]:
-    bindings = (binding for node in all_nodes(source) for binding in binding_nodes(node))
+    bindings = (binding for node in typed_nodes(source, *BINDING_KINDS) for binding in binding_nodes(node))
     return Counter(node_text(binding) or "" for binding in bindings if binding is not None)
 
 
 def logging_callees(source: Node | ParsedFile, names: Counter[str]) -> frozenset[str]:
     if names[CONSOLE]:
         return frozenset[str]()
-    functions = (node.child_by_field_name("function") for node in all_nodes(source) if node.type == "call_expression")
+    functions = (node.child_by_field_name("function") for node in typed_nodes(source, "call_expression"))
     receivers = (
         (function, function.child_by_field_name("object"))
         for function in functions

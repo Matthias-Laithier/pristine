@@ -6,7 +6,7 @@ from pristine.checks.testing.script_scopes import (
     framework_call,
     owned_calls,
     parents,
-    test_callbacks,
+    script_tests,
 )
 from pristine.syntax.calls import callee_of, calls_of
 from pristine.syntax.parsing import ParsedFile
@@ -108,8 +108,8 @@ def fake_at(call: Node, test: Node, resolution: ScriptResolution, *, setup: bool
 
 def typescript_nondeterministic_calls(parsed: ParsedFile) -> list[tuple[Node, str, str]]:
     found = []
-    resolution = ScriptResolution()
-    callbacks = test_callbacks(parsed, resolution)
+    tests = script_tests(parsed)
+    resolution, callbacks = tests.resolution, tests.callbacks
     if not callbacks:
         return []
     timer_setup = TimerSetup(parsed, resolution)

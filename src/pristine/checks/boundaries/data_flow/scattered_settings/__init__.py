@@ -13,7 +13,7 @@ from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import FUNCTION_KINDS
-from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, line_of, module_statements, node_text
+from pristine.syntax.parsing import ParsedFile, function_name, line_of, module_statements, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 from pristine.syntax.python_strings import is_constant_string
 
@@ -45,8 +45,7 @@ def class_bases(node: Node) -> list[str]:
 def defines_settings_class(parsed: ParsedFile, bindings: dict[str, str]) -> bool:
     classes = {
         node_text(node.child_by_field_name("name")) or "": class_bases(node)
-        for node in all_nodes(parsed)
-        if node.type == "class_definition"
+        for node in parsed.nodes_of("class_definition")
     }
     settings = {name for name, bases in classes.items() if any(is_settings_base(base, bindings) for base in bases)}
     pending = classes.keys() - settings
@@ -103,7 +102,7 @@ def is_inside_application_function(node: Node) -> bool:
 
 def environment_reads(parsed: ParsedFile, bindings: dict[str, str]) -> Iterator[Node]:
     constants = module_strings(parsed.root)
-    for node in all_nodes(parsed):
+    for node in parsed.nodes_of("call", "subscript"):
         key = read_key(node, bindings)
         if is_setting_name(key, constants) and is_inside_application_function(node):
             yield node
