@@ -1,4 +1,4 @@
-from pristine.checks.boundaries.data_flow import injection, interpolated_logs, scattered_settings, secrets
+from pristine.checks.boundaries.data_flow import injection, interpolated_logs, scattered_settings
 from pristine.checks.boundaries.execution import (
     async_blocking,
     swallowed_failures,
@@ -71,7 +71,6 @@ PATH_CHECKS: tuple[PathCheck, ...] = (
     directory_grouping.CHECK,
     function_clones.CHECK,
     import_cycles.CHECK,
-    secrets.CHECK,
     edited_migrations.CHECK,
     location_of_tests.CHECK,
 )

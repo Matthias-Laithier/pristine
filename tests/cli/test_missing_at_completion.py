@@ -8,7 +8,6 @@ import pytest
 
 from pristine.cli.main import main
 from pristine.reports.outcomes import Checked
-from tests.services.secret_scan import gitleaks_without_leaks
 
 
 def worker_that_deletes_invoice(
@@ -35,10 +34,7 @@ def test_paths_removed_during_workers_are_missing_at_completion(
     (tmp_path / "invoice.py").write_text("invoice_total = 1\n", encoding="utf-8")
     (tmp_path / "receipt.py").write_text("receipt_total = 1\n", encoding="utf-8")
 
-    with (
-        patch("pristine.services.gitleaks.run_gitleaks", gitleaks_without_leaks),
-        patch("pristine.cli.main.worker_outcomes", worker_that_deletes_invoice(tmp_path)),
-    ):
+    with patch("pristine.cli.main.worker_outcomes", worker_that_deletes_invoice(tmp_path)):
         assert main(["check", "invoice.py", "receipt.py", "--jobs", "1", "--json"]) == 0
 
     document = json.loads(capsys.readouterr().out)

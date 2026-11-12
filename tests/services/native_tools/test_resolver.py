@@ -2,7 +2,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
-from typing import Literal
 
 import pytest
 
@@ -12,17 +11,13 @@ from pristine.services.native_tools.resolver import NativeToolResolver, NativeTo
 from tests.services.native_tools.conftest import FIXTURE_DIGEST, FIXTURE_URL, NativeBoundary
 
 
-@pytest.mark.parametrize("name", ["osv-scanner", "gitleaks"])
-def test_exact_installed_version_avoids_cache_and_network(
-    native_boundary: NativeBoundary, name: Literal["osv-scanner", "gitleaks"]
-) -> None:
+def test_exact_installed_version_avoids_cache_and_network(native_boundary: NativeBoundary) -> None:
     installed = native_boundary.root.parent / "installed"
     installed.write_bytes(b"installed fixture")
     native_boundary.installed = str(installed)
-    output = b"osv-scanner version: 2.7.0\nother metadata\n" if name == "osv-scanner" else b"8.30.1\n"
-    native_boundary.version = ProcessResult(output, b"", 0, None)
-    assert native_boundary.resolver(name).resolve_tool(name) == str(installed.resolve())
-    assert native_boundary.commands == [[str(installed.resolve()), "--version" if name == "osv-scanner" else "version"]]
+    native_boundary.version = ProcessResult(b"osv-scanner version: 2.7.0\nother metadata\n", b"", 0, None)
+    assert native_boundary.resolver().resolve_tool("osv-scanner") == str(installed.resolve())
+    assert native_boundary.commands == [[str(installed.resolve()), "--version"]]
     assert native_boundary.download_calls == []
     assert not native_boundary.root.exists()
 
@@ -152,7 +147,7 @@ def test_unsupported_platform_does_not_probe_or_download(
 
 
 def test_invalid_executable_digest_cannot_escape_cache(native_boundary: NativeBoundary) -> None:
-    artifact = ReleaseArtifact("Darwin", "arm64", FIXTURE_URL, FIXTURE_DIGEST, "../outside")
+    artifact = ReleaseArtifact("Darwin", "arm64", FIXTURE_URL, "../outside")
     with pytest.raises(NativeToolUnavailable, match="pin is invalid"):
         native_boundary.resolver(artifact=artifact).resolve_tool("osv-scanner")
     assert not native_boundary.root.exists()

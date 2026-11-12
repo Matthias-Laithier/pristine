@@ -7,7 +7,6 @@ from pristine.cli.rendering import render_text
 from pristine.reports.findings import Finding, FindingKind, Severity
 from pristine.reports.report import Report
 from tests.conftest import RunPristine, json_object
-from tests.services.secret_scan import unavailable_native_tool
 
 LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))
 TRIAGE_FILES = {
@@ -80,16 +79,13 @@ def test_text_groups_ranked_files_and_keeps_full_overviews(
     assert "verification: complete, 0 failures" in lines
 
 
-def test_verification_findings_are_not_code_fixes_and_missing_paths_remain_visible(
-    run_pristine: RunPristine, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+def test_unchecked_files_are_not_code_fixes_and_missing_paths_remain_visible(
+    run_pristine: RunPristine, capsys: pytest.CaptureFixture[str]
 ) -> None:
     run_pristine({"clean.py": "value = 1\n", "broken.py": "def broken(:\n"})
-    monkeypatch.setattr("pristine.services.gitleaks.resolve_tool", unavailable_native_tool)
     assert main(["check", ".", "gone.py", "--json", "--max", "1"]) == 3
     document = json_object(json.loads(capsys.readouterr().out))
-    assert document["triage"] == [
-        {"path": ".", "distinct_checks": 0, "findings": 1, "fix": {}, "verify": {"SAFE-2": 1}},
-    ]
+    assert document["triage"] == []
     assert document["missing"] == ["gone.py"]
     assert document["verification_status"] == "incomplete"
     unchecked = document["unchecked"]
@@ -97,10 +93,9 @@ def test_verification_findings_are_not_code_fixes_and_missing_paths_remain_visib
     assert [json_object(entry)["path"] for entry in unchecked] == ["broken.py"]
     assert main(["check", ".", "gone.py", "--max", "1"]) == 3
     output = capsys.readouterr().out
-    assert "\n.\n  1 warning; verify SAFE-2\n  - file: verify SAFE-2 warning:" in output
     assert "missing: gone.py\n" in output
     assert "unchecked: broken.py (" in output
-    assert "verification: incomplete, 2 failures\n" in output
+    assert "verification: incomplete, 1 failures\n" in output
 
 
 @pytest.mark.parametrize("limit", [None, 1])

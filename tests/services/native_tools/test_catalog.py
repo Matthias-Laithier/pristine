@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Literal
 
 import pytest
 
@@ -8,28 +7,19 @@ from pristine.services.native_tools.resolver import NativeToolResolver, NativeTo
 from tests.services.native_tools.conftest import NativeBoundary
 
 
-@pytest.mark.parametrize("name", ["osv-scanner", "gitleaks"])
 @pytest.mark.parametrize(
-    "system,machine,asset_names",
+    "system,machine,asset_name",
     [
-        ("Darwin", "arm64", ("darwin_arm64", "darwin_arm64")),
-        ("Darwin", "x86_64", ("darwin_amd64", "darwin_x64")),
-        ("Linux", "aarch64", ("linux_arm64", "linux_arm64")),
-        ("Linux", "x86_64", ("linux_amd64", "linux_x64")),
+        ("Darwin", "arm64", "darwin_arm64"),
+        ("Darwin", "x86_64", "darwin_amd64"),
+        ("Linux", "aarch64", "linux_arm64"),
+        ("Linux", "x86_64", "linux_amd64"),
     ],
 )
 def test_supported_catalog_selects_only_fixed_official_release_assets(
-    tmp_path: Path,
-    name: Literal["osv-scanner", "gitleaks"],
-    system: str,
-    machine: str,
-    asset_names: tuple[str, str],
+    tmp_path: Path, system: str, machine: str, asset_name: str
 ) -> None:
-    url = (
-        "google/osv-scanner/releases/download/v2.7.0/osv-scanner_" + asset_names[0]
-        if name == "osv-scanner"
-        else "gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_" + asset_names[1] + ".tar.gz"
-    )
+    url = "google/osv-scanner/releases/download/v2.7.0/osv-scanner_" + asset_name
     requested: list[str] = []
 
     def offline(download_url: str) -> bytes:
@@ -38,7 +28,7 @@ def test_supported_catalog_selects_only_fixed_official_release_assets(
 
     resolver = NativeToolResolver(tmp_path / "cache", system, machine, finder=lambda _name: None, download=offline)
     with pytest.raises(NativeToolUnavailable):
-        resolver.resolve_tool(name)
+        resolver.resolve_tool("osv-scanner")
     assert requested == ["https://github.com/" + url]
     assert list((tmp_path / "cache").iterdir()) == []
 

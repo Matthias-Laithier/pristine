@@ -9,7 +9,6 @@ import pytest
 from pristine.cli.main import main
 from pristine.reports.findings import Finding, Severity
 from pristine.reports.outcomes import Checked
-from tests.services.secret_scan import gitleaks_without_leaks
 
 EXPECTED_JSON_REPORT = {
     "verification_status": "complete",
@@ -100,10 +99,7 @@ def test_check_returns_the_full_result_after_every_worker(
     (tmp_path / "invoice.py").write_text("invoice_total = 1\n", encoding="utf-8")
     (tmp_path / "receipt.py").write_text("receipt_total = 2\n", encoding="utf-8")
 
-    with (
-        patch("pristine.services.gitleaks.run_gitleaks", gitleaks_without_leaks),
-        patch("pristine.cli.main.worker_outcomes", worker_outcomes(capsys)),
-    ):
+    with patch("pristine.cli.main.worker_outcomes", worker_outcomes(capsys)):
         assert main(["check", "invoice.py", "receipt.py", "--jobs", "1", *report_options]) == 1
 
     output = capsys.readouterr().out

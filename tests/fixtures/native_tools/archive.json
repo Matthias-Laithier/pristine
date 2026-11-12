@@ -1,7 +1,0 @@
-{
-  "base64": "H4sIAAAAAAAA/+3TvQrCMBRA4c4+hU8gsabNLJpBUAd9gthGKbYO/QEf31oUpCAuJhU833JDlnuXs14t9HavA5dEK5aym63+FCJ8eXf/sZJhMBZOr3poqtqU7Uofu37QMbvWTWnHeZbYS2VHQ98Dv3Z6vtzoSZE63PGx/6nq9a/CkP69ePZfWpMW5P93TlmdW3OuXO64R62i6H3/YtbvX8aK/n0wh2ToEwAAAAAAAAAAAAAAX3ADMHBuPwAoAAA=",
-  "sha256": "97ea7646e5b865b3f9dc38f1c481bcdd6970dbca2abb25e78e18f36d4b8096e9",
-  "executable_sha256": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-  "members": ["LICENSE", "README.md", "gitleaks"],
-  "executable": "abc"
-}

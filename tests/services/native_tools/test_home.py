@@ -24,4 +24,4 @@ def test_unavailable_home_is_an_owned_provisioning_failure(monkeypatch: pytest.M
 
     monkeypatch.setattr(Path, "home", unavailable_home)
     with pytest.raises(NativeToolUnavailable):
-        resolve_tool("gitleaks")
+        resolve_tool("osv-scanner")

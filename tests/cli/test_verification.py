@@ -2,7 +2,6 @@ import pytest
 
 from pristine.cli.main import main
 from tests.conftest import RunPristine, parsed_report
-from tests.services.secret_scan import unavailable_native_tool
 
 LONG_FILE = "".join(f"value_{index} = {index}\n" for index in range(201))
 
@@ -14,10 +13,7 @@ def test_parser_recovery_is_incomplete_verification(run_pristine: RunPristine) -
     assert report["summary"]["verification_failures"] == 1
 
 
-def test_incomplete_verification_takes_priority_over_rule_errors(
-    run_pristine: RunPristine, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr("pristine.services.gitleaks.resolve_tool", unavailable_native_tool)
+def test_incomplete_verification_takes_priority_over_rule_errors(run_pristine: RunPristine) -> None:
     exit_code, report = run_pristine(
         {
             "broken.py": "def broken(:\n",
@@ -28,7 +24,7 @@ def test_incomplete_verification_takes_priority_over_rule_errors(
     )
     assert exit_code == 3
     assert report["summary"]["errors"] == 1
-    assert report["summary"]["verification_failures"] == 2
+    assert report["summary"]["verification_failures"] == 1
     assert report["unsupported"] == ["source.unknownlang"]
     assert [entry["path"] for entry in report["skipped"]] == ["notes.md"]
     assert report["missing"] == []
