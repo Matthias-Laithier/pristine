@@ -23,8 +23,10 @@ def callee_of(call: Node) -> str:
 
 def calls_of(source: Node | ParsedFile, call_kind: str) -> Iterator[tuple[Node, str, list[Node]]]:
     for node in all_nodes(source):
+        if node.type != call_kind:
+            continue
         arguments = node.child_by_field_name("arguments")
-        if node.type == call_kind and arguments is not None:
+        if arguments is not None:
             yield node, callee_of(node), arguments.named_children
 
 

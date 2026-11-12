@@ -13,6 +13,17 @@ def default_jobs() -> int:
     return max(1, (os.cpu_count() or 1) // 2)
 
 
+def file_size(path: str) -> int:
+    try:
+        return os.stat(path).st_size
+    except OSError:
+        return 0
+
+
+def largest_first(paths: list[str]) -> list[str]:
+    return sorted(paths, key=file_size, reverse=True)
+
+
 def inspect_in_workers(paths: list[str], jobs: int, command: tuple[str, ...] = WORKER_COMMAND) -> dict[str, Outcome]:
     if not paths:
         return {}
@@ -24,7 +35,7 @@ def inspect_in_workers(paths: list[str], jobs: int, command: tuple[str, ...] = W
 def worker_outcomes(
     paths: list[str], jobs: int, command: tuple[str, ...] = WORKER_COMMAND
 ) -> Generator[Iterator[tuple[str, Outcome]]]:
-    pool = WorkerPool(paths, jobs, command)
+    pool = WorkerPool(largest_first(paths), jobs, command)
 
     try:
         yield pool.outcomes()

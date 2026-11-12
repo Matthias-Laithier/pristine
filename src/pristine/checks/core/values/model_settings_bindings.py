@@ -102,6 +102,8 @@ def register_declaration(node: Node, bindings: ModelBindings) -> None:
         single = node.child_by_field_name("parameter")
         for parameter in items + ([] if single is None else [single]):
             bindings.values.setdefault(node.id, {}).update(dict.fromkeys(bound_names(parameter), parameter))
+    if not names:
+        return
     owns_binding = node.type in {"catch_clause", "function_expression"} or (
         node.type == "for_in_statement" and node_text(node.child_by_field_name("kind")) != "var"
     )

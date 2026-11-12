@@ -48,16 +48,18 @@ def markup_injection(node: Node) -> str | None:
 
 
 def evaluation_injection(node: Node) -> str | None:
+    if node.type not in {"call_expression", "new_expression"}:
+        return None
     arguments_node = node.child_by_field_name("arguments")
     arguments = [] if arguments_node is None else arguments_node.named_children
-    dynamic = not all(map(is_trusted, arguments))
     function = node.child_by_field_name("function") or node.child_by_field_name("constructor")
     name = node_text(function) or ""
     method = node_text(function.child_by_field_name("property")) if function is not None else None
     if node.type == "call_expression" and method in RAW_UNSAFE_METHODS and arguments and not is_trusted(arguments[0]):
         return f"'{method}' runs SQL built from non-literal values; {RAW_FIX}"
     is_evaluator = (node.type, name) in {("call_expression", EVALUATOR), ("new_expression", FUNCTION_CONSTRUCTOR)}
-    return f"'{name}' evaluates a non-literal value as code; {EVAL_FIX}" if is_evaluator and dynamic else None
+    dynamic = is_evaluator and not all(map(is_trusted, arguments))
+    return f"'{name}' evaluates a non-literal value as code; {EVAL_FIX}" if dynamic else None
 
 
 def scan_script(parsed: ParsedFile) -> Iterator[Injection]:

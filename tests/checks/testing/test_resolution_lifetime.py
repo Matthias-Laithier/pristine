@@ -33,13 +33,13 @@ def test_resolution_releases_tree_on_success_and_failure(monkeypatch: pytest.Mon
         assert reference() is None
         assert all(owner() is None for owner in owners)
 
-    def fail(_scope: script_scopes.Node, name: str) -> tuple[bool, str | None]:
-        raise ValueError(name)
+    def fail(scope: script_scopes.Node) -> dict[str, str | None]:
+        raise ValueError(scope.type)
 
-    monkeypatch.setattr(script_scopes, "scope_binding", fail)
+    monkeypatch.setattr(script_scopes, "scope_bindings", fail)
     parsed = parse_file("failure.test.ts", 'test("é", () => {});', "typescript")
     tree_references = sys.getrefcount(parsed.tree)
-    with pytest.raises(ValueError, match="test"):
+    with pytest.raises(ValueError, match="program"):
         typescript.typescript_nondeterministic_calls(parsed)
     gc.collect()
     assert all(owner() is None for owner in owners)

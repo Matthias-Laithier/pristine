@@ -1,6 +1,7 @@
 import argparse
 import sys
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 
 from pristine.cli.arguments import parser
@@ -41,11 +42,14 @@ def report_exit_code(report: Report) -> int:
 def run_check(arguments: argparse.Namespace) -> int:
     jobs = arguments.jobs if arguments.jobs is not None else default_jobs()
     files = discover_files(arguments.paths, arguments.exclude)
-    path_findings = [finding for check in path_checks() for finding in check.run(files)]
     for notice in grammar_download_notices(files):
         print(notice, file=sys.stderr)
-    with worker_outcomes(files, jobs) as completed:
-        outcomes = dict(completed)
+    checks = path_checks()
+    with ThreadPoolExecutor(max_workers=len(checks)) as executor:
+        pending = [executor.submit(check.run, files) for check in checks]
+        with worker_outcomes(files, jobs) as completed:
+            outcomes = dict(completed)
+        path_findings = [finding for future in pending for finding in future.result()]
     missing = missing_paths(arguments.paths)
     report = build_report(outcomes, path_findings, missing)
     return print_report(report, arguments)
