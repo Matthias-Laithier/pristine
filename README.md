@@ -82,15 +82,17 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package nam
 
 ## Performance
 
-Full-repository `pristine check . --json`, including secret scanning and report generation. Measured 2026-11-11 with Pristine 0.11.0 ([3dbc7b7](https://github.com/Matthias-Laithier/pristine/commit/3dbc7b77278fbf5aea7212b7e74e4580b0353e37)), Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Nine workers, cached grammars, one warmup and five timed runs per completed repository. Times are medians; files and lines count successfully checked source.
+Full-repository `pristine check . --json --jobs 9`, including secret scanning and report generation. Compared [base 99c5ad7](https://github.com/Matthias-Laithier/pristine/commit/99c5ad7cbf080f271352f4f09531c7a64bd63a39) with [optimization 02e47fc](https://github.com/Matthias-Laithier/pristine/commit/02e47fc8e0357d81ba436f0945e67239ed1cd358), using Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Cached grammars, one warmup and five timed runs per variant, alternating before/after order, without concurrent test gates. Times are medians; files and lines count successfully checked source.
 
-| Repository at revision | Language | Files | Lines | Time |
-| --- | --- | ---: | ---: | ---: |
-| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 1.20 s |
-| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 1.13 s |
-| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 3.44 s |
+| Repository at revision | Language | Files | Lines | Before | After |
+| --- | --- | ---: | ---: | ---: | ---: |
+| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 1.188 s | 1.174 s |
+| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 1.178 s | 1.086 s |
+| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 3.357 s | 3.406 s |
 
-All timed runs completed mechanical verification with findings, after the project test gate finished. Unsupported files are excluded from source counts. A separate [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) scan exceeded a 180-second external deadline during warmup while tests ran concurrently. It has no completed isolated timing result.
+These runs completed mechanical verification with findings and identical full JSON reports within each repository. Unsupported files are excluded from source counts. The small timing differences do not demonstrate a general small-repository gain.
+
+A separate [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) exploratory pair completed in **339.863 s before → 8.514 s after**, with the same setup and a 900-second external deadline. These are single-run times, not medians or an equal-coverage speedup: both returned exit 3, but three previously timed-out files were checked after optimization (517 → 520 checked files). Eight grammar verification failures remain. Common file outcomes and path checks match; the original checker with extended deadlines confirms the three recovered files.
 
 ## Contributing
 
