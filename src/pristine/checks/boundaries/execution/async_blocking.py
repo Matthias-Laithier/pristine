@@ -4,6 +4,7 @@ lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
 from pristine.clients.script_calls import (
+    ScriptScopes,
     enclosing_function,
     qualified_script_call,
     script_bindings,
@@ -51,12 +52,13 @@ def is_script_async(function: Node | None) -> bool:
 
 def script_blocking_findings(parsed: ParsedFile) -> list[Finding]:
     bindings = script_bindings(parsed)
+    scopes = ScriptScopes()
     findings = []
     for call in (node for node in all_nodes(parsed) if node.type == "call_expression"):
         function = enclosing_function(call)
         if not is_script_async(function):
             continue
-        target = qualified_script_call(call, bindings)
+        target = qualified_script_call(call, bindings, scopes)
         module, _, method = (target or "").replace("/default/", "/").partition("/")
         if module in {"fs", "node:fs"} and method in SYNC_FS_METHODS:
             message = (

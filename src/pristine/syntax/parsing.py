@@ -36,8 +36,11 @@ def root_of(source: Node | ParsedFile) -> Node:
 
 def all_nodes(source: Node | ParsedFile) -> Iterator[Node]:
     if isinstance(source, ParsedFile):
-        yield from source.nodes
-        return
+        return iter(source.nodes)
+    return subtree_nodes(source)
+
+
+def subtree_nodes(source: Node) -> Iterator[Node]:
     pending = [source]
     while pending:
         node = pending.pop()

@@ -86,16 +86,20 @@ def mutation(node: Node, parameters: dict[str, str]) -> str | None:
     return name if method in MUTATORS.get(parameters.get(name or "", ""), frozenset()) else None
 
 
-def callback_use(parsed: ParsedFile, function: Node, name: str) -> bool:
+def identifier_uses(parsed: ParsedFile) -> dict[str, list[Node]]:
+    uses: dict[str, list[Node]] = {}
+    for node in all_nodes(parsed):
+        if node.type in {"identifier", "shorthand_property_identifier"}:
+            uses.setdefault(node_text(node) or "", []).append(node)
+    return uses
+
+
+def callback_use(uses: dict[str, list[Node]], function: Node, name: str) -> bool:
     declaration = function.child_by_field_name("name")
     if function.parent is not None and function.parent.type == "variable_declarator":
         declaration = function.parent.child_by_field_name("name")
-    for node in all_nodes(parsed):
-        if (
-            node == declaration
-            or node.type not in {"identifier", "shorthand_property_identifier"}
-            or node_text(node) != name
-        ):
+    for node in uses.get(name, []):
+        if node == declaration:
             continue
         parent = node.parent
         if parent is None or parent.type != "call_expression" or parent.child_by_field_name("function") != node:
@@ -103,9 +107,11 @@ def callback_use(parsed: ParsedFile, function: Node, name: str) -> bool:
     return False
 
 
-def function_findings(parsed: ParsedFile, function: Node, shadowed: set[str]) -> list[Finding]:
+def function_findings(
+    parsed: ParsedFile, function: Node, shadowed: set[str], uses: dict[str, list[Node]]
+) -> list[Finding]:
     name = function_name(function)
-    if name.startswith(("_", "test")) or callback_use(parsed, function, name):
+    if name.startswith(("_", "test")) or callback_use(uses, function, name):
         return []
     nodes = list(own_nodes(function, SCOPES))
     rebound = rebound_names(nodes)
@@ -127,6 +133,6 @@ def check_parameter_mutation(parsed: ParsedFile) -> list[Finding]:
     if parsed.language not in {"typescript", "tsx"} or is_test_path(PurePath(parsed.path)):
         return []
     shadowed = {name for node in all_nodes(parsed) for name in declaration_names(node) if name in COLLECTION_TYPES}
-    return [
-        finding for function in module_functions(parsed) for finding in function_findings(parsed, function, shadowed)
-    ]
+    functions = module_functions(parsed)
+    uses = identifier_uses(parsed) if functions else {}
+    return [finding for function in functions for finding in function_findings(parsed, function, shadowed, uses)]

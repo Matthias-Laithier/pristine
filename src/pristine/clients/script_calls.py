@@ -16,6 +16,8 @@ BINDING_FIELDS = {
     "optional_parameter": "pattern",
     "object_assignment_pattern": "left",
 }
+DECLARING_SCOPES = FUNCTION_KINDS | LEXICAL_SCOPES
+LOCAL_BOUNDARIES = FUNCTION_KINDS | {"class_declaration", "class"}
 PATTERN_CONTAINERS = frozenset({"object_pattern", "array_pattern", "rest_pattern", "formal_parameters"})
 BOUND_IDENTIFIERS = frozenset({"identifier", "shorthand_property_identifier_pattern"})
 
@@ -69,9 +71,7 @@ def local_nodes(scope: Node, *, include_blocks: bool = False) -> list[Node]:
     while pending:
         node = pending.pop()
         nodes.append(node)
-        boundary = node.type in FUNCTION_KINDS | {"class_declaration", "class"} or (
-            not include_blocks and node.type in LEXICAL_SCOPES
-        )
+        boundary = node.type in LOCAL_BOUNDARIES or (not include_blocks and node.type in LEXICAL_SCOPES)
         if not boundary:
             pending.extend(node.named_children)
     return nodes
@@ -95,21 +95,18 @@ def declaration_names(node: Node, *, include_imports: bool) -> set[str]:
     return bound_names(node.child_by_field_name(fields.get(node.type, "")))
 
 
-def scope_shadows(scope: Node, name: str, *, include_imports: bool = True) -> bool:
+def scope_names(scope: Node, *, include_imports: bool) -> frozenset[str]:
     fields = {"catch_clause": "parameter", "for_in_statement": "left"}
     parameter = scope.child_by_field_name(fields.get(scope.type, ""))
     if scope.type in FUNCTION_KINDS:
         parameter = scope.child_by_field_name("parameters") or scope.child_by_field_name("parameter")
-    if name in bound_names(parameter):
-        return True
-    if scope.type not in FUNCTION_KINDS | LEXICAL_SCOPES:
-        return False
-    if any(name in declaration_names(node, include_imports=include_imports) for node in local_nodes(scope)):
-        return True
-    if scope.type not in FUNCTION_KINDS | {"program"}:
-        return False
-    declarations = local_nodes(scope, include_blocks=True)
-    return any(name in function_var_names(node) for node in declarations)
+    names = bound_names(parameter)
+    for node in local_nodes(scope):
+        names |= declaration_names(node, include_imports=include_imports)
+    if scope.type in FUNCTION_KINDS | {"program"}:
+        for node in local_nodes(scope, include_blocks=True):
+            names |= function_var_names(node)
+    return frozenset(names)
 
 
 def function_var_names(node: Node) -> set[str]:
@@ -120,19 +117,29 @@ def function_var_names(node: Node) -> set[str]:
     return set()
 
 
-def is_shadowed(node: Node, name: str, *, include_imports: bool = True) -> bool:
-    scope = node.parent
-    while scope is not None:
-        if scope_shadows(scope, name, include_imports=include_imports):
-            return True
-        scope = scope.parent
-    return False
+class ScriptScopes:
+    def __init__(self) -> None:
+        self.names: dict[tuple[Node, bool], frozenset[str]] = {}
+
+    def declared(self, scope: Node, *, include_imports: bool) -> frozenset[str]:
+        key = scope, include_imports
+        if key not in self.names:
+            self.names[key] = scope_names(scope, include_imports=include_imports)
+        return self.names[key]
+
+    def is_shadowed(self, node: Node, name: str, *, include_imports: bool = True) -> bool:
+        scope = node.parent
+        while scope is not None:
+            if scope.type in DECLARING_SCOPES and name in self.declared(scope, include_imports=include_imports):
+                return True
+            scope = scope.parent
+        return False
 
 
-def qualified_script_call(call: Node, bindings: dict[str, str]) -> str | None:
+def qualified_script_call(call: Node, bindings: dict[str, str], scopes: ScriptScopes) -> str | None:
     callee = node_text(call.child_by_field_name("function")) or ""
     head, _, tail = callee.partition(".")
     target = bindings.get(head)
-    if target is None or is_shadowed(call, head, include_imports=False):
+    if target is None or scopes.is_shadowed(call, head, include_imports=False):
         return None
     return target + ("/" + tail.replace(".", "/") if tail else "")

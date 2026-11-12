@@ -3,8 +3,8 @@ from pathlib import PurePath
 lazy from tree_sitter import Node
 
 from pristine.clients.script_calls import (
+    ScriptScopes,
     enclosing_function,
-    is_shadowed,
     qualified_script_call,
     script_bindings,
 )
@@ -27,11 +27,11 @@ def scope_nodes(root: Node) -> list[Node]:
     return nodes
 
 
-def imported_load(value: Node | None, bindings: dict[str, str]) -> bool:
+def imported_load(value: Node | None, bindings: dict[str, str], scopes: ScriptScopes) -> bool:
     if value is None or value.type != "await_expression" or not value.named_children:
         return False
     call = value.named_children[0]
-    if call.type != "call_expression" or qualified_script_call(call, bindings) is None:
+    if call.type != "call_expression" or qualified_script_call(call, bindings, scopes) is None:
         return False
     keys = {node_text(node.child_by_field_name("key")) for node in all_nodes(call) if node.type == "pair"}
     arguments = call.child_by_field_name("arguments")
@@ -39,7 +39,7 @@ def imported_load(value: Node | None, bindings: dict[str, str]) -> bool:
     return not is_sized and not (keys & SIZE_KEYS)
 
 
-def loaded_collection(mapped: Node, name: str, bindings: dict[str, str]) -> bool:
+def loaded_collection(mapped: Node, name: str, bindings: dict[str, str], scopes: ScriptScopes) -> bool:
     scope = enclosing_function(mapped)
     if scope is None:
         return False
@@ -56,7 +56,7 @@ def loaded_collection(mapped: Node, name: str, bindings: dict[str, str]) -> bool
         bool(assignments)
         and any(node.start_byte < mapped.start_byte for node in assignments)
         and all(
-            imported_load(node.child_by_field_name("value") or node.child_by_field_name("right"), bindings)
+            imported_load(node.child_by_field_name("value") or node.child_by_field_name("right"), bindings, scopes)
             for node in assignments
         )
     )
@@ -86,7 +86,7 @@ def fanned_map(arguments: list[Node]) -> tuple[Node, str] | None:
     return mapped, node_text(receiver) or ""
 
 
-def callback_uses_limiter(mapped: Node, bindings: dict[str, str]) -> bool:
+def callback_uses_limiter(mapped: Node, bindings: dict[str, str], scopes: ScriptScopes) -> bool:
     factories = {name for name, target in bindings.items() if target == "p-limit/default"}
     root = mapped
     while root.parent is not None:
@@ -98,7 +98,7 @@ def callback_uses_limiter(mapped: Node, bindings: dict[str, str]) -> bool:
         and (value := node.child_by_field_name("value")) is not None
         and value.type == "call_expression"
         and callee_of(value) in factories
-        and not is_shadowed(value, callee_of(value), include_imports=False)
+        and not scopes.is_shadowed(value, callee_of(value), include_imports=False)
     }
     arguments = mapped.child_by_field_name("arguments")
     callback = None if arguments is None or not arguments.named_children else arguments.named_children[0]
@@ -113,13 +113,14 @@ def script_fan_out(parsed: ParsedFile) -> list[Finding]:
     bindings = script_bindings(parsed)
     if any(target.startswith(("@temporalio/", "@mistralai/workflows/")) for target in bindings.values()):
         return []
+    scopes = ScriptScopes()
     findings = []
     for call, callee, arguments in calls_of(parsed, "call_expression"):
-        mapped = fanned_map(arguments) if callee == "Promise.all" and not is_shadowed(call, "Promise") else None
+        mapped = fanned_map(arguments) if callee == "Promise.all" and not scopes.is_shadowed(call, "Promise") else None
         if (
             mapped is not None
-            and loaded_collection(mapped[0], mapped[1], bindings)
-            and not callback_uses_limiter(mapped[0], bindings)
+            and loaded_collection(mapped[0], mapped[1], bindings, scopes)
+            and not callback_uses_limiter(mapped[0], bindings, scopes)
         ):
             message = f"'{callee_of(call)}' fans out over '{mapped[1]}' with no concurrency bound; use a bounded concurrency limiter"
             findings.append(Finding(parsed.path, line_of(call), "SAFE-8", Severity.WARNING, message))

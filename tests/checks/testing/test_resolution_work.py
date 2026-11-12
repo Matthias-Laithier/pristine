@@ -10,14 +10,14 @@ from pristine.syntax.parsing import parse_file
 
 
 def test_binding_work_is_reused_per_file(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: Counter[tuple[int, str]] = Counter()
-    original = script_scopes.scope_binding
+    calls: Counter[int] = Counter()
+    original = script_scopes.scope_bindings
 
-    def counted(scope: script_scopes.Node, name: str) -> tuple[bool, str | None]:
-        calls[scope.id, name] += 1
-        return original(scope, name)
+    def counted(scope: script_scopes.Node) -> dict[str, str | None]:
+        calls[scope.id] += 1
+        return original(scope)
 
-    monkeypatch.setattr(script_scopes, "scope_binding", counted)
+    monkeypatch.setattr(script_scopes, "scope_bindings", counted)
     source = 'import { test, expect } from "vitest"; test("é", () => {' + "expect(1).toBe(1);" * 20 + "});"
     parsed = parse_file("tests/repeated.test.ts", source, "typescript")
     for check in file_checks():

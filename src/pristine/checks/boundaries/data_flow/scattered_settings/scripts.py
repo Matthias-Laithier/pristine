@@ -3,7 +3,7 @@ from pathlib import PurePath
 lazy from tree_sitter import Node
 
 from pristine.clients.literals import string_content
-from pristine.clients.script_calls import enclosing_function, is_shadowed
+from pristine.clients.script_calls import ScriptScopes, enclosing_function
 from pristine.files.path_roles import is_test_path
 from pristine.syntax.parsing import ParsedFile, all_nodes, function_name, node_text
 
@@ -19,11 +19,11 @@ def is_startup(parsed: ParsedFile) -> bool:
     return is_test_path(path) or path.stem in STARTUP_FILES or parsed.text.startswith("#!")
 
 
-def environment_key(node: Node) -> str | None:
+def environment_key(node: Node, scopes: ScriptScopes) -> str | None:
     if node.type not in {"member_expression", "subscript_expression"}:
         return None
     owner = node_text(node.child_by_field_name("object"))
-    if owner != "process.env" or is_shadowed(node, "process"):
+    if owner != "process.env" or scopes.is_shadowed(node, "process"):
         return None
     key = node.child_by_field_name("property") or node.child_by_field_name("index")
     name = node_text(key) if node.type == "member_expression" else string_content(key)
@@ -42,14 +42,16 @@ def environment_key(node: Node) -> str | None:
 def environment_reads(parsed: ParsedFile) -> list[tuple[Node, str]]:
     if is_startup(parsed):
         return []
+    scopes = ScriptScopes()
     reads = []
     for node in all_nodes(parsed):
+        key = environment_key(node, scopes)
+        if key is None:
+            continue
         function = enclosing_function(node)
-        key = environment_key(node)
         if (
             function is not None
             and function_name(function) not in STARTUP_NAMES
-            and key is not None
             and not key.startswith(PUBLIC_PREFIXES)
             and key not in {"NODE_ENV", "NODE_OPTIONS"}
         ):

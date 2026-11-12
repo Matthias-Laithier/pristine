@@ -14,6 +14,7 @@ SCOPES = FUNCTION_KINDS | LEXICAL_SCOPES | {"program"}
 FRAMEWORKS = frozenset({"vitest", "@jest/globals"})
 GLOBALS = frozenset({"test", "it", "expect", "vi", "jest", "describe", "beforeEach", "beforeAll", "Math", "setTimeout"})
 TEST_NAMES = frozenset({"test", "it"})
+MODIFIERS = frozenset({"only", "skip", "todo", "concurrent", "sequential"})
 
 
 def parents(node: Node) -> Iterator[Node]:
@@ -32,25 +33,24 @@ def local_nodes(scope: Node) -> Iterator[Node]:
             pending.extend(reversed(node.named_children))
 
 
-def import_member(child: Node, name: str, module: str) -> str | None:
+def import_members(child: Node, module: str) -> Iterator[tuple[str | None, str]]:
     if child.type == "import_specifier":
         original = child.child_by_field_name("name")
-        alias = child.child_by_field_name("alias") or original
-        return f"{module}.{node_text(original)}" if node_text(alias) == name else None
-    kinds = {"namespace_import", "import_clause"}
-    if child.type in kinds and any(
-        item.type == "identifier" and node_text(item) == name for item in child.named_children
-    ):
-        return module
-    return None
+        yield node_text(child.child_by_field_name("alias") or original), f"{module}.{node_text(original)}"
+    elif child.type in {"namespace_import", "import_clause"}:
+        yield from ((node_text(item), module) for item in child.named_children if item.type == "identifier")
 
 
-def imported_name(node: Node, name: str) -> str | None:
+def imported_names(node: Node) -> dict[str, str]:
     module = (node_text(node.child_by_field_name("source")) or "").strip("\"'")
-    return next((value for child in all_nodes(node) if (value := import_member(child, name, module)) is not None), None)
+    members: dict[str, str] = {}
+    for name, value in (member for child in all_nodes(node) for member in import_members(child, module)):
+        if name is not None:
+            members.setdefault(name, value)
+    return members
 
 
-def binds(node: Node, name: str) -> bool:
+def bound_by(node: Node) -> set[str]:
     field = "name" if node.type in {"variable_declarator", "function_declaration", "class_declaration"} else ""
     target = node.child_by_field_name(field)
     if node.type in {"required_parameter", "optional_parameter"}:
@@ -63,36 +63,36 @@ def binds(node: Node, name: str) -> bool:
         target = node.child_by_field_name("left")
     if node.type in {"assignment_expression", "augmented_assignment_expression"}:
         target = node.child_by_field_name("left")
-        return target is not None and target.type == "identifier" and node_text(target) == name
-    return name in bound_names(target)
+        name = None if target is None or target.type != "identifier" else node_text(target)
+        return set() if name is None else {name}
+    return bound_names(target)
 
 
-def scope_binding(scope: Node, name: str) -> tuple[bool, str | None]:
-    if binds(scope, name):
-        return True, None
+def scope_bindings(scope: Node) -> dict[str, str | None]:
     nodes = list(local_nodes(scope))
-    if any(binds(node, name) for node in nodes if node.type not in LEXICAL_SCOPES):
-        return True, None
-    if scope.type in FUNCTION_KINDS | {"program"} and any(
-        name in function_var_names(node) for node in lexical_nodes(scope, include_blocks=True)
-    ):
-        return True, None
+    imports: dict[str, str | None] = {}
+    for statement in (node for node in nodes if node.type == "import_statement"):
+        imports = imported_names(statement) | imports
+    local = bound_by(scope)
     for node in nodes:
-        if node.type == "import_statement" and (value := imported_name(node, name)) is not None:
-            return True, value
-    return False, None
+        if node.type not in LEXICAL_SCOPES:
+            local |= bound_by(node)
+    if scope.type in FUNCTION_KINDS | {"program"}:
+        for node in lexical_nodes(scope, include_blocks=True):
+            local |= function_var_names(node)
+    return imports | {name: None for name in local}
 
 
 class ScriptResolution:
     def __init__(self) -> None:
-        self.bindings: dict[tuple[Node, str], tuple[bool, str | None]] = {}
+        self.scopes: dict[Node, dict[str, str | None]] = {}
         self.calls: dict[Node, str] = {}
 
     def binding(self, scope: Node, name: str) -> tuple[bool, str | None]:
-        key = scope, name
-        if key not in self.bindings:
-            self.bindings[key] = scope_binding(scope, name)
-        return self.bindings[key]
+        if scope not in self.scopes:
+            self.scopes[scope] = scope_bindings(scope)
+        bindings = self.scopes[scope]
+        return (True, bindings[name]) if name in bindings else (False, None)
 
     def qualified(self, call: Node) -> str:
         if call not in self.calls:
@@ -116,15 +116,15 @@ def qualified(call: Node, resolution: ScriptResolution) -> str:
 
 
 def framework_call(call: Node, names: frozenset[str], resolution: ScriptResolution) -> bool:
+    _, separator, tail = callee_of(call).partition(".")
+    members = tail.split(".") if separator else []
+    if members and (members[0] not in names | MODIFIERS or not MODIFIERS.issuperset(members[1:])):
+        return False
     name = resolution.qualified(call)
     parts = name.split(".")
     if parts[0] in FRAMEWORKS:
         parts = parts[1:]
-    return (
-        bool(parts)
-        and parts[0] in names
-        and all(part in {"only", "skip", "todo", "concurrent", "sequential"} for part in parts[1:])
-    )
+    return bool(parts) and parts[0] in names and MODIFIERS.issuperset(parts[1:])
 
 
 def callback(call: Node) -> Node | None:

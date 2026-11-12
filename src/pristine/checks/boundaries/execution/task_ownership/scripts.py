@@ -1,6 +1,7 @@
 lazy from tree_sitter import Node
 
 from pristine.clients.script_calls import (
+    ScriptScopes,
     qualified_script_call,
     script_bindings,
 )
@@ -37,8 +38,8 @@ ASYNC_TARGETS = (
 )
 
 
-def is_known_operation(call: Node, bindings: dict[str, str]) -> bool:
-    target = qualified_script_call(call, bindings)
+def is_known_operation(call: Node, bindings: dict[str, str], scopes: ScriptScopes) -> bool:
+    target = qualified_script_call(call, bindings, scopes)
     if target is None:
         return False
     normalized = target.replace("/default/", "/")
@@ -51,6 +52,7 @@ def is_known_operation(call: Node, bindings: dict[str, str]) -> bool:
 
 def dropped_operations(parsed: ParsedFile) -> list[Finding]:
     bindings = script_bindings(parsed)
+    scopes = ScriptScopes()
     return [
         Finding(
             parsed.path,
@@ -63,5 +65,5 @@ def dropped_operations(parsed: ParsedFile) -> list[Finding]:
         if call.type == "call_expression"
         and call.parent is not None
         and call.parent.type == "expression_statement"
-        and is_known_operation(call, bindings)
+        and is_known_operation(call, bindings, scopes)
     ]

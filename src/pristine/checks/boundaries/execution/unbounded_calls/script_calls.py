@@ -33,6 +33,8 @@ def string_value(node: Node | None) -> str | None:
 
 
 def imported_module(node: Node) -> str | None:
+    if node.type not in {"import_statement", "call_expression"}:
+        return None
     if node.type == "import_statement":
         return string_value(node.child_by_field_name("source"))
     arguments = node.child_by_field_name("arguments")
@@ -41,7 +43,9 @@ def imported_module(node: Node) -> str | None:
 
 
 def is_browser_node(node: Node) -> bool:
-    module = imported_module(node) or ""
+    module = imported_module(node)
+    if module is None:
+        return node.type in JSX_KINDS
     is_framework = any(module == framework or module.startswith(f"{framework}/") for framework in BROWSER_FRAMEWORKS)
     return is_framework or node.type in JSX_KINDS
 
