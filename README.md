@@ -91,8 +91,6 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package nam
 | [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 2.427 s |
 | [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) | TypeScript | 520 | 92,471 | 5.416 s |
 
-Zod returns exit 3: four files cannot be parsed, leaving eight grammar verification failures.
-
 ## Contributing
 
 See [AGENTS.md](AGENTS.md) for architecture, check metadata, tests, and the quality gate.
