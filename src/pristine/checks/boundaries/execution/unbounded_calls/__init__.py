@@ -1,11 +1,14 @@
 from pristine.checks.boundaries.execution.unbounded_calls.python_calls import scan_python
 from pristine.checks.boundaries.execution.unbounded_calls.script_calls import scan_script
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import heads, mentions_any, requiring
 from pristine.reports.findings import Finding
 from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile, line_of
+from pristine.syntax.python_calls import EXTERNAL_CALLS
 
 CHECK_ID = "SAFE-3"
+REQUIRED_TEXT = {"python": heads(EXTERNAL_CALLS), **dict.fromkeys(SCRIPT_LANGUAGES, ("fetch", "axios"))}
 SCANNERS = dict.fromkeys(SCRIPT_LANGUAGES, scan_script) | {"python": scan_python}
 
 
@@ -31,5 +34,5 @@ CHECK = FileCheck(
         "Known external calls without a timeout: Python requests, subprocess, urlopen, socket, and smtplib; "
         "server-side JS/TS/JSX/TSX fetch without signal and axios without timeout."
     ),
-    run=check_unbounded_calls,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_unbounded_calls),
 )

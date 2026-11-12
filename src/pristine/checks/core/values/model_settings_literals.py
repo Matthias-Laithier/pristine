@@ -4,8 +4,10 @@ from pathlib import PurePath
 
 lazy from tree_sitter import Node
 
+from pristine.checks.core.values.model_settings_script import SAMPLING_DEFAULTS
 from pristine.checks.core.values.model_settings_script import hardcoded_settings as script_settings
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.clients.libraries import PYTHON_MODEL_CLIENTS
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
@@ -19,6 +21,10 @@ CHECK_ID = "SAFE-13"
 SHEBANG = "#!"
 MODEL_KEYWORD = "model"
 NEUTRAL_SAMPLING = {"temperature": 0.0, "top_p": 1.0}
+REQUIRED_TEXT = {
+    "python": (MODEL_KEYWORD, *NEUTRAL_SAMPLING),
+    **dict.fromkeys(SCRIPT_LANGUAGES, (MODEL_KEYWORD, *SAMPLING_DEFAULTS)),
+}
 NUMBER_KINDS = frozenset({"integer", "float"})
 TYPE_NAME_KINDS = frozenset({"identifier", "attribute", "string_content"})
 TYPED_PARAMETER_KINDS = frozenset({"typed_parameter", "typed_default_parameter"})
@@ -144,5 +150,5 @@ CHECK = FileCheck(
         "annotations, and with-statements; elsewhere, a literal naming a known model family or a vendor-prefixed "
         "model marks the call. Temperature 0, top_p 1, tests, and shebang scripts are exempt."
     ),
-    run=check_model_settings_literals,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_model_settings_literals),
 )

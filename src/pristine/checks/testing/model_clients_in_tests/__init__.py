@@ -5,9 +5,11 @@ from pathlib import PurePath
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import heads, mentions_any, requiring
 from pristine.checks.testing.model_clients_in_tests.live_clients import LiveClient, key_label
 from pristine.checks.testing.model_clients_in_tests.python_keys import python_live_clients
 from pristine.checks.testing.model_clients_in_tests.script_keys import script_live_clients
+from pristine.clients.libraries import PYTHON_MODEL_CLIENTS, SCRIPT_MODEL_CLIENTS
 from pristine.clients.tables import client_table, library_names
 from pristine.files.path_roles import PYTEST_CONFTEST, is_test_file
 from pristine.reports.findings import Finding, Severity
@@ -15,6 +17,10 @@ from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile
 
 CHECK_ID = "TEST-5"
+REQUIRED_TEXT = {
+    "python": heads(PYTHON_MODEL_CLIENTS),
+    **dict.fromkeys(SCRIPT_LANGUAGES, heads(SCRIPT_MODEL_CLIENTS, "/")),
+}
 EVALS_DIRECTORY = "evals"
 MODEL_SURFACE = re.compile(
     r"\.(chat|fim|embeddings|ocr|agents|conversations|classifiers|messages|responses|completions)\.\w+|\.generate_content\b"
@@ -55,5 +61,5 @@ CHECK = FileCheck(
         "google.generativeai, cohere; JS/TS openai, @anthropic-ai/sdk, @mistralai/mistralai) whose API key "
         "argument reads the environment, with a model API in use. Evals and type-only imports are exempt."
     ),
-    run=check_model_clients_in_tests,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_model_clients_in_tests),
 )

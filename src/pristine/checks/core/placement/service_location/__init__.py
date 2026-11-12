@@ -1,12 +1,19 @@
 from pathlib import PurePath
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import heads, mentions_any, requiring
+from pristine.clients.libraries import PYTHON_CLIENTS, PYTHON_ENTRY_POINTS, SCRIPT_CLIENTS, SCRIPT_ENTRY_POINTS
 from pristine.clients.tables import client_table, library_names
 from pristine.files.path_roles import is_test_path
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.parsing import ParsedFile
 
 CHECK_ID = "STR-6"
+REQUIRED_TEXT = {
+    "python": heads((*PYTHON_CLIENTS, *PYTHON_ENTRY_POINTS)),
+    **dict.fromkeys(SCRIPT_LANGUAGES, heads((*SCRIPT_CLIENTS, *SCRIPT_ENTRY_POINTS), "/")),
+}
 SERVICES_DIRECTORY = "services"
 STORYBOOK_MARKER = ".stories."
 TYPE_DECLARATION_SUFFIX = ".d.ts"
@@ -57,5 +64,5 @@ CHECK = FileCheck(
         "Files importing an external-system client library (HTTP, cloud SDK, database, broker, LLM, mail) outside "
         "a services/ folder. Tests, composition roots, and type-only imports are exempt."
     ),
-    run=check_service_location,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_service_location),
 )

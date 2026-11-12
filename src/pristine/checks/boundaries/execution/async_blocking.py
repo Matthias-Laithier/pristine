@@ -3,6 +3,7 @@ from collections.abc import Iterator
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.clients.script_calls import (
     ScriptScopes,
     enclosing_function,
@@ -10,6 +11,7 @@ from pristine.clients.script_calls import (
     script_bindings,
 )
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, function_name, is_async, line_of
@@ -20,6 +22,7 @@ BLOCKING_CALLS = frozenset(EXTERNAL_CALLS) | {"time.sleep", "psycopg2.connect"}
 OFFLOAD_CALLS = frozenset({"asyncio.to_thread", "anyio.to_thread.run_sync"})
 EXECUTOR_METHOD = ".run_in_executor"
 FUNCTION_KIND = "function_definition"
+ASYNC_KEYWORD = "async"
 SYNC_FS_METHODS = frozenset(
     {
         "readFileSync",
@@ -47,7 +50,7 @@ SYNC_FS_METHODS = frozenset(
 
 
 def is_script_async(function: Node | None) -> bool:
-    return function is not None and any(child.type == "async" for child in function.children)
+    return function is not None and any(child.type == ASYNC_KEYWORD for child in function.children)
 
 
 def script_blocking_findings(parsed: ParsedFile) -> list[Finding]:
@@ -115,5 +118,5 @@ CHECK = FileCheck(
         "smtplib, socket.create_connection, and psycopg2.connect. Calls offloaded to a thread are exempt."
         " JS/TS imported Node fs synchronous IO in async functions; nested synchronous callbacks are exempt."
     ),
-    run=check_async_blocking,
+    run=requiring(mentions_any(dict.fromkeys(("python", *SCRIPT_LANGUAGES), (ASYNC_KEYWORD,))), check_async_blocking),
 )

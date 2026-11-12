@@ -5,13 +5,19 @@ lazy from tree_sitter import Node
 
 from pristine.checks.boundaries.execution.task_ownership.scripts import dropped_operations
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.reports.findings import Finding, Severity
+from pristine.services.grammars import SCRIPT_LANGUAGES
 from pristine.syntax.calls import callee_of
 from pristine.syntax.nodes import NESTED_SCOPE_KINDS
 from pristine.syntax.parsing import ParsedFile, is_async, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
 CHECK_ID = "SAFE-5"
+REQUIRED_TEXT = {
+    "python": ("create_task", "ensure_future", "async"),
+    **dict.fromkeys(SCRIPT_LANGUAGES, ("axios", "node-fetch", "undici", "promises")),
+}
 TASK_FACTORIES = frozenset({"asyncio.create_task", "asyncio.ensure_future"})
 LOOP_RECEIVER = re.compile(r"([\w.]*\.)?\w*loop(\(\))?", re.IGNORECASE)
 STATEMENT_CONTAINERS = frozenset({"module", "block"})
@@ -144,5 +150,5 @@ CHECK = FileCheck(
         "assigned, returned, awaited and explicitly handled promises are exempt. Generic floating promises "
         "and cancellation equivalence are not inferred."
     ),
-    run=check_task_ownership,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_task_ownership),
 )

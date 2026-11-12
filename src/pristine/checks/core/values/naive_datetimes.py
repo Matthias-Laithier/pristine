@@ -1,6 +1,7 @@
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import heads, mentions_any, requiring
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.calls import BoundedCall, calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
@@ -79,5 +80,5 @@ CHECK = FileCheck(
         "fromtimestamp without a timezone. date.today is allowed. "
         "JS/TS Date already represents an instant, so this Python-specific check is inapplicable there."
     ),
-    run=check_naive_datetimes,
+    run=requiring(mentions_any({"python": heads(NAIVE_CALLS)}), check_naive_datetimes),
 )

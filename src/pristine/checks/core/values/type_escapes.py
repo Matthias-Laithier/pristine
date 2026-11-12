@@ -5,11 +5,13 @@ from dataclasses import dataclass
 lazy from tree_sitter import Node
 
 from pristine.checks.definitions import FileCheck
+from pristine.checks.prefilters import mentions_any, requiring
 from pristine.reports.findings import Finding, Severity
 from pristine.syntax.parsing import ParsedFile, all_nodes, line_of, node_text
 from pristine.syntax.python_calls import import_bindings, qualified_callee
 
 CHECK_ID = "SAFE-14"
+REQUIRED_TEXT = {"python": ("Any", "cast", "ignore")}
 TYPING_MODULES = ("typing", "typing_extensions")
 ANY_NAMES = frozenset(f"{module}.Any" for module in TYPING_MODULES)
 CAST_NAMES = frozenset(f"{module}.cast" for module in TYPING_MODULES)
@@ -136,5 +138,5 @@ CHECK = FileCheck(
         "(error), typing.cast (warning); TypeScript any, @ts-ignore, and @ts-nocheck (error), and non-null "
         "assertions and double assertions through unknown (warning). Declaration files are skipped."
     ),
-    run=check_type_escapes,
+    run=requiring(mentions_any(REQUIRED_TEXT), check_type_escapes),
 )
