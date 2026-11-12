@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from pristine.checks.registry import file_checks
+from pristine.engine.file_reads import RECORDER
+from pristine.engine.read_digests import observed_read
 from pristine.files.classification import is_generated, is_minified, skip_reason
 from pristine.reports.outcomes import Checked, Outcome, Skipped, Unchecked, Unsupported
 from pristine.services.grammars import GrammarError, language_for
@@ -14,7 +16,15 @@ def run_checks(shown_path: str, text: str, language: str) -> Outcome:
         return Unchecked(f"could not parse as {language}: {error}")
     if parsed.root.has_error:
         return Unchecked(f"could not parse as {language}: the parser recovered from a syntax error")
-    return Checked([finding for check in file_checks() for finding in check.run(parsed)])
+    with RECORDER.recording() as reads:
+        findings = [finding for check in file_checks() for finding in check.run(parsed)]
+    if RECORDER.untraceable:
+        return Checked(findings)
+    observed = {
+        path: observed_read(path, listed=access.listed, signature=access.signature)
+        for path, access in sorted(reads.items())
+    }
+    return Checked(findings, observed)
 
 
 def inspect_file(shown_path: str) -> Outcome:

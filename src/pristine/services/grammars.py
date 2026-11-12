@@ -2,7 +2,7 @@ from functools import cache
 from pathlib import Path
 
 lazy from tree_sitter import Parser
-lazy from tree_sitter_language_pack import Error, downloaded_languages, get_parser
+lazy from tree_sitter_language_pack import Error, cache_dir, downloaded_languages, get_parser
 
 SCRIPT_LANGUAGES = ("javascript", "typescript", "tsx")
 LANGUAGE_BY_SUFFIX = {
@@ -40,3 +40,7 @@ def parser_for(language: str) -> Parser:
 
 def cached_languages() -> frozenset[str]:
     return frozenset(downloaded_languages()) & SUPPORTED_LANGUAGES
+
+
+def grammar_library_directory() -> Path:
+    return Path(cache_dir())

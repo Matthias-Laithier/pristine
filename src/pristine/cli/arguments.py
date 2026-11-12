@@ -47,6 +47,11 @@ def add_check_command(commands: argparse._SubParsersAction[argparse.ArgumentPars
         metavar="N",
         help="run at most N worker processes, at least 1; default: half the CPU cores, at least 1",
     )
+    check.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="check every file again instead of reusing results of unchanged files from .pristine_cache/",
+    )
     add_report_options(check)
 
 

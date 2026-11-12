@@ -49,6 +49,8 @@ Checks favor precision over recall. A clean scan establishes only the advertised
 
 Use `--json` for structured results, `--max N` to limit displayed findings, and `--exclude <glob>` to skip paths. Totals retain every finding. Workers run in isolation, with half the CPU cores by default; `--jobs N` sets the limit. Grammars download on first use. Discovery respects git ignores and skips vendored and generated code.
 
+Results of unchanged files are reused from `.pristine_cache/` at the repository root, which ignores itself in git. A file is checked again when its content or path changes, when any other file or directory the checks read while inspecting it changes, or when pristine, the parser packages, the grammars or Python change. Pristine records those reads as the checks run, so no check needs to declare them. Crashes and timeouts are never reused. `--no-cache` checks every file and leaves the cache untouched; `PRISTINE_CACHE_DIR` moves it. Without a writable location, every file is checked.
+
 Exit codes: **0** completed without errors, **1** error findings, **2** invalid usage, **3** incomplete verification. Warnings alone return 0. Scanner failures take priority over findings and never produce a clean verdict.
 
 <details>
@@ -82,12 +84,16 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package nam
 
 ## Performance
 
-| Repository at revision | Language | Files | Lines | Time |
-| --- | --- | ---: | ---: | ---: |
-| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 0.638 s |
-| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 0.495 s |
-| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 0.515 s |
-| [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) | TypeScript | 520 | 92,471 | 1.466 s |
+Full-repository `pristine check . --json` on an Apple M5 Pro (macOS, Python 3.15) with nine workers and cached grammars, median of 5 runs measured 2026-11-12. A first run checks every file; a repeat run reuses results of unchanged files from `.pristine_cache/`.
+
+| Repository at revision | Language | Files | Lines | First run | Repeat run |
+| --- | --- | ---: | ---: | ---: | ---: |
+| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 0.36 s | 0.19 s |
+| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 0.33 s | 0.20 s |
+| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 0.41 s | 0.28 s |
+| [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) | TypeScript | 520 | 92,471 | 0.86 s | 0.78 s |
+| [TanStack Query](https://github.com/TanStack/query/tree/9b528b5e51844197a6cb795822edc38569f1dff9) | TypeScript | 2,225 | 252,946 | 1.66 s | 1.60 s |
+| [Django](https://github.com/django/django/tree/2d89a635128e1fe91fb01ebd6ec2672ab1f2dd0a) | Python | 2,985 | 537,551 | 2.62 s | 2.04 s |
 
 ## Contributing
 
