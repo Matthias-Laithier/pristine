@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 lazy from tree_sitter import Node
 
-from pristine.checks.testing.script_scopes import qualified, test_callbacks
+from pristine.checks.testing.script_scopes import ScriptResolution, test_callbacks
 from pristine.syntax.calls import calls_of
 from pristine.syntax.parsing import ParsedFile, all_nodes, node_text
 
@@ -39,11 +39,11 @@ def unwrap(node: Node) -> Node:
     )
 
 
-def operands(call: Node, arguments: list[Node]) -> tuple[Node, Node] | None:
+def operands(call: Node, arguments: list[Node], resolution: ScriptResolution) -> tuple[Node, Node] | None:
     function = call.child_by_field_name("function")
     if function is None:
         return None
-    name = qualified(call)
+    name = resolution.qualified(call)
     if any(name == f"{module}.{method}" for module in ASSERT for method in COMPARISONS) and len(arguments) >= PAIR_SIZE:
         return unwrap(arguments[0]), unwrap(arguments[1])
     receiver = function.child_by_field_name("object")
@@ -53,7 +53,7 @@ def operands(call: Node, arguments: list[Node]) -> tuple[Node, Node] | None:
         or receiver is None
         or receiver.type != "call_expression"
         or len(arguments) != 1
-        or qualified(receiver) not in EXPECT
+        or resolution.qualified(receiver) not in EXPECT
     ):
         return None
     expected = receiver.child_by_field_name("arguments")
@@ -80,8 +80,8 @@ def same_value(left: Node, right: Node) -> bool:
     return literal_tokens(left) == literal_tokens(right)
 
 
-def assertion_problem(call: Node, arguments: list[Node]) -> str | None:
-    pair = operands(call, arguments)
+def assertion_problem(call: Node, arguments: list[Node], resolution: ScriptResolution) -> str | None:
+    pair = operands(call, arguments, resolution)
     function = call.child_by_field_name("function")
     deep = function is not None and node_text(function.child_by_field_name("property")) == "toEqual"
     if pair is not None and (deep or pair[0].type not in {"array", "object"}) and same_value(*pair):
@@ -90,7 +90,8 @@ def assertion_problem(call: Node, arguments: list[Node]) -> str | None:
 
 
 def typescript_dependent_assertions(parsed: ParsedFile) -> Iterator[tuple[Node, str]]:
-    calls = (item for test in test_callbacks(parsed) for item in calls_of(test, "call_expression"))
+    resolution = ScriptResolution()
+    calls = (item for test in test_callbacks(parsed, resolution) for item in calls_of(test, "call_expression"))
     for call, _, arguments in calls:
-        if (problem := assertion_problem(call, arguments)) is not None:
+        if (problem := assertion_problem(call, arguments, resolution)) is not None:
             yield call, problem

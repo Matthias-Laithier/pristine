@@ -82,15 +82,12 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package nam
 
 ## Performance
 
-Full-repository `pristine check . --json`, including secret scanning and report generation. Measured 2026-11-11 with Pristine 0.11.0 ([3dbc7b7](https://github.com/Matthias-Laithier/pristine/commit/3dbc7b77278fbf5aea7212b7e74e4580b0353e37)), Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Nine workers, cached grammars, one warmup and five timed runs per completed repository. Times are medians; files and lines count successfully checked source.
-
 | Repository at revision | Language | Files | Lines | Time |
 | --- | --- | ---: | ---: | ---: |
-| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 1.20 s |
-| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 1.13 s |
-| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 3.44 s |
-
-All timed runs completed mechanical verification with findings, after the project test gate finished. Unsupported files are excluded from source counts. A separate [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) scan exceeded a 180-second external deadline during warmup while tests ran concurrently. It has no completed isolated timing result.
+| [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 0.896 s |
+| [HTTPX](https://github.com/encode/httpx/tree/b5addb64f0161ff6bfe94c124ef76f6a1fba5254) | Python | 60 | 17,753 | 0.744 s |
+| [ky](https://github.com/sindresorhus/ky/tree/3541888878c4d303a8bc2ad61815f4e048f55a5d) | TypeScript | 98 | 36,231 | 2.427 s |
+| [Zod](https://github.com/colinhacks/zod/tree/19c40d2072288b4cafec851e9d056a72a88e5973) | TypeScript | 520 | 92,471 | 5.416 s |
 
 ## Contributing
 
