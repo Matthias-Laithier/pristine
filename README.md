@@ -82,8 +82,6 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.15+. The PyPI package nam
 
 ## Performance
 
-`pristine check . --json --jobs 9`, measured 2026-11-12 with Pristine 0.12.0 ([4c4804d](https://github.com/Matthias-Laithier/pristine/commit/4c4804d062e8e77faab137311e6d4f675cffb29e)), Python 3.15.2, macOS 26.7.1 and Apple M5 Pro. Cached grammars, one warmup, medians of five runs. Files and lines count successfully checked source.
-
 | Repository at revision | Language | Files | Lines | Time |
 | --- | --- | ---: | ---: | ---: |
 | [requests](https://github.com/psf/requests/tree/3c7baaa05ab4aa49cc819ce3a819d260de19c157) | Python | 37 | 12,032 | 0.896 s |
