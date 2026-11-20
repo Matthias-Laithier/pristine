@@ -3,6 +3,7 @@ from pathlib import Path
 from pristine.checks.registry import file_checks
 from pristine.engine.file_reads import RECORDER
 from pristine.engine.read_digests import observed_read
+from pristine.engine.suppressions import apply_suppressions
 from pristine.files.classification import is_generated, is_minified, skip_reason
 from pristine.reports.outcomes import Checked, Outcome, Skipped, Unchecked, Unsupported
 from pristine.services.grammars import GrammarError, language_for
@@ -17,7 +18,7 @@ def run_checks(shown_path: str, text: str, language: str) -> Outcome:
     if parsed.root.has_error:
         return Unchecked(f"could not parse as {language}: the parser recovered from a syntax error")
     with RECORDER.recording() as reads:
-        findings = [finding for check in file_checks() for finding in check.run(parsed)]
+        findings = apply_suppressions(parsed, [finding for check in file_checks() for finding in check.run(parsed)])
     if RECORDER.untraceable:
         return Checked(findings)
     observed = {
