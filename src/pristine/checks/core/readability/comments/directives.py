@@ -7,6 +7,7 @@ DIRECTIVE_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
         r"noqa\b",
+        r"pristine\s*:\s*ignore\b",
         r"type:\s",
         r"(pyright|mypy|ty|pyrefly|pylint|ruff|flake8|isort|jshint|jscs)\s*:",
         r"fmt:\s*(off|on|skip)\b",

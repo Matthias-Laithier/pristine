@@ -53,6 +53,22 @@ Results of unchanged files are reused from `.pristine_cache/` at the repository 
 
 Exit codes: **0** completed without errors, **1** error findings, **2** invalid usage, **3** incomplete verification. Warnings alone return 0. Scanner failures take priority over findings and never produce a clean verdict.
 
+## Suppressions
+
+A comment containing `pristine: ignore` suppresses the findings on its line. A standalone pragma comment, with nothing before it on its line, also suppresses the next line, so it can sit above a declaration. It works alongside another tool's directive in the same comment:
+
+```py
+value = compute()  # type: ignore[attr-defined]  # pristine: ignore
+```
+
+```py
+# pristine: ignore
+def legacy_settings() -> dict[str, Any]:
+    ...
+```
+
+`//` and `/* */` comments work the same way in JavaScript and TypeScript. Pragmas suppress findings from source checks; path checks and project checks still report, and the comment check allows pragma comments.
+
 <details>
 <summary>Project-check coverage</summary>
 
